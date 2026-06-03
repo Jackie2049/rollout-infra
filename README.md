@@ -160,6 +160,7 @@
 | [serving_framework_compare.py](tools/serving_framework_compare.py) | LLM Serving 框架对比（vLLM/SGLang/TRT-LLM 吞吐、KV 共享、结构化生成、扩展效率） | 已验证 |
 | [inference_cost_calculator.py](tools/inference_cost_calculator.py) | LLM 推理部署成本计算器（GPU 选型、量化策略、场景成本、能效分析） | 已验证 |
 | [cuda_kernel_simulator.py](tools/cuda_kernel_simulator.py) | CUDA Kernel 执行模拟器（Grid/Block、内存层次、Occupancy、Roofline 分析） | 已验证 |
+| [cuda_stream_simulator.py](tools/cuda_stream_simulator.py) | CUDA Stream 并发模型模拟器（通信计算重叠、TP overlap、vLLM 多 Stream） | 已验证 |
 
 ### 日志记录规范
 
@@ -202,8 +203,8 @@
 | 基础知识笔记 | 45 篇 |
 | 项目源码阅读 | 23 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 51 个 |
-| **总计** | **122 项** |
+| 实用工具脚本 | 52 个 |
+| **总计** | **123 项** |
 
 ## GitHub
 
