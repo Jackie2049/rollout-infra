@@ -33,6 +33,10 @@
 - [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
 - [GPU 性能分析](notebook/fundamentals/gpu-profiling.md) — 四层方法：nvidia-smi → nsys → ncu → ncu detail
 
+## RL 训练基础设施
+
+- [RLHF/GRPO 训练基础设施](notebook/fundamentals/rlhf-training-infra.md) — PPO 四模型架构、GRPO 无 Critic、verl/OpenRLHF 框架、Prefix Sharing
+
 ## 推理与部署
 
 - [Speculative Decoding](notebook/fundamentals/speculative-decoding.md) — Draft-Verify、Medusa、Eagle 投机采样
@@ -121,7 +125,7 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 25 篇 |
+| 基础知识笔记 | 26 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
 | 实用工具脚本 | 12 个 |
