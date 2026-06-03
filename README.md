@@ -28,6 +28,7 @@
 - [Triton 编程](notebook/fundamentals/triton-programming.md) — OpenAI Triton：kernel、autotune、GEMM、FlashAttention
 - [FlashAttention](notebook/fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
+- [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
 - [GPU 显存优化](notebook/fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
 - [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
 - [GPU 性能分析](notebook/fundamentals/gpu-profiling.md) — 四层方法：nvidia-smi → nsys → ncu → ncu detail
@@ -119,7 +120,7 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 23 篇 |
+| 基础知识笔记 | 24 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
 | 实用工具脚本 | 12 个 |
