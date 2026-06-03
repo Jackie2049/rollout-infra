@@ -24,6 +24,7 @@
 - [梯度检查点](notebook/fundamentals/gradient-checkpointing.md) — 激活重计算策略，用计算换显存
 - [NCCL 通信库](notebook/fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
 - [RDMA 高性能网络](notebook/fundamentals/rdma-networking.md) — InfiniBand/RoCE/iWARP、GPUDirect RDMA、NCCL 调优、实战排错
+- [CUDA 编程基础](notebook/fundamentals/cuda-programming-basics.md) — Grid/Block/Thread、内存层次、Coalesced Access、Occupancy、Roofline Model
 - [通信与计算重叠](notebook/fundamentals/comm-compute-overlap.md) — DDP Bucket Overlap、1F1B、ZeRO-3 Prefetch
 - [MoE 混合专家架构](notebook/fundamentals/moe.md) — 稀疏激活、Top-K 路由、负载均衡、Expert Parallelism、DeepSeek-V3
 - [序列并行](notebook/fundamentals/sequence-parallelism.md) — DeepSpeed Ulysses、Ring Attention、USP 统一框架
@@ -94,6 +95,7 @@
 - [verl 源码架构阅读](notebook/projects/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
 - [vLLM 量化推理管线源码阅读](notebook/projects/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
 - [vLLM 权重加载管线源码阅读](notebook/projects/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
+- [vLLM P/D 分离架构源码阅读](notebook/projects/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
@@ -156,6 +158,8 @@
 | [chunked_prefill_sim.py](tools/chunked_prefill_sim.py) | Chunked Prefill 模拟（无 chunking vs chunked、chunk size 影响、并发调度、Prefix Caching 组合） | 已验证 |
 | [kv_cache_quant_sim.py](tools/kv_cache_quant_sim.py) | KV Cache 量化模拟（FP16/FP8/INT4/2-bit 对比、Batch 影响、组合优化、成本效率） | 已验证 |
 | [serving_framework_compare.py](tools/serving_framework_compare.py) | LLM Serving 框架对比（vLLM/SGLang/TRT-LLM 吞吐、KV 共享、结构化生成、扩展效率） | 已验证 |
+| [inference_cost_calculator.py](tools/inference_cost_calculator.py) | LLM 推理部署成本计算器（GPU 选型、量化策略、场景成本、能效分析） | 已验证 |
+| [cuda_kernel_simulator.py](tools/cuda_kernel_simulator.py) | CUDA Kernel 执行模拟器（Grid/Block、内存层次、Occupancy、Roofline 分析） | 已验证 |
 
 ### 日志记录规范
 
@@ -195,11 +199,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 44 篇 |
-| 项目源码阅读 | 22 篇 |
+| 基础知识笔记 | 45 篇 |
+| 项目源码阅读 | 23 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 49 个 |
-| **总计** | **119 项** |
+| 实用工具脚本 | 51 个 |
+| **总计** | **122 项** |
 
 ## GitHub
 
