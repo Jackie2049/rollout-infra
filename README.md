@@ -42,6 +42,7 @@
 ## RL 训练基础设施
 
 - [RLHF/GRPO 训练基础设施](notebook/fundamentals/rlhf-training-infra.md) — PPO 四模型架构、GRPO 无 Critic、verl/OpenRLHF 框架、Prefix Sharing
+- [DPO 直接偏好优化](notebook/fundamentals/dpo.md) — 跳过 RM 和 RL 的对齐方法、IPO/KTO/SimPO 变体
 - [LoRA 与参数高效微调](notebook/fundamentals/lora-peft.md) — 低秩分解原理、QLoRA、多 LoRA 服务、RLHF 中的应用
 
 ## 推理与部署
@@ -131,11 +132,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 29 篇 |
+| 基础知识笔记 | 30 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
 | 实用工具脚本 | 14 个 |
-| **总计** | **53 项** |
+| **总计** | **54 项** |
 
 ## GitHub
 
