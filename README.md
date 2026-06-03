@@ -57,6 +57,7 @@
 - [FP8 量化与训练](notebook/fundamentals/fp8-quantization.md) — E4M3/E5M2 格式、缩放策略、Transformer Engine、vLLM FP8 实现
 - [模型服务架构](notebook/fundamentals/model-serving.md) — API 网关、负载均衡、HPA 自动扩缩容
 - [Disaggregated Serving](notebook/fundamentals/disaggregated-serving.md) — Prefill/Decode 分离、KV Transfer、Splitwise/Mooncake 架构
+- [LLM 采样方法](notebook/fundamentals/sampling-methods.md) — Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚
 
 ## 集群与基础设施
 
@@ -113,6 +114,7 @@
 | [pytorch_inference_bench.py](tools/pytorch_inference_bench.py) | PyTorch 原生推理 benchmark（KV Cache 加速比、Prefill/Decode 延迟、Batch 扩展效率） | 已验证 |
 | [fp8_simulation.py](tools/fp8_simulation.py) | FP8 量化模拟（E4M3/E5M2 格式、缩放策略、Outlier 影响、误差传播） | 已验证 |
 | [fsdp_memory_sim.py](tools/fsdp_memory_sim.py) | FSDP 内存模拟（DDP vs FSDP 对比、Sharding 策略、Wrapping 分析、Prefetching） | 已验证 |
+| [sampling_simulator.py](tools/sampling_simulator.py) | LLM 采样模拟（Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚） | 已验证 |
 
 ### 日志记录规范
 
@@ -152,13 +154,13 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 35 篇 |
+| 基础知识笔记 | 36 篇 |
 | 项目源码阅读 | 10 篇 |
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 25 个 |
-| **总计** | **75 项** |
+| 实用工具脚本 | 26 个 |
+| **总计** | **77 项** |
 
 ## GitHub
 

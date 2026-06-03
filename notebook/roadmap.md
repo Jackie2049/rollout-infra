@@ -58,6 +58,8 @@
 ### 推理引擎
 - [x] Continuous Batching / Iteration-level Scheduling → `fundamentals/continuous-batching.md`
 - [x] Speculative Decoding → `fundamentals/speculative-decoding.md`
+- [x] 采样方法：Temperature / Top-K / Top-P / Min-P / Beam Search → `fundamentals/sampling-methods.md`
+- [x] 实践：采样方法模拟器（6 个实验, Temperature/Top-K/P/Min-P/Penalty/Beam） → `tools/sampling_simulator.py`
 - [x] 量化推理 (GPTQ, AWQ, FP8) → `fundamentals/quantization.md`
 - [x] FP8 量化与训练：E4M3/E5M2、Transformer Engine、vLLM 实现 → `fundamentals/fp8-quantization.md`
 - [x] Disaggregated Serving：P/D 分离、KV Transfer、Mooncake/Splitwise → `fundamentals/disaggregated-serving.md`
