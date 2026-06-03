@@ -33,6 +33,7 @@
 
 - [CUDA 编程基础](notebook/fundamentals/cuda-basics.md) — 线程层次、内存模型、流、Tensor Core
 - [Triton 编程](notebook/fundamentals/triton-programming.md) — OpenAI Triton：kernel、autotune、GEMM、FlashAttention
+- [torch.compile 与 Inductor](notebook/fundamentals/torch-compile.md) — Dynamo 图捕获、Triton 代码生成、CUDA Graphs 集成
 - [FlashAttention](notebook/fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
@@ -53,6 +54,7 @@
 - [Tokenizer 与推理管线](notebook/fundamentals/tokenizer.md) — BPE、词表大小影响、压缩率与推理成本、特殊 Tokens
 - [推理量化](notebook/fundamentals/quantization.md) — GPTQ/AWQ/SmoothQuant/FP8 量化方法对比
 - [模型服务架构](notebook/fundamentals/model-serving.md) — API 网关、负载均衡、HPA 自动扩缩容
+- [Disaggregated Serving](notebook/fundamentals/disaggregated-serving.md) — Prefill/Decode 分离、KV Transfer、Splitwise/Mooncake 架构
 
 ## 集群与基础设施
 
@@ -145,13 +147,13 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 31 篇 |
+| 基础知识笔记 | 33 篇 |
 | 项目源码阅读 | 10 篇 |
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 22 个 |
-| **总计** | **68 项** |
+| **总计** | **70 项** |
 
 ## GitHub
 
