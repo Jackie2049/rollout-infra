@@ -440,6 +440,21 @@ Disaggregated:
    专用 KV transfer ASIC
 ```
 
+## 模拟验证
+
+- `tools/disaggregated_serving_sim.py` — Disaggregated Serving 模拟器（5 个实验）
+  - 实验 1: Monolithic vs Disaggregated (1P+1D, 100 reqs, H100, NVLink → 2.14x 吞吐)
+  - 实验 2: KV Transfer 带宽影响 (10GbE 184 tok/s → NVLink 415 tok/s)
+  - 实验 3: P/D 实例比例 (1P+2D GPU效率最高 133.1 tok/GPU)
+  - 实验 4: Prompt 长度影响 (短 prompt 两者无差异, 超长 prompt 分离优势)
+  - 实验 5: 扩展效率 (Monolithic 4-GPU 扩展效率 0.36, Disaggregated 0.40)
+
+关键发现:
+- **1P+2D 是最优比例**: GPU 效率 133.1 tok/GPU, Decode 是吞吐瓶颈
+- **KV Transfer 开销与带宽线性相关**: NVLink <4ms, 10GbE >2300ms
+- **短 prompt 场景无差异**: TTFT 62ms vs 63ms, 分离架构收益可忽略
+- **扩展效率都不理想**: 4x GPU 仅 ~0.4 效率, 说明调度和分配是瓶颈
+
 ## 参考
 
 - [Splitwise: Efficient generative LLM inference using phase splitting (ISCA 2024)](https://arxiv.org/abs/2311.18677)

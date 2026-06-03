@@ -122,6 +122,7 @@
 | [prefix_caching_sim.py](tools/prefix_caching_sim.py) | Prefix Caching 模拟（Hash/Trie/Group 策略对比, RL 场景, 收益量化） | 已验证 |
 | [continuous_batching_sim.py](tools/continuous_batching_sim.py) | Continuous Batching 模拟（Static vs Continuous, 调度策略, KV Cache 压力, Chunked Prefill） | 已验证 |
 | [speculative_decoding_sim.py](tools/speculative_decoding_sim.py) | Speculative Decoding 模拟（Draft-Verify、质量影响、K 最优化、批量扩展） | 已验证 |
+| [disaggregated_serving_sim.py](tools/disaggregated_serving_sim.py) | Disaggregated Serving 模拟（Monolithic vs P/D 分离、KV Transfer、实例比例优化） | 已验证 |
 
 ### 日志记录规范
 
@@ -164,8 +165,8 @@
 | 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 30 个 |
-| **总计** | **84 项** |
+| 实用工具脚本 | 31 个 |
+| **总计** | **85 项** |
 
 ## GitHub
 
