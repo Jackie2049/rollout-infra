@@ -256,9 +256,13 @@ Iteration 9: 开始 decode 该请求
   - 释放 GPU blocks 给新请求
   - 当 GPU 有空余时，从 CPU 拷贝回来继续
 
-方案 3: 混合策略（vLLM）
-  - 优先 swap（可恢复，无重算开销）
-  - swap 空间也满时 → preempt（重算）
+方案 3: vLLM V1 策略 — 纯重计算（Pure Recomputation）
+  - 只用 preemption + recomputation，不用 swap
+  - 被抢占请求: 释放所有 KV blocks，num_computed_tokens 重置为 0
+  - 放回等待队列 (优先队列前端)
+  - 如果有 prefix caching，prefix 部分的 KV 可以跳过重计算
+  - 优势: 实现简单，无 CPU-GPU 数据传输开销
+  - 劣势: 重计算有额外开销，但通常比 swap 更快（PCIe 带宽限制）
 ```
 
 ## 5. Scheduling 策略
@@ -341,15 +345,27 @@ outputs = llm.generate(["prompt 1", "prompt 2", "prompt 3"], params)
 ```
 
 ```
-vLLM V1 架构:
-  Scheduler → 决定每个 iteration 的 prefill/decode 请求
-  KV Cache Manager → PagedAttention block 分配
-  Executor → 执行 prefill/decode on GPU
+vLLM V1 调度器架构 (schedule() 方法):
+
+1. new_step_starts() → KVCacheManager 准备新步
+2. 处理 RUNNING 请求:
+   - 计算 num_new_tokens (decode=1, prefill=min(remaining, threshold))
+   - long_prefill_token_threshold 限制每步 prefill tokens
+   - 分配 KV cache slots → 失败则触发抢占循环
+3. 处理 WAITING 请求 (仅当没有抢占时):
+   - 检查 prefix cache 命中
+   - 计算剩余 tokens
+   - 分配 slots → 提升到 RUNNING
+4. 返回 SchedulerOutput
+
+调度策略:
+  FCFS: deque 等待队列, 抢占最后到达的请求
+  PRIORITY: min-heap 按 (priority, arrival_time) 排序
 
 关键参数:
-  --max-num-seqs 256        # 最大并发序列数
-  --max-num-batched-tokens 8192  # 每 iteration 最大 token 数
-  --gpu-memory-utilization 0.9   # GPU 显存使用比例
+  --max-num-seqs 256              # 最大并发序列数
+  --max-num-batched-tokens 8192   # 每 iteration 最大 token 数
+  --gpu-memory-utilization 0.9    # GPU 显存使用比例
 ```
 
 ### 7.2 SGLang
@@ -379,6 +395,21 @@ NVIDIA 的优化:
 3. **Chunked Prefill 是最新实践** — 将长 prompt 分块处理，避免饿死 decode 请求
 4. **Prefix-aware 调度可以进一步提升** — 优先调度有共享前缀的请求，命中 prefix caching
 5. **Preemption + Swap 保证稳定性** — 显存不足时优雅降级而非 OOM
+
+## 模拟验证
+
+- `tools/continuous_batching_sim.py` — Continuous Batching 模拟器（5 个实验）
+  - 实验 1: Static vs Continuous 对比 (到达率 5-50 req/s)
+  - 实验 2: 调度策略对比 (FCFS/SJF/Priority)
+  - 实验 3: KV Cache 大小影响 (8K-128K tokens)
+  - 实验 4: Batch Size 扩展效率 (4-64)
+  - 实验 5: Chunked Prefill 阈值影响
+
+关键发现:
+- **TTFT**: Continuous 比 Static 好 10-100x (32-58ms vs 1231-3324ms)
+- **KV Cache 压力**: 8K tokens → 66 次抢占/TTFT 4492ms; 32K+ → 0 抢占/TTFT 1162ms
+- **Batch Size**: Continuous 吞吐一致 (~4450 tok/s, batch 8-64); Static 在 batch>32 后下降
+- **高到达率 (50 req/s)**: Continuous 吞吐 4579 vs Static 3816 tok/s (+20%)
 
 ## 参考
 
