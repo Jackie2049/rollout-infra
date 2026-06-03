@@ -134,6 +134,7 @@
 | [collective_comm_sim.py](tools/collective_comm_sim.py) | 集合通信深度分析（Ring/Tree AllReduce、AllGather/ReduceScatter、通信重叠） | 已验证 |
 | [nccl_tuning_sim.py](tools/nccl_tuning_sim.py) | NCCL 调优参数分析（算法/协议选择、通道调优、跨节点拓扑、速查表） | 已验证 |
 | [checkpoint_perf_sim.py](tools/checkpoint_perf_sim.py) | Checkpoint 性能分析（大小估算、保存策略、加载恢复、存储推荐） | 已验证 |
+| [dataloader_perf_sim.py](tools/dataloader_perf_sim.py) | DataLoader 优化分析（加载瓶颈、Prefetch 预取、存储对比、调优推荐） | 已验证 |
 
 ### 日志记录规范
 
@@ -176,8 +177,8 @@
 | 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 13 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 41 个 |
-| **总计** | **97 项** |
+| 实用工具脚本 | 42 个 |
+| **总计** | **98 项** |
 
 ## GitHub
 
