@@ -124,6 +124,7 @@
 | [continuous_batching_sim.py](tools/continuous_batching_sim.py) | Continuous Batching 模拟（Static vs Continuous, 调度策略, KV Cache 压力, Chunked Prefill） | 已验证 |
 | [speculative_decoding_sim.py](tools/speculative_decoding_sim.py) | Speculative Decoding 模拟（Draft-Verify、质量影响、K 最优化、批量扩展） | 已验证 |
 | [disaggregated_serving_sim.py](tools/disaggregated_serving_sim.py) | Disaggregated Serving 模拟（Monolithic vs P/D 分离、KV Transfer、实例比例优化） | 已验证 |
+| [flash_attention_sim.py](tools/flash_attention_sim.py) | FlashAttention 算法模拟（tiling、online softmax、IO 分析、block size 影响） | 已验证 |
 
 ### 日志记录规范
 
@@ -166,8 +167,8 @@
 | 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 13 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 31 个 |
-| **总计** | **86 项** |
+| 实用工具脚本 | 32 个 |
+| **总计** | **87 项** |
 
 ## GitHub
 

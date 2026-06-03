@@ -190,6 +190,20 @@ FA3 针对 H100 的三大特性：
 - **Sequence Parallelism**：FA 的 O(N) 内存使超长序列训练成为可能
 - **推理优化**：FA 是 continuous batching 和 prefix caching 的基础
 
+## 模拟验证
+
+- `tools/flash_attention_sim.py` — FlashAttention 算法模拟器（4 个实验，CPU 可运行）
+  - 实验 1: 标准 vs Flash 数值等价（Max Abs Err < 3.3e-7, Cos Sim > 0.999999）
+  - 实验 2: HBM IO 分析（标准 N²×d vs Flash N²×d²/M, 16K 序列节省 2.2x）
+  - 实验 3: Online Softmax 逐步演示（correction factor exp(m_old - m_new), 误差 < 1.4e-7）
+  - 实验 4: Block Size 影响（bs=8→4096 pairs vs bs=512→1 pair, 精度不受 bs 影响）
+
+关键发现:
+- **Online softmax 修正因子**: `exp(m_old - m_new)` 调整之前累积值，保证等价
+- **IO 复杂度**: 标准 O(N²d), Flash O(N²d²/M), 序列越长节省越多
+- **中间存储**: 标准 N=16K 时需要 ~32GB, Flash = 0（零中间矩阵!）
+- **Block size 不影响精度**: online softmax 数值等价与 block size 无关
+
 ## 参考
 
 - [FlashAttention-1](https://arxiv.org/abs/2205.14135) (NeurIPS 2022)
