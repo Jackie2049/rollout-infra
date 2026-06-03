@@ -65,6 +65,7 @@
 - [vLLM V1 架构](notebook/projects/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
 - [vLLM KV Transfer Connector](notebook/projects/vllm-kv-transfer-connector.md) — NIXL 连接器架构、P/D 分离、ZMQ 握手、TP 聚合
 - [vLLM V1 Scheduler 源码阅读](notebook/projects/vllm-v1-scheduler-reading.md) — 调度循环、抢占策略、KV Cache 管理、Prefix Caching 集成
+- [vLLM 投机解码源码阅读](notebook/projects/vllm-spec-decode-reading.md) — Draft-Verify、Eagle/Medusa/Ngram proposer、Rejection Sampling
 - [vLLM Prefix Caching V1](notebook/projects/vllm-prefix-caching-v1.md) — Hash chain、block 生命周期、四种 attention 缓存策略
 - [vLLM 开源贡献计划](notebook/projects/vllm-contribution-plan.md) — 11 个 good first issue 筛选和分析
 - [vLLM 贡献准备](notebook/projects/vllm-contribution-prep.md) — FlashInfer 后端分析、开发环境搭建
@@ -144,8 +145,10 @@
 | 基础知识笔记 | 31 篇 |
 | 项目源码阅读 | 10 篇 |
 | 实验记录 | 3 篇 |
+| 项目源码阅读 | 12 篇 |
+| 实验记录 | 3 篇 |
 | 实用工具脚本 | 19 个 |
-| **总计** | **64 项** |
+| **总计** | **65 项** |
 
 ## GitHub
 
