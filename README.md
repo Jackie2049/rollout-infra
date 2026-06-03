@@ -80,6 +80,7 @@
 - [Megatron-LM 张量并行](notebook/projects/megatron-tp-reading.md) — ColumnParallelLinear/RowParallelLinear 源码
 - [Megatron-LM 流水线并行](notebook/projects/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](notebook/projects/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
+- [vLLM MLA Backend 源码阅读](notebook/projects/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
 - [verl PrefixGrouper](notebook/projects/verl-prefix-grouper.md) — RL 训练中 prompt 复用的分组与调度
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 
@@ -163,10 +164,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 39 篇 |
-| 项目源码阅读 | 12 篇 |
+| 项目源码阅读 | 13 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 31 个 |
-| **总计** | **85 项** |
+| **总计** | **86 项** |
 
 ## GitHub
 
