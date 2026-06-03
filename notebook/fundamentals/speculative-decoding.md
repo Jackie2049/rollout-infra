@@ -267,6 +267,21 @@ output = llm.generate(prompts, sampling_params)
 5. **Medusa/Eagle 等变体**不需要单独的 draft model
 6. **vLLM 原生支持**多种 speculative decoding 方法
 
+## 模拟验证
+
+- `tools/speculative_decoding_sim.py` — Speculative Decoding 模拟器（5 个实验）
+  - 实验 1: Standard AR vs Speculative 对比 (70B+7B, K=5, quality=0.8 → 1.48x 加速, target forward 节省 62%)
+  - 实验 2: Draft 质量影响 (quality=0.5→0.83x减速, 0.8→1.40x, 0.99→2.14x; 分界线在 0.6-0.8)
+  - 实验 3: 投机长度 K 最优化 (quality=0.7→最优K=2, quality=0.8→最优K=2, quality=0.9→最优K=3)
+  - 实验 4: 不同模型规模 (7B无收益, 13B→1.60x, 70B→1.48x, 405B→1.88x)
+  - 实验 5: Batch 扩展 (batch=1→1.54x, batch=32→1.46x; 大 batch 下收益递减)
+
+关键发现:
+- **最优 K 比预期小**: quality=0.8 时 K=2-3 最优，而非常见的 K=5。原因是位置衰减使远端 token 接受率低
+- **Draft 质量分界线**: quality<0.6 时反而减速（draft 延迟 > 接受收益）
+- **大模型收益最大**: 405B 模型加速 1.88x，因为 target 延迟远大于 draft 延迟
+- **Batch 影响有限**: 1.42-1.54x，说明 speculative 主要适合在线推理而非批量场景
+
 ## 参考
 
 - [Fast Inference from Transformers via Speculative Decoding](https://arxiv.org/abs/2302.01318) (Leviathan et al., 2023)
