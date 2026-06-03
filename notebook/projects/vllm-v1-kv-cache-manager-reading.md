@@ -84,6 +84,47 @@ class BlockPool:
 
 ## 5. Prefix Caching 实现
 
+### BlockHashToBlockMap (block_pool.py:34-127)
+
+核心数据结构，支持 hash→blocks 的 1:N 映射：
+
+```python
+class BlockHashToBlockMap:
+    _cache: dict[BlockHashWithGroupId, KVCacheBlock | dict[int, KVCacheBlock]]
+
+    def get_one_block(key) -> KVCacheBlock | None  # 取任意一个
+    def insert(key, block) -> None                  # 插入（1→dict 升级）
+    def pop(key, block_id) -> KVCacheBlock | None   # 弹出指定 block_id
+```
+
+设计要点：
+- **不去重**: 相同 hash 的多个 block 都保留，保证 block table append-only
+- **GC 优化**: 单 block 直接存 KVCacheBlock，多 block 用 dict（避免嵌套 dict）
+- **group_id 隔离**: 不同 KV cache group 的 block 独立管理
+
+### cache_full_blocks() 流程 (block_pool.py:211-331)
+
+1. 取 `[num_cached_blocks:num_full_blocks]` 的满块
+2. 获取 request 的 precomputed block_hashes
+3. 对每个满块（跳过 null/masked blocks）：
+   - 计算 `block_hash_with_group_id`
+   - 设置 `blk.block_hash`
+   - 插入 `cached_block_hash_to_block`
+4. 如果启用 kv_cache_events，生成 `BlockStored` 事件
+
+### get_cached_block() (block_pool.py:184-209)
+
+- 遍历所有 `kv_cache_group_ids`
+- 对每个 group 查找 hash→block 映射
+- 任一 group miss → 整体返回 None
+- 支持多 block_size（通过 `BlockHashListWithBlockSize` 转换）
+
+### block_mask 机制
+
+SWA/Mamba 等稀疏注意力模式使用 `block_mask` 选择性缓存：
+- mask=False 的 block 不参与 prefix caching
+- 避免永远不会被 hit 的 block 占用缓存空间
+
 ### Hash 计算
 
 - 块满时计算 `BlockHash`
