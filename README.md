@@ -38,6 +38,7 @@
 - [FlashAttention](notebook/fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
+- [Prefix Caching 深度对比](notebook/fundamentals/prefix-caching.md) — vLLM Hash vs SGLang Radix vs verl Group、收益量化
 - [GPU 显存优化](notebook/fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
 - [GPU 内存分配器](notebook/fundamentals/gpu-memory-allocator.md) — PyTorch Caching Allocator、vLLM Paged Memory、碎片化分析
 - [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
@@ -117,6 +118,7 @@
 | [fsdp_memory_sim.py](tools/fsdp_memory_sim.py) | FSDP 内存模拟（DDP vs FSDP 对比、Sharding 策略、Wrapping 分析、Prefetching） | 已验证 |
 | [sampling_simulator.py](tools/sampling_simulator.py) | LLM 采样模拟（Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚） | 已验证 |
 | [memory_allocator_sim.py](tools/memory_allocator_sim.py) | GPU 内存分配器模拟（Naive vs Caching vs Paged, 碎片化分析） | 已验证 |
+| [prefix_caching_sim.py](tools/prefix_caching_sim.py) | Prefix Caching 模拟（Hash/Trie/Group 策略对比, RL 场景, 收益量化） | 已验证 |
 
 ### 日志记录规范
 
@@ -156,13 +158,13 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 37 篇 |
+| 基础知识笔记 | 38 篇 |
 | 项目源码阅读 | 10 篇 |
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 27 个 |
-| **总计** | **79 项** |
+| 实用工具脚本 | 28 个 |
+| **总计** | **81 项** |
 
 ## GitHub
 
