@@ -36,6 +36,7 @@
 - [Triton 编程](notebook/fundamentals/triton-programming.md) — OpenAI Triton：kernel、autotune、GEMM、FlashAttention
 - [torch.compile 与 Inductor](notebook/fundamentals/torch-compile.md) — Dynamo 图捕获、Triton 代码生成、CUDA Graphs 集成
 - [FlashAttention](notebook/fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
+- [Attention Kernel 优化](notebook/fundamentals/attention-kernel-optimization.md) — FlashAttention-3/4、FlashInfer、FlashMLA 对比与选型
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
 - [Multi-head Latent Attention](notebook/fundamentals/mla.md) — DeepSeek-V2 MLA 低秩 KV 压缩、解耦 RoPE、矩阵吸收、93.3% KV Cache 减少
@@ -184,11 +185,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 41 篇 |
+| 基础知识笔记 | 42 篇 |
 | 项目源码阅读 | 16 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 47 个 |
-| **总计** | **108 项** |
+| **总计** | **109 项** |
 
 ## GitHub
 
