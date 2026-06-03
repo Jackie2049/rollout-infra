@@ -240,3 +240,66 @@ Step 1: GPU_i 用 (Q_i, K_{(i-1)%4}, V_{(i-1)%4})
 - [Efficient Large-Scale Language Model Training on GPU Clusters](https://arxiv.org/abs/2104.04473) (Megatron 1F1B)
 - [Ring Attention with Blockwise Parallel FlashAttention](https://arxiv.org/abs/2310.01889)
 - [PyTorch FSDP 论文](https://www.vldb.org/pvldb/vol16/p3848-huang.pdf)
+
+---
+
+## 模拟验证
+
+以下定量结果来自 CPU 模拟工具，验证和扩展了上述理论：
+
+### 张量并行通信开销 (`tensor_parallel_sim.py`)
+
+| 模型 | TP | 通信占比 (Prefill S=2048) | 通信占比 (Decode S=1) | 效率 |
+|------|----|--------------------------|-----------------------|------|
+| LLaMA-7B | 8 | 3.2% | 11.5% | 85.4% |
+| LLaMA-70B | 8 | 2.1% | 11.5% | 93.9% |
+| LLaMA-405B | 8 | 1.5% | 11.5% | 96.1% |
+
+**核心发现**: Decode 阶段通信占比始终 ~11.5%（与模型无关），因为通信量 ∝ B×S×H 而 S=1。大模型受益更多因为计算量更大。
+
+### 流水线并行气泡分析 (`pipeline_parallel_sim.py`)
+
+| 策略 | P=4 M=32 气泡 | P=8 M=32 气泡 | P=8 M=128 气泡 |
+|------|--------------|--------------|----------------|
+| GPipe | 9.4% | 21.9% | 5.5% |
+| 1F1B | 8.6% | 17.9% | 5.2% |
+| Interleaved | 4.5% | 9.3% | 2.6% |
+
+**核心发现**: M (micro-batch) >> P (stages) 是 PP 高效的前提。RLHF 小 batch 场景不适合大 PP。
+
+### 3D 并行策略推荐
+
+| 模型 | GPU | 推荐配置 | 总效率 |
+|------|-----|---------|--------|
+| LLaMA-7B | 8×A100 | TP=1, DP=8 | ~95% |
+| LLaMA-70B | 8×A100 | TP=8 | ~73% |
+| LLaMA-70B | 32×A100 | TP=8, PP=4 | ~67% |
+| LLaMA-405B | 64×H100 | TP=8, PP=4, DP=2 | ~58% |
+
+### 集合通信网络影响 (`collective_comm_sim.py`)
+
+| 网络 | DP=8 通信占比 | DP=32 通信占比 | 瓶颈? |
+|------|-------------|--------------|-------|
+| NVLink 900GB/s | 1.1% | 1.2% | 否 |
+| PCIe Gen4 | 13.5% | 14.8% | 接近 |
+| Ethernet 200G | 28.6% | 30.7% | 是 |
+
+**核心发现**: NVLink 下通信不是瓶颈；跨节点 Ethernet 是训练扩展的主要障碍。
+
+### 训练显存优化链 (`training_optimizer_sim.py`)
+
+LLaMA-7B BF16 Adam 训练显存组成 (B=4):
+- 权重: 14 GB (7.5%)
+- 优化器: 84 GB (45.2%) — Adam FP32 master + m + v = 12 bytes/param
+- 梯度: 14 GB (7.5%)
+- 激活: 73 GB (39.3%)
+
+优化后 (CKPT + ZeRO-2/DP=4): 42.9 GB → 可在单 A100 上运行。
+
+### 相关工具
+
+- `tools/tensor_parallel_sim.py` — TP 通信开销分析
+- `tools/pipeline_parallel_sim.py` — PP 气泡与 3D 策略
+- `tools/collective_comm_sim.py` — 集合通信深度分析
+- `tools/training_optimizer_sim.py` — 训练显存与优化分析
+- `tools/gemm_roofline.py` — GEMM Roofline 分析
