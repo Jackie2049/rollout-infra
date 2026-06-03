@@ -1,6 +1,28 @@
 # 每日进展日志
 
-## 2026-06-03
+## 2026-06-03 (Session 4 — GPU 实战开始)
+
+### [进展] GPU 服务器部署 + 新笔记
+- **GPU**: 租用 matpool.com A16 15GB (¥0.55/h)
+- **SSH**: `ssh -p 26531 root@hz-t3.matpool.com`
+- **问题**: 镜像与广告不符 (Python 3.8 非 3.9, 无 PyTorch/pip/NVCC)
+- **修复**: apt-get install python3-distutils python3-pip → pip 安装 PyTorch (进行中)
+- **新增笔记**:
+  - `fundamentals/gpu-memory-optimization.md` — GPU 显存优化 (估算/OOM/ZeRO/碎片化)
+  - `fundamentals/comm-compute-overlap.md` — 通信与计算重叠 (Bucket/1F1B/Prefetch)
+  - `fundamentals/cuda-graphs.md` — CUDA Graphs (推理加速/录制重放)
+  - `fundamentals/gpu-profiling.md` — GPU 性能分析 (nsys/ncu/PyTorch Profiler)
+- **新增工具**:
+  - `tools/training_recipe.py` — 训练启动命令生成器 (已验证)
+  - `tools/gpu_benchmark.py` — GPU 快速基准测试 (待 GPU 验证)
+- **版本管理**:
+  - 初始化 git 仓库 + 创建 GitHub 远程仓库 (Jackie2049/rollout-infra)
+  - 已推送 3 个 commit
+- **当前状态**:
+  - PyTorch 安装进行中 (从阿里云镜像下载 torch + cuDNN)
+  - 等待安装完成后运行 gpu_benchmark.py 验证环境
+
+## 2026-06-03 (Sessions 1-3)
 
 ### [进展] AI Infra 学习计划 — 理论+源码阅读阶段
 - **状态**: 完成大量理论学习和源码阅读，等待 GPU 到位
