@@ -234,9 +234,27 @@ BF16 参数 + FP32 归约：利用 BF16 的动态范围优势，同时保证梯�
 有 Prefetch:  [AG L1] [Compute L1 + AG L2] [Compute L2 + AG L3] [Compute L3]
 ```
 
+### 前向 Prefetching
+
 ```python
-model = FSDP(model, forward_prefetch=True)  # 启用 forward prefetch
+model = FSDP(model, forward_prefetch=True)
 ```
+
+- **隐式预取**（始终开启）：使用独立 CUDA stream 执行 AllGather，与计算并行
+- **显式预取**（`forward_prefetch=True`）：改变 CPU 侧的 AllGather 发起顺序
+
+### 反向 Prefetching
+
+```python
+from torch.distributed.fsdp import BackwardPrefetch
+
+model = FSDP(model, backward_prefetch=BackwardPrefetch.BACKWARD_PRE)
+```
+
+- `BACKWARD_PRE`：在当前 unit 反向**前**就预取下一个 unit（激进，内存高但重叠好）
+- `BACKWARD_POST`：在当前 unit 反向**后**才预取（保守，内存友好但重叠少）
+
+**关键限制**：反向预取必须显式配置，因为 NCCL 使用单个 process group 对应单个内部 stream。
 
 ### 效果分析
 
@@ -273,6 +291,27 @@ fully_shard(model, mesh=device_mesh)
 | 灵活性 | 全局 wrap 策略 | 逐模块精细控制 |
 | 混合并行 | 需手动管理 | 原生支持 2D/3D mesh |
 | 状态管理 | state_dict 类型切换 | DTensor 直接序列化 |
+| 内存管理 | recordStream (非确定性) | 显式管理 (确定性) |
+| torch.compile | 需要 `use_orig_params=True` | 原生支持 |
+
+### FSDP1 的 recordStream 问题
+
+FSDP1 使用 `torch.Tensor.record_stream` 管理 buffer 生命周期：
+- buffer 何时释放取决于 GC 和 CUDA event 完成时间
+- 导致**非确定性内存使用**：同样的代码可能 OOM 也可能不 OOM
+- 这是 FSDP2 的主要改进动机之一
+
+### FSDP2 的显式内存管理
+
+FSDP2 使用显式的 unshard/reshard 控制参数生命周期：
+```python
+# FSDP2 手动控制 API
+module.unshard(async_op=False)   # 收集完整参数
+module.reshard()                  # 释放回分片状态
+module.set_modules_to_backward_prefetch(modules)  # 配置预取
+```
+- 内存使用可预测、可复现
+- 适合需要精细控制的场景（如推理与训练混合）
 
 verl 同时支持两种：
 ```python
