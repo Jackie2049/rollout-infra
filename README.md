@@ -130,6 +130,7 @@
 | [tensor_parallel_sim.py](tools/tensor_parallel_sim.py) | 张量并行通信分析（TP 效率、通信占比、模型规模、推荐策略） | 已验证 |
 | [profiling_guide.py](tools/profiling_guide.py) | LLM 推理性能诊断（Prefill/Decode 分解、KV 压力、吞吐估算、瓶颈诊断） | 已验证 |
 | [pipeline_parallel_sim.py](tools/pipeline_parallel_sim.py) | 流水线并行分析（GPipe vs 1F1B 气泡、micro-batch 影响、3D 并行策略推荐） | 已验证 |
+| [training_optimizer_sim.py](tools/training_optimizer_sim.py) | 训练优化模拟（梯度累积、混合精度、梯度检查点、综合显存估算） | 已验证 |
 
 ### 日志记录规范
 
@@ -172,8 +173,8 @@
 | 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 13 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 37 个 |
-| **总计** | **93 项** |
+| 实用工具脚本 | 38 个 |
+| **总计** | **94 项** |
 
 ## GitHub
 
