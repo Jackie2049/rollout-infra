@@ -85,6 +85,7 @@
 - [verl PrefixGrouper](notebook/projects/verl-prefix-grouper.md) — RL 训练中 prompt 复用的分组与调度
 - [vLLM V1 KV Cache Manager 源码阅读](notebook/projects/vllm-v1-kv-cache-manager-reading.md) — Block 分配/释放、6 种 Attention Manager、Prefix Caching、Coordinator 架构
 - [vLLM V1 Executor 源码阅读](notebook/projects/vllm-v1-executor-reading.md) — Executor→Worker→ModelRunner→AttentionBackend 完整执行路径、CUDA Graph、20+ Attention Backend
+- [vLLM MoE Serving 源码阅读](notebook/projects/vllm-moe-serving-reading.md) — 模块化 MoE kernel 架构、8+ All-to-All 后端、Router/Experts/Prepare-Finalize 分离
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 
 ## GPU 实验记录
@@ -180,10 +181,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 40 篇 |
-| 项目源码阅读 | 15 篇 |
+| 项目源码阅读 | 16 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 44 个 |
-| **总计** | **103 项** |
+| **总计** | **104 项** |
 
 ## GitHub
 
