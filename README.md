@@ -4,6 +4,11 @@
 
 ## 仓库运作规则
 
+## 工作日志
+
+- [2026-06-04](diary/2026-06-04.md) — vLLM 安装、推理性能估算工具、LoRA/Tokenizer 笔记
+- [2026-06-03](diary/2026-06-03.md) — GPU 基准测试、vLLM 安装、HuggingFace 推理实验、笔记体系搭建
+
 ## 规划与路线
 
 - [学习路线图](notebook/roadmap.md) — Phase 1-5 学习计划，从分布式训练到 vLLM 开源贡献
@@ -86,10 +91,7 @@
 | [triton_examples.py](tools/triton_examples.py) | Triton kernel 示例集（vector_add/GEMM/softmax/flash_attn） | |
 | [ddp_cpu_demo.py](tools/ddp_cpu_demo.py) | PyTorch DDP CPU 模式 demo（无 GPU 也可跑） | |
 | [collective_ops_viz.py](tools/collective_ops_viz.py) | 集合通信原语可视化（AllReduce/AllGather/Broadcast 数据流） | |
-
-## 工作日志
-
-- [2026-06-03](diary/2026-06-03.md) — GPU 基准测试、vLLM 安装、HuggingFace 推理实验、笔记体系搭建
+| [vllm_experiment.py](tools/vllm_experiment.py) | vLLM 推理 benchmark（不同 batch/seq 配置、Prefix Caching 测试） | 待 GPU |
 
 ### 日志记录规范
 
@@ -132,8 +134,8 @@
 | 基础知识笔记 | 29 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
-| 实用工具脚本 | 13 个 |
-| **总计** | **45 项** |
+| 实用工具脚本 | 14 个 |
+| **总计** | **53 项** |
 
 ## GitHub
 
