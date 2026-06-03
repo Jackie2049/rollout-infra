@@ -2,6 +2,21 @@
 
 > IO-Aware Tiling：为什么 FlashAttention 比标准 Attention 快 2-4x
 
+## 实验验证 (A16, PyTorch 2.5.1+cu118)
+
+**SDPA (Flash Attention) vs Naive Attention:**
+
+| 序列长度 | SDPA (ms) | Naive (ms) | 加速比 | 显存 (SDPA/Naive) |
+|---------|-----------|-----------|--------|-------------------|
+| 512     | 0.165     | 0.729     | 4.41x  | 2.2/35.7 MB       |
+| 1024    | 0.638     | 2.848     | 4.46x  | 4.3/138.4 MB      |
+| 2048    | 2.481     | 22.736    | **9.16x** | 8.7/545.3 MB   |
+| 4096    | 9.585     | 66.591    | 6.95x  | 17.3/2164.3 MB    |
+| 8192    | —         | OOM       | —      | 34.6/8623.5 MB    |
+
+Naive 显存随 S² 增长 (O(N²))，Flash Attention 随 S 线性增长 (O(N))。
+S=8192 时 Naive 仅 attention 矩阵就需要 8.6 GB。工具: `tools/flash_attention_bench.py`
+
 ## 1. 核心问题：标准 Attention 的瓶颈
 
 标准 attention 计算：
