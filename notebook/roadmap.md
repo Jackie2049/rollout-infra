@@ -37,7 +37,9 @@
 - [x] 张量并行 (TP)：Megatron-LM 的 1D/2D/3D TP → `projects/megatron-tp-reading.md`
 - [x] 流水线并行 (PP)：GPipe, 1F1B, interleaved → `projects/megatron-pp-reading.md`
 - [x] 序列并行 (SP)：Ring Attention, Context Parallelism → `fundamentals/sequence-parallelism.md`
+- [x] 实践：序列并行模拟器（Ulysses vs Ring vs USP, Ring P² 倍缩减） → `tools/sequence_parallel_sim.py`
 - [x] ZeRO 优化器：ZeRO-1/2/3 原理与适用场景 → `fundamentals/zero-optimizer.md`
+- [x] MoE 混合专家架构：稀疏激活、Expert Parallelism → `fundamentals/moe.md`
 - [x] 实践：阅读 Megatron-LM 核心代码，理解 TP 通信模式
 
 ### 显存优化
@@ -57,12 +59,17 @@
 
 ### 推理引擎
 - [x] Continuous Batching / Iteration-level Scheduling → `fundamentals/continuous-batching.md`
+- [x] 实践：Continuous Batching 模拟器（5 个实验, TTFT 10-100x 提升） → `tools/continuous_batching_sim.py`
 - [x] Speculative Decoding → `fundamentals/speculative-decoding.md`
+- [x] 实践：Speculative Decoding 模拟器（5 个实验, 最优 K=2-3） → `tools/speculative_decoding_sim.py`
 - [x] 采样方法：Temperature / Top-K / Top-P / Min-P / Beam Search → `fundamentals/sampling-methods.md`
 - [x] 实践：采样方法模拟器（6 个实验, Temperature/Top-K/P/Min-P/Penalty/Beam） → `tools/sampling_simulator.py`
 - [x] 量化推理 (GPTQ, AWQ, FP8) → `fundamentals/quantization.md`
 - [x] FP8 量化与训练：E4M3/E5M2、Transformer Engine、vLLM 实现 → `fundamentals/fp8-quantization.md`
 - [x] Disaggregated Serving：P/D 分离、KV Transfer、Mooncake/Splitwise → `fundamentals/disaggregated-serving.md`
+- [x] 实践：Disaggregated Serving 模拟器（5 个实验, 1P+2D 最优） → `tools/disaggregated_serving_sim.py`
+- [x] Multi-head Latent Attention: DeepSeek-V2 MLA 低秩 KV 压缩 → `fundamentals/mla.md`
+- [x] FlashAttention 算法: tiling + online softmax 深度模拟 → `tools/flash_attention_sim.py`
 - [x] vLLM / TensorRT-LLM / SGLang 架构对比 → `projects/vllm-architecture.md`
 - [x] Tokenizer 与推理管线 → `fundamentals/tokenizer.md`
 - [x] 实践：推理延迟分解 (LM Head #1 瓶颈, 层内 89-97%) → `tools/inference_latency_breakdown.py`
@@ -91,6 +98,12 @@
 
 - [x] 选择一个核心项目深入贡献（vLLM / Megatron / verl） → 聚焦 vLLM
 - [x] 阅读 issue list，找到 good first issue → `projects/vllm-contribution-plan.md`
+- [x] vLLM V1 Scheduler 深度源码阅读 → `projects/vllm-v1-scheduler-reading.md`
+- [x] vLLM V1 Architecture 整体架构 → `projects/vllm-architecture.md`
+- [x] vLLM KV Transfer Connector 架构分析 → `projects/vllm-kv-transfer-connector.md`
+- [x] vLLM MLA Attention Backend 源码阅读 → `projects/vllm-mla-backend-reading.md`
+- [x] vLLM Speculative Decoding 源码阅读 → `projects/vllm-spec-decode-reading.md`
+- [x] vLLM Prefix Caching V1 源码阅读 → `projects/vllm-prefix-caching-v1.md`
 - [ ] 提交 PR，参与 code review (PR #44439, #44444 待 DCO 修复)
 - [ ] 形成个人技术博客或分享
 
