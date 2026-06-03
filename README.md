@@ -75,6 +75,7 @@
 ## GPU 实验记录
 
 - [A16 基准测试](notebook/experiments/gpu-a16-benchmark.md) — GEMM 14.64 TFLOPS、HBM 76 GB/s、混合精度 3.9x 加速
+- [vLLM GPT-2 推理](notebook/experiments/vllm-a16-gpt2-benchmark.md) — vLLM 0.6.4+cu118, Batch=16 达 1875 tok/s, Flash Attention 后端
 
 ## 工具脚本
 
@@ -137,7 +138,7 @@
 |------|------|
 | 基础知识笔记 | 31 篇 |
 | 项目源码阅读 | 9 篇 |
-| 实验记录 | 1 篇 |
+| 实验记录 | 2 篇 |
 | 实用工具脚本 | 16 个 |
 | **总计** | **57 项** |
 
