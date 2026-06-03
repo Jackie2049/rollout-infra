@@ -1,0 +1,74 @@
+# 每日进展日志
+
+## 2026-06-03
+
+### [进展] AI Infra 学习计划 — 理论+源码阅读阶段
+- **状态**: 完成大量理论学习和源码阅读，等待 GPU 到位
+- **已完成笔记**:
+  - `knowledge-map.md` — 8 大领域知识地图
+  - `roadmap.md` — 5 阶段学习路线图 (已更新完成标记)
+  - `fundamentals/distributed-training.md` — 分布式训练核心概念
+  - `fundamentals/flash-attention.md` — FlashAttention 1/2/3 深度解析
+  - `projects/vllm-architecture.md` — vLLM V1 架构深度分析
+  - `projects/megatron-tp-reading.md` — Megatron-LM 张量并行源码阅读
+  - `projects/verl-architecture.md` — verl 架构深度分析 (三级前缀缓存)
+- **已完成工具**:
+  - `tools/ddp_cpu_demo.py` — PyTorch DDP CPU demo
+  - `tools/collective_ops_viz.py` — 集合通信原语可视化
+- **已完成环境**:
+  - conda `ai-infra` (Python 3.11 + PyTorch + NumPy)
+  - vLLM 源码、Megatron-LM 源码、verl 源码 (shallow clone)
+- **已完成（本批次新增）**:
+  - `fundamentals/zero-optimizer.md` — ZeRO 1/2/3 优化器深度解析
+  - `fundamentals/mixed-precision.md` — 混合精度训练 (FP16/BF16/FP8)
+  - `projects/megatron-pp-reading.md` — Megatron-LM 流水线并行源码阅读
+  - `fundamentals/speculative-decoding.md` — Speculative Decoding 推理加速
+  - `fundamentals/quantization.md` — 推理量化 (GPTQ/AWQ/SmoothQuant/FP8)
+  - `fundamentals/gradient-checkpointing.md` — 激活重计算/梯度检查点
+  - `gpu-experiment-plan.md` — GPU 到位后的实验计划
+  - `roadmap.md` — 更新了完成标记
+  - `README.md` — 更新了目录索引
+- **约束**:
+  - GPU 预计 20260605 到位
+  - 磁盘空间紧张，需注意控制
+- **已完成（最新批次）**:
+  - `fundamentals/speculative-decoding.md` — Speculative Decoding 推理加速
+  - `fundamentals/quantization.md` — 推理量化 (GPTQ/AWQ/SmoothQuant/FP8)
+  - `fundamentals/gradient-checkpointing.md` — 激活重计算/梯度检查点
+  - `fundamentals/nccl.md` — NCCL 通信库架构与调优
+  - `fundamentals/ray-framework.md` — Ray 分布式框架
+  - `fundamentals/checkpoint.md` — 分布式 Checkpoint 机制
+  - `tools/ddp_train_demo.py` — PyTorch DDP 完整训练 demo (已验证运行)
+  - `tools/comm_benchmark.py` — 通信 benchmark (已验证运行)
+- **下一步**:
+  - 待 GPU 到位后按 `gpu-experiment-plan.md` 执行实战实验
+  - 整理 vLLM 开源贡献机会
+  - 继续研究 DataLoader 优化、分布式文件系统
+- **已完成（Session 2 新增）**:
+  - `fundamentals/distributed-fs.md` — 分布式文件系统 (Lustre/GPFS)
+  - `fundamentals/k8s-gpu-scheduling.md` — K8s GPU 调度基础
+  - `fundamentals/slurm.md` — Slurm 集群管理基础
+  - `fundamentals/cuda-basics.md` — CUDA 编程基础 (GPU 架构、线程、内存、流)
+  - `fundamentals/model-serving.md` — 模型服务架构 (API、负载均衡、多副本部署)
+  - `roadmap.md` — 更新了 Phase 1/3/4/5 完成标记
+  - vLLM 源码探索中 — 为开源贡献做准备
+- **当前状态**:
+  - 路线图 Phase 1: ~95% (仅剩 CUDA 实践待 GPU)
+  - 路线图 Phase 2: 100%
+  - 路线图 Phase 3: ~95% (仅剩推理部署实践待 GPU)
+  - 路线图 Phase 4: ~90% (仅剩异步 checkpoint 和 Ray 实践)
+  - 路线图 Phase 5: 进行中 (vLLM 贡献准备)
+  - 总笔记: 27 篇 | 总工具: 6 个
+- **已完成（Session 3 新增）**:
+  - `fundamentals/triton-programming.md` — Triton 编程基础 (kernel/autotune/GEMM/FlashAttn)
+  - `projects/troubleshooting-guide.md` — 分布式训练排错指南 (NCCL/OOM/数值/性能)
+  - `projects/vllm-contribution-prep.md` — 更新 FlashInfer 后端深度分析
+  - `tools/training_config_guide.py` — 分布式训练配置决策工具（已验证 7B/70B/1.3B）
+  - `tools/gpu_monitor.py` — GPU 实时监控脚本
+- **当前状态**:
+  - 路线图 Phase 1: ~95% (CUDA+Triton 理论完成, 实践待 GPU)
+  - 路线图 Phase 2: 100%
+  - 路线图 Phase 3: ~95%
+  - 路线图 Phase 4: ~90%
+  - 路线图 Phase 5: 进行中 (vLLM FlashInfer 后端分析完成, 准备提交 PR)
+  - 总笔记: 29 篇 | 总工具: 8 个
