@@ -108,6 +108,7 @@
 | [inference_latency_breakdown.py](tools/inference_latency_breakdown.py) | 推理延迟分解（逐操作耗时、GPT-2/LLaMA decode step profiling） | 已验证 |
 | [quantization_bench.py](tools/quantization_bench.py) | 量化推理 benchmark（FP32/FP16/BF16/INT8 性能+精度+内存对比） | 已验证 |
 | [pytorch_inference_bench.py](tools/pytorch_inference_bench.py) | PyTorch 原生推理 benchmark（KV Cache 加速比、Prefill/Decode 延迟、Batch 扩展效率） | 已验证 |
+| [fp8_simulation.py](tools/fp8_simulation.py) | FP8 量化模拟（E4M3/E5M2 格式、缩放策略、Outlier 影响、误差传播） | 已验证 |
 
 ### 日志记录规范
 
@@ -152,8 +153,8 @@
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 22 个 |
-| **总计** | **70 项** |
+| 实用工具脚本 | 23 个 |
+| **总计** | **71 项** |
 
 ## GitHub
 
