@@ -27,18 +27,19 @@
 ### 模型并行
 - [x] 张量并行 (TP)：Megatron-LM 的 1D/2D/3D TP → `projects/megatron-tp-reading.md`
 - [x] 流水线并行 (PP)：GPipe, 1F1B, interleaved → `projects/megatron-pp-reading.md`
-- [x] 序列并行 (SP)：Ring Attention, Context Parallelism → `fundamentals/distributed-training.md`
+- [x] 序列并行 (SP)：Ring Attention, Context Parallelism → `fundamentals/sequence-parallelism.md`
 - [x] ZeRO 优化器：ZeRO-1/2/3 原理与适用场景 → `fundamentals/zero-optimizer.md`
 - [x] 实践：阅读 Megatron-LM 核心代码，理解 TP 通信模式
 
 ### 显存优化
-- [x] KV Cache 管理与 PagedAttention → `projects/vllm-architecture.md`
+- [x] KV Cache 管理与 PagedAttention → `fundamentals/kv-cache.md`
 - [x] Gradient Checkpointing / Activation Recomputation → `fundamentals/gradient-checkpointing.md`
 - [x] FlashAttention 系列原理 → `fundamentals/flash-attention.md`
+- [x] GPU 显存优化总览 → `fundamentals/gpu-memory-optimization.md`
 - [ ] 实践：分析模型训练时的显存占用 breakdown (待 GPU)
 
 ### RL 训练 Infra
-- [x] RLHF / PPO / GRPO 训练流程 → `projects/verl-architecture.md`
+- [x] RLHF / PPO / GRPO 训练流程 → `fundamentals/rlhf-training-infra.md`
 - [x] Actor-Critic 并行架构 → `projects/verl-architecture.md`
 - [x] Rollout 引擎设计（vLLM 集成） → `projects/verl-architecture.md`
 - [x] 实践：阅读 verl 源码，理解 rollout-worker 交互
@@ -46,11 +47,12 @@
 ## 阶段三：推理优化（第 5-6 周）
 
 ### 推理引擎
-- [x] Continuous Batching / Iteration-level Scheduling → `projects/vllm-architecture.md`
+- [x] Continuous Batching / Iteration-level Scheduling → `fundamentals/continuous-batching.md`
 - [x] Speculative Decoding → `fundamentals/speculative-decoding.md`
 - [x] 量化推理 (GPTQ, AWQ, FP8) → `fundamentals/quantization.md`
 - [x] vLLM / TensorRT-LLM / SGLang 架构对比 → `projects/vllm-architecture.md`
-- [ ] 实践：部署 vLLM，benchmark 不同配置的吞吐量 (待 GPU)
+- [x] Tokenizer 与推理管线 → `fundamentals/tokenizer.md`
+- [ ] 实践：部署 vLLM，benchmark 不同配置的吞吐量 (进行中)
 
 ### 模型服务
 - [x] Serving 架构：API 设计、负载均衡、多副本 → `fundamentals/model-serving.md`
