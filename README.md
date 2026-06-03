@@ -154,6 +154,7 @@
 | [kv_cache_offload_sim.py](tools/kv_cache_offload_sim.py) | KV Cache 分层存储模拟（GPU/CPU/SSD 三层容量、Offload 性能、服务策略、成本优化） | 已验证 |
 | [chunked_prefill_sim.py](tools/chunked_prefill_sim.py) | Chunked Prefill 模拟（无 chunking vs chunked、chunk size 影响、并发调度、Prefix Caching 组合） | 已验证 |
 | [kv_cache_quant_sim.py](tools/kv_cache_quant_sim.py) | KV Cache 量化模拟（FP16/FP8/INT4/2-bit 对比、Batch 影响、组合优化、成本效率） | 已验证 |
+| [serving_framework_compare.py](tools/serving_framework_compare.py) | LLM Serving 框架对比（vLLM/SGLang/TRT-LLM 吞吐、KV 共享、结构化生成、扩展效率） | 已验证 |
 
 ### 日志记录规范
 
@@ -196,8 +197,8 @@
 | 基础知识笔记 | 44 篇 |
 | 项目源码阅读 | 21 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 48 个 |
-| **总计** | **117 项** |
+| 实用工具脚本 | 49 个 |
+| **总计** | **118 项** |
 
 ## GitHub
 
