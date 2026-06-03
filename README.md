@@ -132,6 +132,7 @@
 | [pipeline_parallel_sim.py](tools/pipeline_parallel_sim.py) | 流水线并行分析（GPipe vs 1F1B 气泡、micro-batch 影响、3D 并行策略推荐） | 已验证 |
 | [training_optimizer_sim.py](tools/training_optimizer_sim.py) | 训练优化模拟（梯度累积、混合精度、梯度检查点、综合显存估算） | 已验证 |
 | [collective_comm_sim.py](tools/collective_comm_sim.py) | 集合通信深度分析（Ring/Tree AllReduce、AllGather/ReduceScatter、通信重叠） | 已验证 |
+| [nccl_tuning_sim.py](tools/nccl_tuning_sim.py) | NCCL 调优参数分析（算法/协议选择、通道调优、跨节点拓扑、速查表） | 已验证 |
 
 ### 日志记录规范
 
@@ -174,8 +175,8 @@
 | 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 13 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 39 个 |
-| **总计** | **95 项** |
+| 实用工具脚本 | 40 个 |
+| **总计** | **96 项** |
 
 ## GitHub
 
