@@ -39,6 +39,7 @@
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
 - [GPU 显存优化](notebook/fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
+- [GPU 内存分配器](notebook/fundamentals/gpu-memory-allocator.md) — PyTorch Caching Allocator、vLLM Paged Memory、碎片化分析
 - [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
 - [GPU 性能分析](notebook/fundamentals/gpu-profiling.md) — 四层方法：nvidia-smi → nsys → ncu → ncu detail
 
@@ -115,6 +116,7 @@
 | [fp8_simulation.py](tools/fp8_simulation.py) | FP8 量化模拟（E4M3/E5M2 格式、缩放策略、Outlier 影响、误差传播） | 已验证 |
 | [fsdp_memory_sim.py](tools/fsdp_memory_sim.py) | FSDP 内存模拟（DDP vs FSDP 对比、Sharding 策略、Wrapping 分析、Prefetching） | 已验证 |
 | [sampling_simulator.py](tools/sampling_simulator.py) | LLM 采样模拟（Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚） | 已验证 |
+| [memory_allocator_sim.py](tools/memory_allocator_sim.py) | GPU 内存分配器模拟（Naive vs Caching vs Paged, 碎片化分析） | 已验证 |
 
 ### 日志记录规范
 
@@ -154,13 +156,13 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 36 篇 |
+| 基础知识笔记 | 37 篇 |
 | 项目源码阅读 | 10 篇 |
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 26 个 |
-| **总计** | **77 项** |
+| 实用工具脚本 | 27 个 |
+| **总计** | **79 项** |
 
 ## GitHub
 
