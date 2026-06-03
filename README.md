@@ -36,6 +36,7 @@
 ## 推理与部署
 
 - [Speculative Decoding](notebook/fundamentals/speculative-decoding.md) — Draft-Verify、Medusa、Eagle 投机采样
+- [Continuous Batching](notebook/fundamentals/continuous-batching.md) — Static→Continuous 演进、Chunked Prefill、调度策略
 - [推理量化](notebook/fundamentals/quantization.md) — GPTQ/AWQ/SmoothQuant/FP8 量化方法对比
 - [模型服务架构](notebook/fundamentals/model-serving.md) — API 网关、负载均衡、HPA 自动扩缩容
 
@@ -120,7 +121,7 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 24 篇 |
+| 基础知识笔记 | 25 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
 | 实用工具脚本 | 12 个 |
