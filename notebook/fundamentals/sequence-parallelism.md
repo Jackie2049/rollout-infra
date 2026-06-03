@@ -336,6 +336,20 @@ TP (对比):
 4. **USP 统一框架最灵活** — 正交组合 Ulysses 和 Ring，适应不同硬件和序列长度
 5. **主要用于 prefill** — Decode 阶段序列增长缓慢，通常不需要序列并行
 
+## 模拟验证
+
+- `tools/sequence_parallel_sim.py` — 序列并行模拟器（4 个实验）
+  - 实验 1: Ulysses vs Ring vs USP (32K/8GPU: Ulysses 8589MB vs Ring 1073MB, Ring 8x 显存节省)
+  - 实验 2: 序列长度影响 (4K-131K, Ring Attn O(H×(N/P)²) vs Ulysses O(H/P×N²))
+  - 实验 3: GPU 扩展 (Ring 超线性: 8GPU→8x, 32GPU→32x, 因为 O(N/P²) 减缩)
+  - 实验 4: 网络影响 (NVLink <1ms, RoCE 200G ~19ms, Ulysses 通信更少)
+
+关键发现:
+- **Ring Attention 显存 P² 倍缩减**: 32K/8GPU, 68719MB→1073MB (64x!)
+- **Ulysses 显存只减 P 倍**: 仍然是 O(N²), 超长序列不够
+- **NVLink 下通信可忽略**: Ring 0.54ms vs 计算 ~100ms, 占比 < 1%
+- **USP 是最灵活方案**: 2D 切分平衡显存和通信
+
 ## 参考
 
 - 论文: [DeepSpeed Ulysses](https://arxiv.org/abs/2304.14977)
