@@ -77,6 +77,7 @@
 | [ddp_train_demo.py](tools/ddp_train_demo.py) | PyTorch DDP 完整训练示例（多进程、梯度同步、checkpoint） | 已验证 |
 | [comm_benchmark.py](tools/comm_benchmark.py) | 集合通信性能测试（AllReduce/AllGather/ReduceScatter 延迟和带宽） | 已验证 |
 | [ai_infra_cheatsheet.py](tools/ai_infra_cheatsheet.py) | AI Infra 常用命令速查表（nvidia-smi/nccl/pytorch/triton） | 已验证 |
+| [inference_estimator.py](tools/inference_estimator.py) | LLM 推理性能估算（显存/KV Cache/吞吐/延迟） | 已验证 |
 | [memory_estimator.py](tools/memory_estimator.py) | 训练显存估算（参数/梯度/优化器/激活值逐项计算） | |
 | [scaling_simulator.py](tools/scaling_simulator.py) | 多卡扩展效率模拟（通信占比、线性度、最优卡数） | |
 | [gpu_monitor.py](tools/gpu_monitor.py) | GPU 实时监控（利用率/显存/温度/功耗） | |
@@ -129,7 +130,7 @@
 | 基础知识笔记 | 27 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
-| 实用工具脚本 | 12 个 |
+| 实用工具脚本 | 13 个 |
 | **总计** | **45 项** |
 
 ## GitHub
