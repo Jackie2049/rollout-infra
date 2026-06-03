@@ -166,14 +166,79 @@
 
 ---
 
+## 9. 工具覆盖度
+
+> 43 个 CPU 可运行模拟器，覆盖 AI Infra 全栈
+
+### 推理引擎
+| 工具 | 关键发现 |
+|------|----------|
+| inference_estimator.py | Mistral-7B MQA KV Cache 仅 16KB/token |
+| profiling_guide.py | Decode 永远 memory-bound, AI≈1.0 |
+| gemm_roofline.py | Decode 吞吐 ∝ HBM BW, 非 TFLOPS |
+| pytorch_inference_bench.py | KV Cache 3.95x 加速 |
+| inference_latency_breakdown.py | LM Head 是 decode 最大瓶颈 |
+| flash_attention_bench.py | SDPA 9.16x 加速, 249x 显存节省 |
+
+### 并行策略
+| 工具 | 关键发现 |
+|------|----------|
+| tensor_parallel_sim.py | NVLink TP 通信 <5%, 405B TP=8 效率 93.9% |
+| pipeline_parallel_sim.py | 1F1B 气泡 (P-1)/(M+P-1), M>>P 前提 |
+| sequence_parallel_sim.py | Ring Attn O(H×(N/P)²), 8x 超线性扩展 |
+| collective_comm_sim.py | Ring 总是优于 Tree (大数据+NVLink) |
+| nccl_tuning_sim.py | 跨节点 >88% 通信, IB+RDMA 必需 |
+
+### 显存与调度
+| 工具 | 关键发现 |
+|------|----------|
+| fsdp_memory_sim.py | FSDP-full 比 DDP 节省 76-80% 显存 |
+| training_optimizer_sim.py | Adam 优化器 12B/param 占 78% 训练显存 |
+| memory_allocator_sim.py | vLLM Paged Memory 零碎片化 |
+| continuous_batching_sim.py | TTFT 10-100x 提升 vs Static Batching |
+| ray_schedule_sim.py | GRPO+Colocate 可将 70B RLHF 16→8 GPU |
+
+### 推理优化
+| 工具 | 关键发现 |
+|------|----------|
+| speculative_decoding_sim.py | 最优 K=2-3 (非 5), quality 阈值 0.6-0.8 |
+| prefix_caching_sim.py | 收益 = 复用率 × (prompt_len / total_len) |
+| disaggregated_serving_sim.py | 1P+2D 最优, NVLink 必需 |
+| sampling_simulator.py | T=0.7+Top-P=0.9 最常用对话组合 |
+
+### 基础实验
+| 工具 | 关键发现 |
+|------|----------|
+| flash_attention_sim.py | Tiling+Online Softmax, IO 节省 2.2x |
+| fp8_simulation.py | FP8 对 outlier 鲁棒性远超 INT8 |
+| quantization_bench.py | INT8 2.5x 加速, 精度损失 <0.5% |
+| moe_router_demo.py | Top-K 路由负载比 1.22x |
+| expert_parallelism_sim.py | EP 通信仅 DP 的 1/13.5 |
+| cuda_graph_demo.py | 9.37x kernel launch 加速 |
+| gpu_profile_experiment.py | A16 ≈ A100 的 1/10 性能 |
+
+### 存储/IO/训练
+| 工具 | 关键发现 |
+|------|----------|
+| checkpoint_perf_sim.py | 70B CKPT=980GB, 分片+异步 <3s 影响 |
+| dataloader_perf_sim.py | LLM 训练加载 <3% 训练时间 |
+
+### 工具链
+```
+推理分析: gemm_roofline → profiling_guide → tensor_parallel_sim → pipeline_parallel_sim
+显存分析: training_optimizer_sim → fsdp_memory_sim → memory_allocator_sim
+通信分析: collective_comm_sim → nccl_tuning_sim
+调度分析: continuous_batching_sim → ray_schedule_sim
+```
+
 ## 优先级排序
 
 基于学习价值和当前项目需求（prefix-sharing / RL训练）：
 
-1. **分布式训练** (TP/PP/SP/CP) — 最核心，直接相关
-2. **显存管理** — 紧密关联分布式训练
-3. **RL 训练 Infra** — 当前项目方向
-4. **推理引擎** — 了解即可，后续深入
-5. **集合通信** — 与分布式训练同步学习
-6. **GPU 计算** — 长期深入，先掌握概念
-7. **存储/调度** — 按需学习
+1. **分布式训练** (TP/PP/SP/CP) — 最核心，直接相关 ✅ 工具链完整
+2. **显存管理** — 紧密关联分布式训练 ✅ 工具链完整
+3. **RL 训练 Infra** — 当前项目方向 ✅ Ray+PPO 工具完成
+4. **推理引擎** — vLLM 源码深入中 ✅ 6 源码阅读 + 6 工具
+5. **集合通信** — 与分布式训练同步学习 ✅ 2 工具完成
+6. **GPU 计算** — CUDA/Triton 实践 🔄 需 GPU 环境
+7. **存储/调度** — Checkpoint/DataLoader ✅ 完成
