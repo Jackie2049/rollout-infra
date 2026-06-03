@@ -126,6 +126,7 @@
 | [disaggregated_serving_sim.py](tools/disaggregated_serving_sim.py) | Disaggregated Serving 模拟（Monolithic vs P/D 分离、KV Transfer、实例比例优化） | 已验证 |
 | [flash_attention_sim.py](tools/flash_attention_sim.py) | FlashAttention 算法模拟（tiling、online softmax、IO 分析、block size 影响） | 已验证 |
 | [sequence_parallel_sim.py](tools/sequence_parallel_sim.py) | 序列并行模拟（Ulysses vs Ring Attention vs USP、通信量、扩展效率） | 已验证 |
+| [gemm_roofline.py](tools/gemm_roofline.py) | GEMM Roofline 分析（Prefill vs Decode 瓶颈、算术强度、GPU 对比） | 已验证 |
 
 ### 日志记录规范
 
@@ -168,8 +169,8 @@
 | 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 13 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 33 个 |
-| **总计** | **88 项** |
+| 实用工具脚本 | 34 个 |
+| **总计** | **90 项** |
 
 ## GitHub
 
