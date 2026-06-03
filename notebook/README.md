@@ -12,7 +12,7 @@ notebook/
 ├── daily-log.md                       # 每日进展日志（时间倒序）
 ├── gpu-experiment-plan.md             # GPU 到位后的实验计划
 │
-├── fundamentals/                      # 基础知识笔记（21 篇）
+├── fundamentals/                      # 基础知识笔记（22 篇）
 │   ├── distributed-training.md        # 分布式训练（DP/TP/PP/SP/ZeRO/通信原语）
 │   ├── flash-attention.md             # FlashAttention 1/2/3 深度解析
 │   ├── mixed-precision.md             # 混合精度训练（FP16/BF16/FP8/Loss Scaling）
@@ -29,6 +29,7 @@ notebook/
 │   ├── gpu-memory-optimization.md     # GPU 显存优化（估算/OOM/ZeRO/碎片化）
 │   ├── comm-compute-overlap.md        # 通信与计算重叠（Bucket/1F1B/Prefetch）
 │   ├── cuda-graphs.md                 # CUDA Graphs（推理加速/录制重放/vLLM）
+│   ├── gpu-profiling.md               # GPU 性能分析（nsys/ncu/PyTorch Profiler）
 │   ├── model-serving.md               # 模型服务架构（API/负载均衡/多副本/HPA）
 │   ├── k8s-gpu-scheduling.md          # K8s GPU 调度（Device Plugin/MIG/Gang）
 │   ├── slurm.md                       # Slurm 集群管理（sbatch/NCCL/抢占处理）
@@ -62,10 +63,10 @@ notebook/
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 21 篇 |
+| 基础知识笔记 | 22 篇 |
 | 项目源码阅读 | 8 篇 |
 | 实用工具脚本 | 11 个 |
-| **总计** | **40 项** |
+| **总计** | **41 项** |
 
 ## 约定
 
