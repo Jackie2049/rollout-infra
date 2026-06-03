@@ -38,6 +38,7 @@
 - [FlashAttention](notebook/fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
+- [Multi-head Latent Attention](notebook/fundamentals/mla.md) — DeepSeek-V2 MLA 低秩 KV 压缩、解耦 RoPE、矩阵吸收、93.3% KV Cache 减少
 - [Prefix Caching 深度对比](notebook/fundamentals/prefix-caching.md) — vLLM Hash vs SGLang Radix vs verl Group、收益量化
 - [GPU 显存优化](notebook/fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
 - [GPU 内存分配器](notebook/fundamentals/gpu-memory-allocator.md) — PyTorch Caching Allocator、vLLM Paged Memory、碎片化分析
@@ -159,13 +160,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 38 篇 |
-| 项目源码阅读 | 10 篇 |
-| 实验记录 | 3 篇 |
+| 基础知识笔记 | 39 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 29 个 |
-| **总计** | **82 项** |
+| **总计** | **83 项** |
 
 ## GitHub
 
