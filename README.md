@@ -83,6 +83,7 @@
 - [vLLM 开源贡献计划](notebook/projects/vllm-contribution-plan.md) — 11 个 good first issue 筛选和分析
 - [vLLM 贡献准备](notebook/projects/vllm-contribution-prep.md) — FlashInfer 后端分析、开发环境搭建
 - [Megatron-LM 张量并行](notebook/projects/megatron-tp-reading.md) — ColumnParallelLinear/RowParallelLinear 源码
+- [Megatron-LM TP 源码深度阅读](notebook/projects/megatron-tp-source-reading.md) — 通信原语 autograd、TP 数据流、权重分发、SP 扩展、3D 并行交互
 - [Megatron-LM 流水线并行](notebook/projects/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
 - [verl 架构](notebook/projects/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
 - [vLLM MLA Backend 源码阅读](notebook/projects/vllm-mla-backend-reading.md) — FlashMLA/FlashInfer/Triton/Cutlass MLA 后端、压缩数据流、KV Cache 格式、Backend 选择
@@ -193,10 +194,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 44 篇 |
-| 项目源码阅读 | 20 篇 |
+| 项目源码阅读 | 21 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 48 个 |
-| **总计** | **116 项** |
+| **总计** | **117 项** |
 
 ## GitHub
 
