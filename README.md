@@ -63,6 +63,7 @@
 ## 开源项目源码阅读
 
 - [vLLM V1 架构](notebook/projects/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
+- [vLLM KV Transfer Connector](notebook/projects/vllm-kv-transfer-connector.md) — NIXL 连接器架构、P/D 分离、ZMQ 握手、TP 聚合
 - [vLLM Prefix Caching V1](notebook/projects/vllm-prefix-caching-v1.md) — Hash chain、block 生命周期、四种 attention 缓存策略
 - [vLLM 开源贡献计划](notebook/projects/vllm-contribution-plan.md) — 11 个 good first issue 筛选和分析
 - [vLLM 贡献准备](notebook/projects/vllm-contribution-prep.md) — FlashInfer 后端分析、开发环境搭建
@@ -76,6 +77,7 @@
 
 - [A16 基准测试](notebook/experiments/gpu-a16-benchmark.md) — GEMM 14.64 TFLOPS、HBM 76 GB/s、混合精度 3.9x 加速
 - [vLLM GPT-2 推理](notebook/experiments/vllm-a16-gpt2-benchmark.md) — vLLM 0.6.4+cu118, Batch=16 达 1875 tok/s, Flash Attention 后端
+- [GPU Profiling 深度实验](notebook/experiments/gpu-profiling-a16.md) — GEMM/带宽/Attention/Kernel Launch 五类操作 profiling，A16 约为 A100 的 1/10 性能
 
 ## 工具脚本
 
@@ -96,6 +98,7 @@
 | [collective_ops_viz.py](tools/collective_ops_viz.py) | 集合通信原语可视化（AllReduce/AllGather/Broadcast 数据流） | |
 | [vllm_experiment.py](tools/vllm_experiment.py) | vLLM 推理 benchmark（不同 batch/seq 配置、Prefix Caching 测试） | 待 GPU |
 | [moe_router_demo.py](tools/moe_router_demo.py) | MoE Router 模拟器（Top-K/Capacity 路由、负载均衡分析、Dense vs MoE 对比） | 已验证 |
+| [gpu_profile_experiment.py](tools/gpu_profile_experiment.py) | GPU profiling（GEMM/带宽/Attention/Kernel Launch/Reduction 五类操作） | 已验证 |
 | [pytorch_inference_bench.py](tools/pytorch_inference_bench.py) | PyTorch 原生推理 benchmark（KV Cache 加速比、Prefill/Decode 延迟、Batch 扩展效率） | 已验证 |
 
 ### 日志记录规范
@@ -137,10 +140,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 31 篇 |
-| 项目源码阅读 | 9 篇 |
-| 实验记录 | 2 篇 |
-| 实用工具脚本 | 16 个 |
-| **总计** | **57 项** |
+| 项目源码阅读 | 10 篇 |
+| 实验记录 | 3 篇 |
+| 实用工具脚本 | 17 个 |
+| **总计** | **61 项** |
 
 ## GitHub
 

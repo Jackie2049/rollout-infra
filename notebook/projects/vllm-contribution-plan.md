@@ -38,7 +38,7 @@ pytest tests/
 
 | Issue | 描述 | 类型 |
 |-------|------|------|
-| [#41230](https://github.com/vllm-project/vllm/issues/41230) | 文档: NIXL KV connector metrics | Doc |
+| [#41230](https://github.com/vllm-project/vllm/issues/41230) | 文档: NIXL KV connector metrics | Doc | ✅ [PR #44438](https://github.com/vllm-project/vllm/pull/44438) |
 | [#31414](https://github.com/vllm-project/vllm/issues/31414) | 统一 flashinfer 工具模块 | Refactor |
 | [#38734](https://github.com/vllm-project/vllm/issues/38734) | SarvamMLA Transformers v5 兼容 | Model fix |
 | [#38425](https://github.com/vllm-project/vllm/issues/38425) | InternVL2 Transformers v5 兼容 | Model fix |
