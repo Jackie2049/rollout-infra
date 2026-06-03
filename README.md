@@ -141,6 +141,7 @@
 | [dataloader_perf_sim.py](tools/dataloader_perf_sim.py) | DataLoader 优化分析（加载瓶颈、Prefetch 预取、存储对比、调优推荐） | 已验证 |
 | [ray_schedule_sim.py](tools/ray_schedule_sim.py) | Ray 分布式调度模拟（Actor/Task 调度、Placement Group、RLHF PPO） | 已验证 |
 | [long_context_serving_sim.py](tools/long_context_serving_sim.py) | 长上下文推理模拟（KV Cache 压力、Chunked Prefill、Sliding Window、Prefix Caching、服务策略） | 已验证 |
+| [inference_planner.py](tools/inference_planner.py) | LLM 推理端到端规划器（单卡部署、多卡并行策略、Batch 优化、成本效率） | 已验证 |
 
 ### 日志记录规范
 
@@ -183,8 +184,8 @@
 | 基础知识笔记 | 40 篇 |
 | 项目源码阅读 | 16 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 44 个 |
-| **总计** | **104 项** |
+| 实用工具脚本 | 45 个 |
+| **总计** | **105 项** |
 
 ## GitHub
 
