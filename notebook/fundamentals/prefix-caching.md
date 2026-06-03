@@ -97,7 +97,9 @@ match(prefix):
 | 不满 block | 不缓存 | 仍可部分匹配 |
 | 适用 | 大批量、固定 prompt | 多轮对话、RAG |
 
-## 4. verl — Group-based (三级前缀缓存)
+## 4. verl — Group-based (训练时注意力分解)
+
+> **关键区分**: verl 的 PrefixGrouper 和 vLLM/SGLang 的 Prefix Caching 本质不同。vLLM/SGLang 是**服务时 KV Cache 复用**（跨请求共享已计算的 KV block），而 verl 是**训练时注意力计算优化**（同一 batch 内共享 prompt 的请求，在 attention 计算时复用 prefix 的 KV）。
 
 ### 三级缓存架构
 
@@ -115,10 +117,11 @@ Level 3: 请求级缓存 (Batch 内)
   - PrefixGrouper 负责分组
 ```
 
-### PrefixGrouper
+### PrefixGrouper — 注意力分解
 
 ```python
-# verl 的分组策略
+# verl 的分组策略: 将相同 prompt 的请求分组
+# 训练时: attention 计算分解为 prefix 部分 (共享) + response 部分 (独立)
 class PrefixGrouper:
     def group_by_prefix(self, requests):
         # 1. 按 prompt hash 分组
@@ -126,22 +129,57 @@ class PrefixGrouper:
         for req in requests:
             groups[hash(req.prompt)].append(req)
 
-        # 2. 每组第一个请求计算完整 KV
-        # 3. 后续请求复用 prompt KV，只计算 response 部分
+        # 2. 每组共享 prompt KV 计算
+        # 3. response 部分独立计算
         return groups
+
+# Attention 分解:
+# 完整: attn(Q_response, K_prompt+K_response, V_prefix+V_response)
+# 优化: attn(Q_response, K_prefix, V_prefix)  ← 共享，只算一次
+#      + attn(Q_response, K_response, V_response)  ← 每个请求独立
 ```
+
+### 性能基准 (verl benchmark)
+
+| 上下文长度 | 加速比 | 说明 |
+|-----------|--------|------|
+| 1K tokens | 1.14x | prefix 短，收益有限 |
+| 4K tokens | 1.40x | 典型 RL 训练场景 |
+| 8K tokens | 1.70x | 长 prompt，收益显著 |
+
+加速比随 prompt 长度增加，因为 prefix 计算被均摊到更多请求。
 
 ### 特点
 
 | 特性 | 说明 |
 |------|------|
+| 优化层面 | 训练时 attention 计算 (非 serving KV Cache 复用) |
 | 检测方式 | 显式分组 (知道哪些请求共享 prompt) |
 | 适用场景 | RL 训练 (GRPO/PPO) |
 | 精确度 | 最高 (分组信息已知) |
 | 开销 | 最低 (无需 hash/tree 计算) |
 | 局限 | 仅适用于已知分组信息的场景 |
+| 收益 | 1.14-1.70x (随 prompt 长度增加) |
 
-## 5. 收益量化
+## 5. vLLM V1 多 Attention 后端
+
+vLLM V1 根据 model config 自动选择不同的 KV Cache 管理策略：
+
+| 后端 | 适用模型 | KV Cache 特点 |
+|------|---------|--------------|
+| FullAttentionManager | GPT/LLaMA 等 | 标准全序列 KV Cache |
+| SlidingWindowManager | Mistral 等 | 滑动窗口，只保留最近 N tokens |
+| MambaManager | Mamba/Jamba | SSM state (非传统 KV) |
+| ChunkedLocalAttentionManager | Phi-3 等 | 分块局部 attention |
+| CrossAttentionManager | Encoder-Decoder | 跨 attention 分离管理 |
+
+所有后端共享同一个 `BlockPool`，但 KV Cache 的分配和释放逻辑不同。Prefix Caching 目前主要在 FullAttentionManager 中实现。
+
+### vLLM Hash 驱逐策略与 RadixAttention 的等价性
+
+vLLM 官方文档指出：其 hash-based block 驱逐策略（LRU eviction of cached blocks）**实际上实现了与 SGLang RadixAttention 完全相同的策略**。区别仅在于实现数据结构（HashMap vs Radix Tree），而非算法语义。两者都按 LRU 顺序驱逐无人引用的 prefix-cached blocks。
+
+## 6. 收益量化
 
 ### 模拟实验数据 (prefix_caching_sim.py)
 
@@ -180,12 +218,12 @@ savings ≈ prompt_reuse_ratio × (prompt_len / total_len)
 - total_len = prompt + input 总 token 数
 ```
 
-## 6. 选择建议
+## 7. 选择建议
 
 | 场景 | 推荐策略 | 原因 |
 |------|---------|------|
-| RL 训练 | Group-based (verl) | 分组信息已知，最精确 |
-| 通用推理 | Hash-based (vLLM) | 自动检测，无需标注 |
+| RL 训练 | Group-based (verl) | 训练时 attention 分解，分组信息已知，1.14-1.70x 加速 |
+| 通用推理 | Hash-based (vLLM) | 自动检测，无需标注，与 RadixAttention 等价 |
 | 多轮对话 | Trie-based (SGLang) | 变长匹配更灵活 |
 | RAG / 长文档 | Hash or Trie | prompt 长度高，收益大 |
 | API 服务 | Hash-based | 用户独立，但可能共享 template |
