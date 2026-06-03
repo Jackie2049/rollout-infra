@@ -343,19 +343,130 @@ Step 5: [v2] [v2] [v2] [v2]     ← 完成
   前缀复用: SGLang (RadixAttention 最优)
 ```
 
-## 9. 学习要点
+## 9. vLLM 生产级监控指标
+
+### 9.1 Prometheus 指标分类 (GET /metrics)
+
+```
+调度器状态:
+  vllm:num_requests_running     — 正在 GPU 上运行的请求数 (gauge)
+  vllm:num_requests_waiting     — 等待队列中的请求数 (gauge) ← HPA 最佳指标
+  vllm:num_requests_swapped     — 换出到 CPU 的请求数 (gauge)
+
+KV Cache:
+  vllm:gpu_cache_usage_perc     — GPU KV Cache 使用率 0-1 (gauge)
+  vllm:cpu_cache_usage_perc     — CPU KV Cache 使用率 0-1 (gauge)
+  vllm:gpu_prefix_cache_hit_rate — Prefix Cache 命中率 (gauge)
+
+延迟直方图:
+  vllm:time_to_first_token_seconds    — TTFT (1ms-10s buckets)
+  vllm:time_per_output_token_seconds  — TPOT/ITL (10ms-2.5s buckets)
+  vllm:e2e_request_latency_seconds    — 端到端延迟 (0.3s-60s buckets)
+  vllm:request_prefill_time_seconds   — Prefill 阶段时间
+  vllm:request_decode_time_seconds    — Decode 阶段时间
+
+吞吐量:
+  vllm:prompt_tokens_total      — 输入 token 计数器
+  vllm:generation_tokens_total  — 生成 token 计数器
+
+投机解码:
+  vllm:spec_decode_draft_acceptance_rate — Draft 接受率
+  vllm:spec_decode_efficiency           — 投机解码效率
+
+LoRA:
+  vllm:lora_requests_info — 运行/等待/最大 LoRA adapter 数
+
+抢占:
+  vllm:num_preemptions_total — 累积抢占次数 (counter)
+```
+
+### 9.2 生产 HPA 策略 (多信号)
+
+```yaml
+# 主信号: 等待队列长度 (最直接的负载指标)
+- type: Pods
+  pods:
+    metric:
+      name: vllm:num_requests_waiting
+    target:
+      type: AverageValue
+      averageValue: "10"
+
+# 次信号: KV Cache 压力
+- type: Pods
+  pods:
+    metric:
+      name: vllm:gpu_cache_usage_perc
+    target:
+      type: AverageValue
+      averageValue: "0.85"
+
+# 第三信号: TTFT 劣化 (QoS 保障)
+- type: Pods
+  pods:
+    metric:
+      name: vllm:time_to_first_token_seconds
+    target:
+      type: AverageValue
+      averageValue: "2.0"  # 平均 TTFT > 2s 时扩容
+```
+
+为什么 GPU 利用率不适合做 HPA:
+  - GPU 通常 90%+ 即使低吞吐 (prefill 时 compute-bound)
+  - 无法区分"高效服务多请求"和"卡在一个长序列请求上"
+  - 等待队列长度 + TTFT 才是直接的 QoS 信号
+
+## 10. 多模型服务模式
+
+```
+模式 1: Model-per-Deployment (最简单)
+  每个模型 = 独立 K8s Deployment
+  Gateway 按模型名路由
+  优点: 隔离性好, 独立扩缩容
+  缺点: GPU 浪费 (模型共享 base weights 时)
+
+模式 2: LoRA Multi-Tenant (最高效)
+  一个 base model deployment
+  按 request 加载不同 LoRA adapter
+  vLLM: Punica kernel 支持多 LoRA batching
+  优点: GPU 利用率 10-100x 提升
+  缺点: adapter 加载延迟, rank 限制
+  关键指标: vllm:lora_requests_info (running/waiting/max)
+
+模式 3: P/D 分离 (最高吞吐)
+  Prefill 实例池 + Decode 实例池
+  KV Transfer 连接器: Mooncake, LMCache, NIXL
+  适合: 高并发在线推理
+```
+
+## 11. vLLM API 关键生产参数
+
+```
+priority: int          — 请求优先级 (低值 = 高优先级, 需要 --priority)
+cache_salt: str        — Prefix cache 隔离盐 (多租户安全, 建议 43 字符 base64)
+kv_transfer_params: dict — P/D 分离参数 (指定 connector 和角色)
+structured_outputs: dict — 约束解码 (JSON schema/regex/choices, 替代 deprecated guided_*)
+return_token_ids: bool — 返回 token IDs (调试/追踪)
+bad_words: list[str]   — 阻止特定 token 序列
+logits_processors: list — 自定义 logits 操作
+```
+
+## 12. 学习要点
 
 1. **OpenAI API 是事实标准** — 所有框架都兼容这个接口
 2. **Continuous Batching 是核心** — 区别于传统 static batching，显著提高吞吐
 3. **Prefix-Aware Routing 很重要** — 相似前缀路由到同一实例，利用 KV Cache 复用
 4. **模型加载是部署瓶颈** — 70B 模型加载需要数分钟，滚动更新需考虑
 5. **监控 TTFT 和 ITL** — 推理服务最重要的两个延迟指标
-6. **HPA 基于等待队列** — GPU 利用率不适合直接做扩缩容指标（满载不一定需要扩容）
+6. **HPA 基于等待队列 + KV Cache 压力** — GPU 利用率不适合直接做扩缩容指标
+7. **多租户用 LoRA Multi-Tenant** — 比 Model-per-Deployment 节省 10-100x GPU
+8. **SGLang Cache-Aware LB** — 基于 KV Cache prefix overlap 路由，最新最优方案
 
 ## 参考
 
 - [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
 - [vLLM Serving Documentation](https://docs.vllm.ai/en/latest/serving/index.html)
+- [vLLM Metrics Documentation](https://docs.vllm.ai/en/latest/serving/metrics.html)
 - [SGLang Architecture](https://github.com/sgl-project/sglang)
 - [Triton Inference Server](https://github.com/triton-inference-server)
 - [KServe](https://github.com/kserve/kserve)
