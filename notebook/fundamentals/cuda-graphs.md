@@ -10,6 +10,18 @@
 
 每次 kernel launch 的 CPU 端开销: ~5-20 μs
 
+**实测数据 (A16, PyTorch 2.5.1+cu118)**:
+  单元素加法 kernel: ~9.2 μs（纯 launch 开销）
+  < 64K 元素时，launch 开销占总时间 >90%
+
+  CUDA Graph 实测加速:
+  - 500 kernels: 9.37x (4.14ms → 0.44ms)
+  - 100 kernels: 9.17x (0.82ms → 0.09ms)
+  - 12 层 decode: 3.71x (1.26ms → 0.34ms)
+  - Batch=1 decode: 1.97x
+
+  详见: `tools/cuda_graph_demo.py`
+
 推理场景 (如 GPT-1.3B):
   每个 token 生成需要 ~100+ 个 kernel
   CPU launch 开销: 100 × 10μs = 1ms

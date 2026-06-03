@@ -99,6 +99,7 @@
 | [vllm_experiment.py](tools/vllm_experiment.py) | vLLM 推理 benchmark（不同 batch/seq 配置、Prefix Caching 测试） | 待 GPU |
 | [moe_router_demo.py](tools/moe_router_demo.py) | MoE Router 模拟器（Top-K/Capacity 路由、负载均衡分析、Dense vs MoE 对比） | 已验证 |
 | [gpu_profile_experiment.py](tools/gpu_profile_experiment.py) | GPU profiling（GEMM/带宽/Attention/Kernel Launch/Reduction 五类操作） | 已验证 |
+| [cuda_graph_demo.py](tools/cuda_graph_demo.py) | CUDA Graph 实验（eager vs graph 对比、batch/kernel 数量 scaling） | 已验证 |
 | [pytorch_inference_bench.py](tools/pytorch_inference_bench.py) | PyTorch 原生推理 benchmark（KV Cache 加速比、Prefill/Decode 延迟、Batch 扩展效率） | 已验证 |
 
 ### 日志记录规范
