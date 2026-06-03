@@ -119,6 +119,7 @@
 | [sampling_simulator.py](tools/sampling_simulator.py) | LLM 采样模拟（Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚） | 已验证 |
 | [memory_allocator_sim.py](tools/memory_allocator_sim.py) | GPU 内存分配器模拟（Naive vs Caching vs Paged, 碎片化分析） | 已验证 |
 | [prefix_caching_sim.py](tools/prefix_caching_sim.py) | Prefix Caching 模拟（Hash/Trie/Group 策略对比, RL 场景, 收益量化） | 已验证 |
+| [continuous_batching_sim.py](tools/continuous_batching_sim.py) | Continuous Batching 模拟（Static vs Continuous, 调度策略, KV Cache 压力, Chunked Prefill） | 已验证 |
 
 ### 日志记录规范
 
@@ -163,8 +164,8 @@
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 28 个 |
-| **总计** | **81 项** |
+| 实用工具脚本 | 29 个 |
+| **总计** | **82 项** |
 
 ## GitHub
 
