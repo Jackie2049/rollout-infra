@@ -19,6 +19,8 @@
 
 ### 分布式训练基础
 - [x] 数据并行 (DP / DDP) 原理与实现 → `fundamentals/distributed-training.md`
+- [x] FSDP 全分片数据并行 — FlattenParameter、Sharding 策略、Prefetching → `fundamentals/fsdp.md`
+- [x] 实践：FSDP 内存模拟器（DDP vs FSDP 对比, 76% 显存节省） → `tools/fsdp_memory_sim.py`
 - [x] 混合精度训练 (AMP / BF16 / FP8) → `fundamentals/mixed-precision.md`
 - [x] 梯度累加、梯度裁剪 → `tools/ddp_train_demo.py` (已实践)
 - [x] 实践：PyTorch DDP 训练 demo → `tools/ddp_train_demo.py`

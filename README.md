@@ -19,6 +19,7 @@
 
 - [分布式训练总览](notebook/fundamentals/distributed-training.md) — DP/TP/PP/SP 演进逻辑，通信原语图解
 - [ZeRO 优化器](notebook/fundamentals/zero-optimizer.md) — ZeRO 1/2/3 原理、显存公式、适用场景
+- [FSDP 全分片数据并行](notebook/fundamentals/fsdp.md) — FlattenParameter、Sharding 策略、Prefetching、verl FSDP 实践
 - [混合精度训练](notebook/fundamentals/mixed-precision.md) — FP16/BF16/FP8、Loss Scaling、Tensor Core 利用
 - [梯度检查点](notebook/fundamentals/gradient-checkpointing.md) — 激活重计算策略，用计算换显存
 - [NCCL 通信库](notebook/fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
@@ -111,6 +112,7 @@
 | [quantization_bench.py](tools/quantization_bench.py) | 量化推理 benchmark（FP32/FP16/BF16/INT8 性能+精度+内存对比） | 已验证 |
 | [pytorch_inference_bench.py](tools/pytorch_inference_bench.py) | PyTorch 原生推理 benchmark（KV Cache 加速比、Prefill/Decode 延迟、Batch 扩展效率） | 已验证 |
 | [fp8_simulation.py](tools/fp8_simulation.py) | FP8 量化模拟（E4M3/E5M2 格式、缩放策略、Outlier 影响、误差传播） | 已验证 |
+| [fsdp_memory_sim.py](tools/fsdp_memory_sim.py) | FSDP 内存模拟（DDP vs FSDP 对比、Sharding 策略、Wrapping 分析、Prefetching） | 已验证 |
 
 ### 日志记录规范
 
@@ -150,13 +152,13 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 34 篇 |
+| 基础知识笔记 | 35 篇 |
 | 项目源码阅读 | 10 篇 |
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 24 个 |
-| **总计** | **73 项** |
+| 实用工具脚本 | 25 个 |
+| **总计** | **75 项** |
 
 ## GitHub
 
