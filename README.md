@@ -4,69 +4,81 @@
 
 ## 仓库运作规则
 
-### 目录结构
+## 规划与路线
 
-```
-rollout-infra/
-├── notebook/                           # 学习笔记 (含项目源码分析)
-│   ├── [roadmap.md](notebook/roadmap.md)                      # 学习路线图
-│   ├── [knowledge-map.md](notebook/knowledge-map.md)                # 知识地图 (8 大领域技能树)
-│   ├── [gpu-experiment-plan.md](notebook/gpu-experiment-plan.md)          # GPU 实验计划
-│   │
-│   ├── fundamentals/                   # 基础知识笔记 (22 篇)
-│   │   ├── [distributed-training.md](notebook/fundamentals/distributed-training.md)     # 分布式训练 (DP/TP/PP/SP/ZeRO/通信原语)
-│   │   ├── [flash-attention.md](notebook/fundamentals/flash-attention.md)          # FlashAttention 1/2/3 深度解析
-│   │   ├── [mixed-precision.md](notebook/fundamentals/mixed-precision.md)          # 混合精度训练 (FP16/BF16/FP8/Loss Scaling)
-│   │   ├── [zero-optimizer.md](notebook/fundamentals/zero-optimizer.md)           # ZeRO 优化器 (1/2/3 原理+显存公式)
-│   │   ├── [cuda-basics.md](notebook/fundamentals/cuda-basics.md)              # CUDA 编程基础 (线程/内存/流/Tensor Core)
-│   │   ├── [triton-programming.md](notebook/fundamentals/triton-programming.md)       # Triton 编程 (kernel/autotune/GEMM/FlashAttn)
-│   │   ├── [nccl.md](notebook/fundamentals/nccl.md)                     # NCCL 通信库 (Ring/Tree/调优)
-│   │   ├── [speculative-decoding.md](notebook/fundamentals/speculative-decoding.md)     # Speculative Decoding (Draft-Verify/Medusa/Eagle)
-│   │   ├── [quantization.md](notebook/fundamentals/quantization.md)             # 推理量化 (GPTQ/AWQ/SmoothQuant/FP8)
-│   │   ├── [gradient-checkpointing.md](notebook/fundamentals/gradient-checkpointing.md)   # 梯度检查点/激活重计算
-│   │   ├── [ray-framework.md](notebook/fundamentals/ray-framework.md)            # Ray 分布式框架
-│   │   ├── [checkpoint.md](notebook/fundamentals/checkpoint.md)               # 分布式 Checkpoint (分片/异步/mmap)
-│   │   ├── [dataloader.md](notebook/fundamentals/dataloader.md)               # DataLoader 优化 (prefetch/mmap/WebDataset)
-│   │   ├── [gpu-memory-optimization.md](notebook/fundamentals/gpu-memory-optimization.md)  # GPU 显存优化 (估算/OOM/ZeRO/碎片化)
-│   │   ├── [comm-compute-overlap.md](notebook/fundamentals/comm-compute-overlap.md)     # 通信与计算重叠 (Bucket/1F1B/Prefetch)
-│   │   ├── [cuda-graphs.md](notebook/fundamentals/cuda-graphs.md)              # CUDA Graphs (推理加速/录制重放/vLLM)
-│   │   ├── [gpu-profiling.md](notebook/fundamentals/gpu-profiling.md)            # GPU 性能分析 (nsys/ncu/PyTorch Profiler)
-│   │   ├── [model-serving.md](notebook/fundamentals/model-serving.md)            # 模型服务架构 (API/负载均衡/HPA)
-│   │   ├── [k8s-gpu-scheduling.md](notebook/fundamentals/k8s-gpu-scheduling.md)       # K8s GPU 调度 (Device Plugin/MIG/Gang)
-│   │   ├── [slurm.md](notebook/fundamentals/slurm.md)                    # Slurm 集群管理 (sbatch/NCCL/抢占)
-│   │   └── [distributed-fs.md](notebook/fundamentals/distributed-fs.md)           # 分布式文件系统 (Lustre/条带化/IO优化)
-│   │
-│   ├── projects/                       # 开源项目源码阅读 (9 篇)
-│   │   ├── [vllm-architecture.md](notebook/projects/vllm-architecture.md)        # vLLM V1 架构深度分析
-│   │   ├── [vllm-prefix-caching-v1.md](notebook/projects/vllm-prefix-caching-v1.md)   # vLLM Prefix Caching 源码分析
-│   │   ├── [vllm-contribution-plan.md](notebook/projects/vllm-contribution-plan.md)   # vLLM 开源贡献计划 (11 个 good first issue)
-│   │   ├── [vllm-contribution-prep.md](notebook/projects/vllm-contribution-prep.md)   # vLLM 贡献准备 (FlashInfer 后端分析)
-│   │   ├── [megatron-tp-reading.md](notebook/projects/megatron-tp-reading.md)      # Megatron-LM 张量并行源码阅读
-│   │   ├── [megatron-pp-reading.md](notebook/projects/megatron-pp-reading.md)      # Megatron-LM 流水线并行源码阅读
-│   │   ├── [verl-architecture.md](notebook/projects/verl-architecture.md)        # verl 架构深度分析 (三级前缀缓存)
-│   │   ├── [verl-prefix-grouper.md](notebook/projects/verl-prefix-grouper.md)      # verl PrefixGrouper 源码分析
-│   │   └── [troubleshooting-guide.md](notebook/projects/troubleshooting-guide.md)    # 分布式训练排错指南
-│   │
-│   └── [experiments/](notebook/experiments/)                    # GPU 实验记录
-│       └── [gpu-a16-benchmark.md](notebook/experiments/gpu-a16-benchmark.md)        # A16 基准测试数据
-│
-├── [tools/](tools/)                              # 工具与脚本 (12 个)
-│   ├── [ddp_cpu_demo.py](tools/ddp_cpu_demo.py)                 # PyTorch DDP CPU demo
-│   ├── [collective_ops_viz.py](tools/collective_ops_viz.py)           # 集合通信原语可视化
-│   ├── [ddp_train_demo.py](tools/ddp_train_demo.py)               # DDP 完整训练 demo (已验证)
-│   ├── [comm_benchmark.py](tools/comm_benchmark.py)               # 通信 benchmark (已验证)
-│   ├── [memory_estimator.py](tools/memory_estimator.py)             # 训练显存估算器
-│   ├── [scaling_simulator.py](tools/scaling_simulator.py)            # 扩展效率模拟器
-│   ├── [gpu_monitor.py](tools/gpu_monitor.py)                  # GPU 实时监控脚本
-│   ├── [training_config_guide.py](tools/training_config_guide.py)        # 训练配置决策工具 (已验证)
-│   ├── [training_recipe.py](tools/training_recipe.py)              # 训练启动命令生成器 (已验证)
-│   ├── [triton_examples.py](tools/triton_examples.py)              # Triton kernel 示例集
-│   ├── [gpu_benchmark.py](tools/gpu_benchmark.py)                # GPU 快速基准测试 (已验证)
-│   └── [ai_infra_cheatsheet.py](tools/ai_infra_cheatsheet.py)          # AI Infra 命令速查表 (已验证)
-│
-└── [diary/](diary/)                              # 工作日志 (每天一个文件)
-    └── [2026-06-03.md](diary/2026-06-03.md)                   # 按时间正序记录进展和思考
-```
+- [学习路线图](notebook/roadmap.md) — Phase 1-5 学习计划，从分布式训练到 vLLM 开源贡献
+- [知识地图](notebook/knowledge-map.md) — AI Infra 8 大领域技能树，标注掌握程度
+- [GPU 实验计划](notebook/gpu-experiment-plan.md) — A16 GPU 上的实验清单和优先级
+
+## 分布式训练
+
+- [分布式训练总览](notebook/fundamentals/distributed-training.md) — DP/TP/PP/SP 演进逻辑，通信原语图解
+- [ZeRO 优化器](notebook/fundamentals/zero-optimizer.md) — ZeRO 1/2/3 原理、显存公式、适用场景
+- [混合精度训练](notebook/fundamentals/mixed-precision.md) — FP16/BF16/FP8、Loss Scaling、Tensor Core 利用
+- [梯度检查点](notebook/fundamentals/gradient-checkpointing.md) — 激活重计算策略，用计算换显存
+- [NCCL 通信库](notebook/fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
+- [通信与计算重叠](notebook/fundamentals/comm-compute-overlap.md) — DDP Bucket Overlap、1F1B、ZeRO-3 Prefetch
+- [Ray 分布式框架](notebook/fundamentals/ray-framework.md) — Actor/Task 模型、Placement Group、RLHF 调度
+- [分布式 Checkpoint](notebook/fundamentals/checkpoint.md) — 分片保存、异步 IO、mmap 加速加载
+- [DataLoader 优化](notebook/fundamentals/dataloader.md) — Prefetch、mmap、WebDataset 流式加载
+
+## GPU 编程与优化
+
+- [CUDA 编程基础](notebook/fundamentals/cuda-basics.md) — 线程层次、内存模型、流、Tensor Core
+- [Triton 编程](notebook/fundamentals/triton-programming.md) — OpenAI Triton：kernel、autotune、GEMM、FlashAttention
+- [FlashAttention](notebook/fundamentals/flash-attention.md) — 1/2/3 深度解析，tiling、online softmax、IO 复杂度
+- [GPU 显存优化](notebook/fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
+- [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
+- [GPU 性能分析](notebook/fundamentals/gpu-profiling.md) — 四层方法：nvidia-smi → nsys → ncu → ncu detail
+
+## 推理与部署
+
+- [Speculative Decoding](notebook/fundamentals/speculative-decoding.md) — Draft-Verify、Medusa、Eagle 投机采样
+- [推理量化](notebook/fundamentals/quantization.md) — GPTQ/AWQ/SmoothQuant/FP8 量化方法对比
+- [模型服务架构](notebook/fundamentals/model-serving.md) — API 网关、负载均衡、HPA 自动扩缩容
+
+## 集群与基础设施
+
+- [K8s GPU 调度](notebook/fundamentals/k8s-gpu-scheduling.md) — Device Plugin、MIG、Gang Scheduling
+- [Slurm 集群管理](notebook/fundamentals/slurm.md) — sbatch 提交、NCCL 配置、抢占式调度
+- [分布式文件系统](notebook/fundamentals/distributed-fs.md) — Lustre 条带化、IO 优化、并行读写
+
+## 开源项目源码阅读
+
+- [vLLM V1 架构](notebook/projects/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
+- [vLLM Prefix Caching V1](notebook/projects/vllm-prefix-caching-v1.md) — Hash chain、block 生命周期、四种 attention 缓存策略
+- [vLLM 开源贡献计划](notebook/projects/vllm-contribution-plan.md) — 11 个 good first issue 筛选和分析
+- [vLLM 贡献准备](notebook/projects/vllm-contribution-prep.md) — FlashInfer 后端分析、开发环境搭建
+- [Megatron-LM 张量并行](notebook/projects/megatron-tp-reading.md) — ColumnParallelLinear/RowParallelLinear 源码
+- [Megatron-LM 流水线并行](notebook/projects/megatron-pp-reading.md) — 1F1B 调度、气泡分析、通信 overlap
+- [verl 架构](notebook/projects/verl-architecture.md) — 三级前缀缓存（系统级+进程级+请求级）
+- [verl PrefixGrouper](notebook/projects/verl-prefix-grouper.md) — RL 训练中 prompt 复用的分组与调度
+- [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
+
+## GPU 实验记录
+
+- [A16 基准测试](notebook/experiments/gpu-a16-benchmark.md) — GEMM 14.64 TFLOPS、HBM 76 GB/s、混合精度 3.9x 加速
+
+## 工具脚本
+
+| 工具 | 说明 | 状态 |
+|------|------|------|
+| [training_recipe.py](tools/training_recipe.py) | 输入模型规格和 GPU 配置，生成 Megatron/DeepSpeed/DDP 训练启动命令 | 已验证 |
+| [gpu_benchmark.py](tools/gpu_benchmark.py) | GPU 环境验证 + GEMM TFLOPS / HBM 带宽 / 混合精度 / Attention 性能测试 | 已验证 |
+| [training_config_guide.py](tools/training_config_guide.py) | 根据模型大小和硬件推荐并行策略、batch size、梯度累积 | 已验证 |
+| [ddp_train_demo.py](tools/ddp_train_demo.py) | PyTorch DDP 完整训练示例（多进程、梯度同步、checkpoint） | 已验证 |
+| [comm_benchmark.py](tools/comm_benchmark.py) | 集合通信性能测试（AllReduce/AllGather/ReduceScatter 延迟和带宽） | 已验证 |
+| [ai_infra_cheatsheet.py](tools/ai_infra_cheatsheet.py) | AI Infra 常用命令速查表（nvidia-smi/nccl/pytorch/triton） | 已验证 |
+| [memory_estimator.py](tools/memory_estimator.py) | 训练显存估算（参数/梯度/优化器/激活值逐项计算） | |
+| [scaling_simulator.py](tools/scaling_simulator.py) | 多卡扩展效率模拟（通信占比、线性度、最优卡数） | |
+| [gpu_monitor.py](tools/gpu_monitor.py) | GPU 实时监控（利用率/显存/温度/功耗） | |
+| [triton_examples.py](tools/triton_examples.py) | Triton kernel 示例集（vector_add/GEMM/softmax/flash_attn） | |
+| [ddp_cpu_demo.py](tools/ddp_cpu_demo.py) | PyTorch DDP CPU 模式 demo（无 GPU 也可跑） | |
+| [collective_ops_viz.py](tools/collective_ops_viz.py) | 集合通信原语可视化（AllReduce/AllGather/Broadcast 数据流） | |
+
+## 工作日志
+
+- [2026-06-03](diary/2026-06-03.md) — GPU 基准测试、vLLM 安装、HuggingFace 推理实验、笔记体系搭建
 
 ### 日志记录规范
 
