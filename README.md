@@ -23,6 +23,7 @@
 - [混合精度训练](notebook/fundamentals/mixed-precision.md) — FP16/BF16/FP8、Loss Scaling、Tensor Core 利用
 - [梯度检查点](notebook/fundamentals/gradient-checkpointing.md) — 激活重计算策略，用计算换显存
 - [NCCL 通信库](notebook/fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
+- [RDMA 高性能网络](notebook/fundamentals/rdma-networking.md) — InfiniBand/RoCE/iWARP、GPUDirect RDMA、NCCL 调优、实战排错
 - [通信与计算重叠](notebook/fundamentals/comm-compute-overlap.md) — DDP Bucket Overlap、1F1B、ZeRO-3 Prefetch
 - [MoE 混合专家架构](notebook/fundamentals/moe.md) — 稀疏激活、Top-K 路由、负载均衡、Expert Parallelism、DeepSeek-V3
 - [序列并行](notebook/fundamentals/sequence-parallelism.md) — DeepSpeed Ulysses、Ring Attention、USP 统一框架
@@ -92,6 +93,7 @@
 - [verl 源码架构阅读](notebook/projects/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
 - [vLLM 量化推理管线源码阅读](notebook/projects/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
+- [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
 
 ## GPU 实验记录
@@ -190,11 +192,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 43 篇 |
-| 项目源码阅读 | 19 篇 |
+| 基础知识笔记 | 44 篇 |
+| 项目源码阅读 | 20 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 48 个 |
-| **总计** | **114 项** |
+| **总计** | **116 项** |
 
 ## GitHub
 
