@@ -201,6 +201,54 @@ FlashMLA: MLA 专用, 不同 attention 变体
 5. **Kernel 融合**: POD-Attention (prefill+decode 融合), fused MoE+Attention
 6. **CuTeDSL**: FA4 和 FlashInfer Blackwell 版本都采用 CuTe DSL
 
+## 7. vLLM Attention Backend 架构
+
+### 7.1 Backend 选择逻辑
+
+vLLM 根据 GPU capability、head size、dtype、KV cache dtype、模型架构自动选择:
+
+| GPU | 推荐 Backend | 说明 |
+|-----|-------------|------|
+| SM90+ (Hopper) + FA3 | FlashAttention (AOT) 或 FlashInfer (FA3) | AOT 调度支持 CUDA Graph |
+| SM100+ (Blackwell) | FlashInfer + TRTLLM decode | TRTLLM kernel 用于 decode |
+| SM80+ (Ampere) | FlashInfer (FA2) 或 FlashAttention | 通用 serving |
+| ROCm (AMD) | Triton Attention 或 rocm_aiter | 特殊路径 |
+| MLA 模型 (DeepSeek) | FlashMLA (SM90) / CUTLASS MLA (SM100) / Triton | 专用 |
+
+### 7.2 Prefill vs Decode 路径差异
+
+**FlashAttention Backend**: 单一 API `flash_attn_varlen_func` 处理 prefill 和 decode，通过 `max_seqlen_q` 区分 (1=decode, N=prefill)。FA3 支持 AOT scheduling 预计算 work distribution，实现完整 CUDA Graph。
+
+**FlashInfer Backend**: 分离的 wrapper，更精细优化:
+- Prefill: `BatchPrefillWithPagedKVCacheWrapper` (plan + run)
+- Decode: `BatchDecodeWithPagedKVCacheWrapper` (plan + run)
+- Cascade: `MultiLevelCascadeAttentionWrapper` (共享前缀)
+- MLA: `BatchMLAPagedAttentionWrapper` (q_nope/q_pe/ckv/kpe 分离)
+- Blackwell: 自动分发到 TRTLLM kernel
+
+**Triton Backend**: 纯 Python/Triton 实现，`unified_attention` 内部分发:
+- Prefill: `context_attention_fwd` (Triton kernel)
+- Decode: `triton_decode_attention` (2D/3D dispatch 按 batch size)
+
+### 7.3 Cascade Attention 实现
+
+vLLM 中两种实现:
+- **FlashAttention**: 分两阶段 (prefix non-causal + suffix causal) + `merge_attn_states` (LSE 合并)
+- **FlashInfer**: `MultiLevelCascadeAttentionWrapper` 原生支持多级 cascade
+
+当 scheduler 检测到 `common_prefix_len > 0` 时激活 cascade 路径。
+
+### 7.4 性能关键差异
+
+| 特性 | FlashAttention | FlashInfer | Triton |
+|------|---------------|------------|--------|
+| SM 支持 | 80+ | 75-121 | 全部 |
+| Cascade | 2-phase split | MultiLevel wrapper | 不支持 |
+| CUDA Graph | FA3: 完整, FA2: 有限 | TRTLLM: UNIFORM_BATCH | 完整 |
+| JIT 编译 | 否 | 是 | 隐式 (Triton JIT) |
+| FP8 KV | SM90 only | 是 | 是 |
+| DCP 支持 | 是 | 是 | 否 |
+
 ## 参考资料
 
 - FlashAttention: https://github.com/Dao-AILab/flash-attention
