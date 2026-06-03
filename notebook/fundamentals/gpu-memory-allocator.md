@@ -50,7 +50,24 @@ free(block):
   尝试 merge 相邻空闲块
 ```
 
-### 3.2 关键指标
+### 3.2 两级分配结构
+
+PyTorch Caching Allocator 使用 **Segment → Block** 两级结构：
+
+```
+Segment: 从 CUDA malloc 获取的大块内存 (cudaMalloc)
+  ├── small_pool: 分配 < 1MB
+  └── large_pool: 分配 >= 1MB
+
+Block: Segment 内的分配单元
+  ├── 在 Segment 内切分
+  ├── 可以 split (大→小) 和 merge (相邻合并)
+  └── 空闲时留在 pool 中，不释放给 CUDA
+```
+
+两个 pool 隔离了小型临时分配和大型张量分配，防止交叉碎片化。
+
+### 3.3 关键指标
 
 ```python
 torch.cuda.memory_allocated()    # 当前实际使用的 GPU 内存
@@ -58,8 +75,12 @@ torch.cuda.memory_reserved()     # 从 CUDA 预留的总内存 (>= allocated)
 torch.cuda.max_memory_allocated() # 峰值 allocated
 torch.cuda.max_memory_reserved()  # 峰值 reserved
 
-# 碎片化程度 ≈ reserved - allocated
+# 内存层次关系:
+# nvidia-smi used >= memory_reserved() >= memory_allocated()
+#   ↑ 包括 CUDA context, NCCL    ↑ 包括 cached blocks    ↑ 只有活跃张量
 ```
+
+`inactive_split_bytes` 指标特别重要——它表示已 split 但空闲的字节数，直接反映**碎片化程度**。
 
 ### 3.3 Split 和 Merge
 
@@ -80,6 +101,8 @@ torch.cuda.max_memory_reserved()  # 峰值 reserved
 max_split_size_mb:128       # 超过此大小不 split
 garbage_collection_threshold:0.6  # 当 allocated > 60% reserved 时触发 GC
 expandable_segments:True    # 允许 segment 动态扩展 (PyTorch 2.x)
+                           # vLLM 禁用此选项 (与其内存池不兼容)
+backend:cudaMallocAsync     # 使用 CUDA 内置异步分配器
 ```
 
 ### 3.5 实际训练中的行为
@@ -92,7 +115,17 @@ Step 2: allocate forward activations  → cache hit! → 从 pool 取 (快!)
 
 训练中 activation 大小每步相同，cache 命中率极高。这就是为什么训练一旦开始，`nvidia-smi` 显示的显存使用量不会持续增长。
 
-### 3.6 empty_cache()
+### 3.6 OOM 触发机制
+
+当分配器需要新块时：
+1. 先在 pool 中查找空闲块 → 有则复用
+2. 没有 → 调用 `cudaMalloc()` 获取新 Segment
+3. `cudaMalloc` 失败 → **同步所有 stream，释放所有 cached blocks，重试**
+4. 重试仍失败 → `torch.cuda.OutOfMemoryError`
+
+`num_alloc_retries` 和 `num_ooms` 在 `memory_stats()` 中可查，非零表示内存压力。
+
+### 3.7 empty_cache()
 
 ```python
 torch.cuda.empty_cache()  # 释放所有 cached blocks 回 CUDA
@@ -144,6 +177,58 @@ Free Pool: 空闲 block 列表
 释放规则：`ref_count -= 1`，当 `ref_count == 0` 时才真正回收。
 
 ### 4.4 内存预分配策略
+
+vLLM 的内存预分配分三步（`gpu_worker.py:determine_available_memory()`）：
+
+```python
+# Step 1: 计算目标内存
+requested_memory = ceil(total_memory * gpu_memory_utilization)  # 80GB × 0.9 = 72GB
+
+# Step 2: 运行 profiling forward pass 测量峰值激活
+# 测量: torch_peak_increase (激活值) + non_torch_increase (CUDA context 等)
+
+# Step 3: 计算 KV Cache 可用内存
+non_kv_memory = weights + torch_peak_increase + non_torch_increase + cudagraph_estimate
+available_kv = requested_memory - non_kv_memory
+num_blocks = available_kv // page_size // num_layers
+```
+
+**关键**: vLLM 运行一次虚拟 forward pass 来精确测量峰值激活内存，而不是估算。
+
+### 4.5 物理内存分配
+
+实际分配在 `gpu_model_runner.py:_allocate_kv_cache_tensors()` 中：
+
+```python
+# 分配一个扁平 int8 缓冲区
+for kv_cache_tensor in kv_cache_config.kv_cache_tensors:
+    tensor = torch.zeros(kv_cache_tensor.size, dtype=torch.int8, device=device)
+    # 多层共享同一物理内存（通过 reshape）
+
+# Reshape 为每层的 KV Cache 形状
+# [num_blocks, block_size, num_kv_heads, head_size]
+```
+
+### 4.6 BlockPool 源码结构
+
+vLLM V1 的 `BlockPool`（`vllm/v1/core/block_pool.py`）：
+
+```
+BlockPool:
+  ├── blocks: list[KVCacheBlock]           # 所有 block (按 block_id 索引)
+  ├── free_block_queue: FreeKVCacheBlockQueue  # 空闲 block 双向链表 (LRU 顺序)
+  └── cached_block_hash_to_block: BlockHashToBlockMap  # prefix cache 哈希表
+
+分配流程:
+  1. get_new_blocks(n) → 从 free_block_queue.pop(n)
+  2. 如果空闲不足 → _maybe_evict_cached_block() (LRU 驱逐)
+  3. 每个 block 的 ref_cnt += 1
+
+释放流程:
+  1. free(block) → ref_cnt -= 1
+  2. ref_cnt == 0 → 放回 free_block_queue (尾部 = 低驱逐优先级)
+  3. prefix-cached block → 放入 hash map 等待复用
+```
 
 ```python
 # vLLM 启动时的内存预分配
