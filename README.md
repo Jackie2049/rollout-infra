@@ -23,6 +23,7 @@
 - [梯度检查点](notebook/fundamentals/gradient-checkpointing.md) — 激活重计算策略，用计算换显存
 - [NCCL 通信库](notebook/fundamentals/nccl.md) — Ring/Tree AllReduce、调优参数、网络拓扑
 - [通信与计算重叠](notebook/fundamentals/comm-compute-overlap.md) — DDP Bucket Overlap、1F1B、ZeRO-3 Prefetch
+- [MoE 混合专家架构](notebook/fundamentals/moe.md) — 稀疏激活、Top-K 路由、负载均衡、Expert Parallelism、DeepSeek-V3
 - [序列并行](notebook/fundamentals/sequence-parallelism.md) — DeepSpeed Ulysses、Ring Attention、USP 统一框架
 - [Ray 分布式框架](notebook/fundamentals/ray-framework.md) — Actor/Task 模型、Placement Group、RLHF 调度
 - [分布式 Checkpoint](notebook/fundamentals/checkpoint.md) — 分片保存、异步 IO、mmap 加速加载
@@ -134,11 +135,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 30 篇 |
+| 基础知识笔记 | 31 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
 | 实用工具脚本 | 16 个 |
-| **总计** | **56 项** |
+| **总计** | **57 项** |
 
 ## GitHub
 
