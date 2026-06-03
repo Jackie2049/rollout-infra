@@ -630,7 +630,97 @@ DeepSeek: 256个小expert
    MoE 的 decode 速度较慢 → 推测解码收益更大
 ```
 
-## 9. 关键要点
+## 9. Expert Parallelism 进阶 (DeepSeek-V3 + vLLM)
+
+### 9.1 DeepSeek-V3 EP 架构
+
+```
+DeepSeek-V3 规模:
+  总参数: 671B, 活跃参数: 37B/token
+  256 routed experts + 1 shared expert
+  Top-8 routing (sigmoid gating, 非 softmax)
+  61 层 Transformer (3 dense + 58 MoE)
+
+训练配置 (2048 H800 GPUs):
+  EP64 + PP16 + DP2 (ZeRO-1)
+  每个 GPU: 256/64 = 4 routed experts + 1 shared expert
+  DualPipe: PP 通信与 EP All-to-All 重叠
+
+推理配置:
+  Prefill: EP32 on 4 nodes, TP4 + SP + DP8
+  Decode:  EP320 on 40 nodes, ~1 expert/GPU + 冗余部署
+```
+
+### 9.2 Shared + Routed Expert 设计
+
+```
+传统 MoE (Mixtral):    8个大 expert, top-2
+  问题: common knowledge 被 scatter 到不同 expert
+
+DeepSeekMoE:           256小 expert + 1 shared expert, top-8
+  Shared expert: 处理所有 token, 捕获公共知识
+  Routed experts: 每个 ~1/4 FFN 大小, 细粒度专业化
+  优势: 更好的 specialization + 不丢失 common patterns
+
+计算量对比 (单 token):
+  Shared:  1 × (H × FFN_dim × 3) = 1x FFN
+  Routed:  8 × (H × FFN_dim/4 × 3) = 6x FFN  (8个小expert)
+  Total:   7x FFN (vs Dense 的 1x FFN, 但参数质量更高)
+```
+
+### 9.3 Node-Limited Routing
+
+```
+问题: 256 experts 跨 64 GPU (8 nodes), All-to-All 通信量大
+  跨节点 IB 带宽: ~50 GB/s (vs NVLink 160 GB/s)
+
+解决: Node-Limited Routing (M=4)
+  1. 先选 top-M 个 node (按 node 内 expert affinity 之和排序)
+  2. 再在选中的 node 内选 top-K expert
+  → 跨节点通信从 O(P) 降到 O(M)
+  → 256 GPU 场景: 64x 通信减少!
+  → 代价: 略次优的 expert 选择 (可接受)
+```
+
+### 9.4 vLLM EP 实现架构
+
+```
+vLLM 支持 8+ All-to-All 后端:
+
+  deepep_high_throughput  → DeepEP buffer, 大 batch 推理
+  deepep_low_latency      → FP8 dispatch, decode 场景
+  mori_high_throughput    → FP8 dispatch + PTPC
+  nixl_ep                 → NIXL 库, FP8 dispatch
+  flashinfer_nvlink_*     → NVLink 直连, 单节点
+  allgather_reducescatter → Naive fallback
+
+Expert Placement 策略:
+  linear:     GPU0=[0..E/P-1], GPU1=[E/P..2E/P-1], ...
+  round_robin: GPU0=[0,P,2P,...], GPU1=[1,P+1,2P+1,...]
+
+EPLB (Expert Parallel Load Balancing):
+  基于窗口的 expert 负载记录 (默认 1000 步)
+  定期重排 expert 位置 (默认 3000 步)
+  冗余 expert 部署: 复制高负载 expert 到多个 GPU
+  异步模式: torch_gloo 或 NIXL 后端非阻塞权重迁移
+```
+
+### 9.5 Auxiliary-Loss-Free 负载均衡
+
+```
+传统: Auxiliary Loss
+  L_balance = α × N × Σ(f_i × P_i)
+  问题: 影响 model quality, 需要调 α
+
+DeepSeek-V3: Bias-based 无损均衡
+  g_i = sigmoid(gate(x)_i + b_i)
+  b_i 更新: if overload → decrease b_i
+            if underload → increase b_i
+  学习率: γ = 0.01
+  优势: 不影响训练 loss, 纯工程 trick
+```
+
+## 10. 关键要点
 
 1. **MoE 用参数量换质量** — 总参数远大于活跃参数，以接近大 Dense 模型的质量，用小 Dense 模型的计算成本
 

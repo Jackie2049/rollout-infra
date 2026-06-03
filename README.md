@@ -103,6 +103,7 @@
 | [collective_ops_viz.py](tools/collective_ops_viz.py) | 集合通信原语可视化（AllReduce/AllGather/Broadcast 数据流） | |
 | [vllm_experiment.py](tools/vllm_experiment.py) | vLLM 推理 benchmark（不同 batch/seq 配置、Prefix Caching 测试） | 待 GPU |
 | [moe_router_demo.py](tools/moe_router_demo.py) | MoE Router 模拟器（Top-K/Capacity 路由、负载均衡分析、Dense vs MoE 对比） | 已验证 |
+| [expert_parallelism_sim.py](tools/expert_parallelism_sim.py) | Expert Parallelism 模拟（All-to-All 通信、EP vs TP vs DP 对比、DeepSeek-V3 EP） | 已验证 |
 | [gpu_profile_experiment.py](tools/gpu_profile_experiment.py) | GPU profiling（GEMM/带宽/Attention/Kernel Launch/Reduction 五类操作） | 已验证 |
 | [cuda_graph_demo.py](tools/cuda_graph_demo.py) | CUDA Graph 实验（eager vs graph 对比、batch/kernel 数量 scaling） | 已验证 |
 | [flash_attention_bench.py](tools/flash_attention_bench.py) | Flash Attention 微基准（SDPA vs Naive、显存对比、序列长度/batch scaling） | 已验证 |
@@ -154,8 +155,8 @@
 | 实验记录 | 3 篇 |
 | 项目源码阅读 | 12 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 23 个 |
-| **总计** | **72 项** |
+| 实用工具脚本 | 24 个 |
+| **总计** | **73 项** |
 
 ## GitHub
 
