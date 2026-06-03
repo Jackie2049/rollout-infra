@@ -59,6 +59,7 @@
 - [推理量化](notebook/fundamentals/quantization.md) — GPTQ/AWQ/SmoothQuant/FP8 量化方法对比
 - [FP8 量化与训练](notebook/fundamentals/fp8-quantization.md) — E4M3/E5M2 格式、缩放策略、Transformer Engine、vLLM FP8 实现
 - [模型服务架构](notebook/fundamentals/model-serving.md) — API 网关、负载均衡、HPA 自动扩缩容
+- [长上下文 LLM 推理服务](notebook/fundamentals/long-context-serving.md) — KV Cache 显存压力、Chunked Prefill、Sliding Window、服务策略
 - [Disaggregated Serving](notebook/fundamentals/disaggregated-serving.md) — Prefill/Decode 分离、KV Transfer、Splitwise/Mooncake 架构
 - [LLM 采样方法](notebook/fundamentals/sampling-methods.md) — Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚
 
@@ -178,11 +179,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 39 篇 |
+| 基础知识笔记 | 40 篇 |
 | 项目源码阅读 | 15 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 44 个 |
-| **总计** | **102 项** |
+| **总计** | **103 项** |
 
 ## GitHub
 
