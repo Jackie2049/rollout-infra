@@ -39,6 +39,7 @@
 - [Attention Kernel 优化](notebook/fundamentals/attention-kernel-optimization.md) — FlashAttention-3/4、FlashInfer、FlashMLA 对比与选型
 - [RoPE 旋转位置编码](notebook/fundamentals/rope.md) — 数学推导、四种实现、五种长度扩展方法、推理优化
 - [KV Cache 深度解析](notebook/fundamentals/kv-cache.md) — 显存估算、PagedAttention、GQA/MQA、Prefix Caching、量化
+- [KV Cache 量化](notebook/fundamentals/kv-cache-quantization.md) — FP8/INT8/INT4/2-bit 量化对比、KIVI/KVQuant、vLL8 实践、组合优化
 - [Multi-head Latent Attention](notebook/fundamentals/mla.md) — DeepSeek-V2 MLA 低秩 KV 压缩、解耦 RoPE、矩阵吸收、93.3% KV Cache 减少
 - [Prefix Caching 深度对比](notebook/fundamentals/prefix-caching.md) — vLLM Hash vs SGLang Radix vs verl Group、收益量化
 - [GPU 显存优化](notebook/fundamentals/gpu-memory-optimization.md) — 训练显存估算公式、OOM 排查、ZeRO、碎片化
@@ -146,6 +147,7 @@
 | [inference_planner.py](tools/inference_planner.py) | LLM 推理端到端规划器（单卡部署、多卡并行策略、Batch 优化、成本效率） | 已验证 |
 | [kv_cache_offload_sim.py](tools/kv_cache_offload_sim.py) | KV Cache 分层存储模拟（GPU/CPU/SSD 三层容量、Offload 性能、服务策略、成本优化） | 已验证 |
 | [chunked_prefill_sim.py](tools/chunked_prefill_sim.py) | Chunked Prefill 模拟（无 chunking vs chunked、chunk size 影响、并发调度、Prefix Caching 组合） | 已验证 |
+| [kv_cache_quant_sim.py](tools/kv_cache_quant_sim.py) | KV Cache 量化模拟（FP16/FP8/INT4/2-bit 对比、Batch 影响、组合优化、成本效率） | 已验证 |
 
 ### 日志记录规范
 
@@ -185,11 +187,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 42 篇 |
+| 基础知识笔记 | 43 篇 |
 | 项目源码阅读 | 16 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 47 个 |
-| **总计** | **109 项** |
+| 实用工具脚本 | 48 个 |
+| **总计** | **111 项** |
 
 ## GitHub
 
