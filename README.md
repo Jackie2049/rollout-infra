@@ -60,6 +60,7 @@
 - [FP8 量化与训练](notebook/fundamentals/fp8-quantization.md) — E4M3/E5M2 格式、缩放策略、Transformer Engine、vLLM FP8 实现
 - [模型服务架构](notebook/fundamentals/model-serving.md) — API 网关、负载均衡、HPA 自动扩缩容
 - [长上下文 LLM 推理服务](notebook/fundamentals/long-context-serving.md) — KV Cache 显存压力、Chunked Prefill、Sliding Window、服务策略
+- [Chunked Prefill 深度解析](notebook/fundamentals/chunked-prefill.md) — vLLM V1 统一调度模型、Chunk Size 三层约束、Partial Prefill 处理、Prefix Caching 组合
 - [Disaggregated Serving](notebook/fundamentals/disaggregated-serving.md) — Prefill/Decode 分离、KV Transfer、Splitwise/Mooncake 架构
 - [LLM 采样方法](notebook/fundamentals/sampling-methods.md) — Temperature/Top-K/Top-P/Min-P/Beam Search/重复惩罚
 
@@ -143,6 +144,7 @@
 | [long_context_serving_sim.py](tools/long_context_serving_sim.py) | 长上下文推理模拟（KV Cache 压力、Chunked Prefill、Sliding Window、Prefix Caching、服务策略） | 已验证 |
 | [inference_planner.py](tools/inference_planner.py) | LLM 推理端到端规划器（单卡部署、多卡并行策略、Batch 优化、成本效率） | 已验证 |
 | [kv_cache_offload_sim.py](tools/kv_cache_offload_sim.py) | KV Cache 分层存储模拟（GPU/CPU/SSD 三层容量、Offload 性能、服务策略、成本优化） | 已验证 |
+| [chunked_prefill_sim.py](tools/chunked_prefill_sim.py) | Chunked Prefill 模拟（无 chunking vs chunked、chunk size 影响、并发调度、Prefix Caching 组合） | 已验证 |
 
 ### 日志记录规范
 
@@ -182,11 +184,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 40 篇 |
+| 基础知识笔记 | 41 篇 |
 | 项目源码阅读 | 16 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 46 个 |
-| **总计** | **106 项** |
+| 实用工具脚本 | 47 个 |
+| **总计** | **108 项** |
 
 ## GitHub
 
