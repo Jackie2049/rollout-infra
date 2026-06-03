@@ -93,6 +93,8 @@
 | [ddp_cpu_demo.py](tools/ddp_cpu_demo.py) | PyTorch DDP CPU 模式 demo（无 GPU 也可跑） | |
 | [collective_ops_viz.py](tools/collective_ops_viz.py) | 集合通信原语可视化（AllReduce/AllGather/Broadcast 数据流） | |
 | [vllm_experiment.py](tools/vllm_experiment.py) | vLLM 推理 benchmark（不同 batch/seq 配置、Prefix Caching 测试） | 待 GPU |
+| [moe_router_demo.py](tools/moe_router_demo.py) | MoE Router 模拟器（Top-K/Capacity 路由、负载均衡分析、Dense vs MoE 对比） | 已验证 |
+| [pytorch_inference_bench.py](tools/pytorch_inference_bench.py) | PyTorch 原生推理 benchmark（KV Cache 加速比、Prefill/Decode 延迟、Batch 扩展效率） | 已验证 |
 
 ### 日志记录规范
 
@@ -135,8 +137,8 @@
 | 基础知识笔记 | 30 篇 |
 | 项目源码阅读 | 9 篇 |
 | 实验记录 | 1 篇 |
-| 实用工具脚本 | 14 个 |
-| **总计** | **54 项** |
+| 实用工具脚本 | 16 个 |
+| **总计** | **56 项** |
 
 ## GitHub
 
