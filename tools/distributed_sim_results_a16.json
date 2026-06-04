@@ -1,0 +1,239 @@
+{
+  "tensor_parallel": [
+    {
+      "tp_size": 1,
+      "column_ms": 0.3382,
+      "baseline_ms": 0.2902,
+      "row_ms": 0.3575,
+      "max_error": 0.0,
+      "weight_mem_per_rank_mb": 2.1,
+      "memory_saving_pct": 0.0
+    },
+    {
+      "tp_size": 2,
+      "column_ms": 0.4192,
+      "baseline_ms": 0.3122,
+      "row_ms": 0.468,
+      "max_error": 231.25,
+      "weight_mem_per_rank_mb": 1.05,
+      "memory_saving_pct": 50.0
+    },
+    {
+      "tp_size": 4,
+      "column_ms": 0.4844,
+      "baseline_ms": 0.3172,
+      "row_ms": 0.6751,
+      "max_error": 237.75,
+      "weight_mem_per_rank_mb": 0.52,
+      "memory_saving_pct": 75.0
+    },
+    {
+      "tp_size": 8,
+      "column_ms": 0.4784,
+      "baseline_ms": 0.3077,
+      "row_ms": 1.0594,
+      "max_error": 253.0,
+      "weight_mem_per_rank_mb": 0.26,
+      "memory_saving_pct": 87.5
+    }
+  ],
+  "transformer_block": [
+    {
+      "tp_size": 1,
+      "fwd_ms": 1.4483,
+      "fwd_bwd_ms": 4.6625,
+      "params_mb": 6.3,
+      "peak_mem_mb": 107.81
+    },
+    {
+      "tp_size": 2,
+      "fwd_ms": 0.8345,
+      "fwd_bwd_ms": 2.6032,
+      "params_mb": 3.15,
+      "peak_mem_mb": 99.79
+    },
+    {
+      "tp_size": 4,
+      "fwd_ms": 0.5394,
+      "fwd_bwd_ms": 1.5695,
+      "params_mb": 1.58,
+      "peak_mem_mb": 71.56
+    }
+  ],
+  "pipeline_parallel": [
+    {
+      "n_stages": 2,
+      "n_microbatches": 8,
+      "stage_fwd_ms": 0.1255,
+      "stage_fwd_bwd_ms": 0.7659,
+      "gpipe_bubble_pct": 11.1,
+      "1f1b_bubble_pct": 12.5,
+      "interleaved_bubble_pct": 6.2,
+      "gpipe_peak_act": 8,
+      "1f1b_peak_act": 2
+    },
+    {
+      "n_stages": 4,
+      "n_microbatches": 16,
+      "stage_fwd_ms": 0.1246,
+      "stage_fwd_bwd_ms": 0.5393,
+      "gpipe_bubble_pct": 15.8,
+      "1f1b_bubble_pct": 18.8,
+      "interleaved_bubble_pct": 9.4,
+      "gpipe_peak_act": 16,
+      "1f1b_peak_act": 4
+    },
+    {
+      "n_stages": 8,
+      "n_microbatches": 32,
+      "stage_fwd_ms": 0.1249,
+      "stage_fwd_bwd_ms": 0.7746,
+      "gpipe_bubble_pct": 17.9,
+      "1f1b_bubble_pct": 21.9,
+      "interleaved_bubble_pct": 10.9,
+      "gpipe_peak_act": 32,
+      "1f1b_peak_act": 8
+    }
+  ],
+  "gradient_accumulation": [
+    {
+      "accum_steps": 1,
+      "effective_batch": 8,
+      "total_time_s": 0.055,
+      "ms_per_step": 2.76,
+      "peak_mem_mb": 22.3
+    },
+    {
+      "accum_steps": 2,
+      "effective_batch": 16,
+      "total_time_s": 0.033,
+      "ms_per_step": 1.64,
+      "peak_mem_mb": 22.3
+    },
+    {
+      "accum_steps": 4,
+      "effective_batch": 32,
+      "total_time_s": 0.054,
+      "ms_per_step": 2.71,
+      "peak_mem_mb": 22.3
+    },
+    {
+      "accum_steps": 8,
+      "effective_batch": 64,
+      "total_time_s": 0.098,
+      "ms_per_step": 4.89,
+      "peak_mem_mb": 22.3
+    }
+  ],
+  "allreduce_simulation": [
+    {
+      "interconnect": "NVLink (300 GB/s)",
+      "bandwidth_gbs": 300,
+      "latencies_ms": {
+        "125M": 1458.33,
+        "1.3B": 15166.67,
+        "7B": 81666.67,
+        "13B": 151666.67,
+        "70B": 816666.67
+      }
+    },
+    {
+      "interconnect": "NVLink (600 GB/s)",
+      "bandwidth_gbs": 600,
+      "latencies_ms": {
+        "125M": 729.17,
+        "1.3B": 7583.33,
+        "7B": 40833.33,
+        "13B": 75833.33,
+        "70B": 408333.33
+      }
+    },
+    {
+      "interconnect": "PCIe Gen4 (64 GB/s)",
+      "bandwidth_gbs": 64,
+      "latencies_ms": {
+        "125M": 6835.94,
+        "1.3B": 71093.75,
+        "7B": 382812.5,
+        "13B": 710937.5,
+        "70B": 3828125.0
+      }
+    },
+    {
+      "interconnect": "Ethernet (25 Gbps)",
+      "bandwidth_gbs": 3.125,
+      "latencies_ms": {
+        "125M": 140000.0,
+        "1.3B": 1456000.0,
+        "7B": 7840000.0,
+        "13B": 14560000.0,
+        "70B": 78400000.0
+      }
+    },
+    {
+      "interconnect": "Ethernet (100 Gbps)",
+      "bandwidth_gbs": 12.5,
+      "latencies_ms": {
+        "125M": 35000.0,
+        "1.3B": 364000.0,
+        "7B": 1960000.0,
+        "13B": 3640000.0,
+        "70B": 19600000.0
+      }
+    }
+  ],
+  "zero_memory": [
+    {
+      "zero_stage": 0,
+      "mem_per_rank_mb": 8.41,
+      "saving_pct": 0.0
+    },
+    {
+      "zero_stage": 1,
+      "mem_per_rank_mb": 4.73,
+      "saving_pct": 43.8
+    },
+    {
+      "zero_stage": 2,
+      "mem_per_rank_mb": 2.89,
+      "saving_pct": 65.6
+    },
+    {
+      "zero_stage": 3,
+      "mem_per_rank_mb": 1.05,
+      "saving_pct": 87.5
+    }
+  ],
+  "sequence_parallel": [
+    {
+      "seq_len": 512,
+      "tp_activation_mb": 2.1,
+      "sp_activation_mb": 0.52,
+      "saving_pct": 75.0
+    },
+    {
+      "seq_len": 1024,
+      "tp_activation_mb": 4.19,
+      "sp_activation_mb": 1.05,
+      "saving_pct": 75.0
+    },
+    {
+      "seq_len": 2048,
+      "tp_activation_mb": 8.39,
+      "sp_activation_mb": 2.1,
+      "saving_pct": 75.0
+    },
+    {
+      "seq_len": 4096,
+      "tp_activation_mb": 16.78,
+      "sp_activation_mb": 4.19,
+      "saving_pct": 75.0
+    },
+    {
+      "seq_len": 8192,
+      "tp_activation_mb": 33.55,
+      "sp_activation_mb": 8.39,
+      "saving_pct": 75.0
+    }
+  ]
+}
