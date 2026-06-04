@@ -96,6 +96,7 @@
 - [vLLM 量化推理管线源码阅读](notebook/projects/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
 - [vLLM 权重加载管线源码阅读](notebook/projects/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
 - [vLLM P/D 分离架构源码阅读](notebook/projects/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
+- [vLLM CUDA Graph 源码阅读](notebook/projects/vllm-cuda-graph-reading.md) — FULL/PIECEWISE 模式、捕获回放流程、Attention 兼容、Breakable Graph
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
@@ -202,10 +203,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 45 篇 |
-| 项目源码阅读 | 23 篇 |
+| 项目源码阅读 | 24 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 53 个 |
-| **总计** | **124 项** |
+| **总计** | **125 项** |
 
 ## GitHub
 
