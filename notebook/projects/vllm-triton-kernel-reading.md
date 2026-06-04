@@ -395,7 +395,98 @@ MoE GEMM 的特殊性:
   - Per-token quantization: 减少权重读取量
 ```
 
-## 7. 关键洞察
+## 7. Speculative Decoding Rejection Sampler
+
+**文件**: `vllm/v1/worker/gpu/spec_decode/rejection_sampler_utils.py`
+
+### 7.1 三 Kernel 流水线
+
+```
+Kernel 1: _compute_block_stats_kernel
+  计算 target/draft logits 的分块统计信息 (max, sumexp, argmax)
+
+Kernel 2: _rejection_kernel
+  遍历 draft tokens, 决定接受/拒绝
+
+Kernel 3: _resample_kernel
+  在拒绝点从修正分布重新采样 (bonus token)
+```
+
+### 7.2 Block-Level 统计 (Kernel 1)
+
+```
+Vocab 通常很大 (128K), 无法一次加载:
+  1. 将 vocab 分成 BLOCK_SIZE 块
+  2. 每个 block: 计算 local_max + local_sumexp
+  3. 存储到 [num_logits, num_blocks] 张量
+
+后续 kernel 通过 _compute_global_lse 合并:
+  global_max = max(all_local_max)
+  global_lse = global_max + log(sum(local_sumexp * exp(local_max - global_max)))
+
+Greedy 捷径 (temperature=0):
+  只需 global argmax, 不需要 sumexp
+  → 直接存 target_local_argmax, 跳过 sumexp 计算
+```
+
+### 7.3 拒绝测试 (Kernel 2)
+
+```
+核心算法 (每个 draft token):
+  if temperature == 0:
+    # Greedy: 只检查 draft token == target argmax
+    accepted = (draft_token == target_argmax)
+  else:
+    # 概率比测试: p(x) > u * q(x)
+    # log 形式: log_p(x) > log(u) + log_q(x)
+    target_log_prob = target_logit - target_lse
+    draft_log_prob = draft_logit - draft_lse
+    u = random(0, 1)
+    accepted = (target_log_prob > log(u) + draft_log_prob)
+
+  if accepted:
+    keep draft_token
+  else:
+    reject → resample from modified distribution
+
+One-hot draft (无 draft logits):
+  q(draft_token) = 1 → log_q = 0
+  → accepted = (target_log_prob > log(u))
+  → 等价于: u < p(draft_token)
+
+Synthetic mode:
+  使用预设的接受率, 而非真实概率比
+  accepted = (u < synthetic_conditional_rates[i])
+```
+
+### 7.4 重采样 (Kernel 3)
+
+```
+拒绝后的 bonus token 采样:
+  1. 找到拒绝位置 (rejected_step)
+  2. 从修正分布采样:
+     modified_p(x) = normalize(max(0, p(x) - q(x)))
+  3. 使用 Gumbel-Max trick 采样:
+     gumbel = -log(-log(u))
+     argmax(log_p + gumbel) → 等价于从 p(x) 采样
+
+Vocab 分块处理:
+  每个 block: 找 local argmax
+  所有 blocks: 找 global argmax (Gumbel argmax)
+```
+
+### 7.5 性能优化
+
+```
+1. 分块 Vocab: 避免一次加载 128K logits, 改为 BLOCK_SIZE=256/512
+2. Greedy 捷径: temperature=0 时跳过 sumexp 和 LSE 计算
+3. 预计算 block stats: Kernel 1 的结果被 Kernel 2 和 3 复用
+4. Gumbel-Max: 单次 argmax 替代 CDF 采样, 避免排序
+5. One-hot draft: 无 draft logits 时 log_q=0, 减少计算
+6. 在线 LSE: 通过 block-level 合并避免全 vocab 扫描
+```
+
+## 8. 关键洞察
 
 1. **两阶段设计**: Split-KV 并行 + Reduce 合并, 解决 decode Q=1 的并行度不足
 2. **在线 Softmax**: 避免 materialize 完整注意力矩阵, O(1) 额外内存
@@ -408,6 +499,9 @@ MoE GEMM 的特殊性:
 9. **MoE Block Alignment**: token 按 expert 分组后 padding 到 block_size, 确保高效 GEMM
 10. **Split-K**: 通用技术 (Decode + MoE), 增加 K 维度并行以饱和 GPU
 11. **Padding 损失**: MoE 每个 expert 最多浪费 block_size-1 个 padding token
+12. **Rejection Sampler 三 kernel**: stats→reject→resample, 分块处理 128K vocab
+13. **概率比测试**: `log_p(x) > log(u) + log_q(x)`, greedy 模式下只需 argmax 比较
+14. **Gumbel-Max trick**: 单次 argmax 实现从修正分布采样, 避免排序或 CDF
 
 ## 参考资料
 
