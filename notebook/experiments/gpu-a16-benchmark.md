@@ -174,6 +174,42 @@
 
 **结论**: 我们的模拟器模型与实测高度吻合! A16 HBM 实际带宽 ~76 GB/s 是关键约束, OPT-125M (0.24GB 权重) decode 阶段每次需读权重, 76/0.24 ≈ 317 tok/s (理论单 batch), 实测 163 tok/s (约 51% 效率, 含 attention + 采样 + 开销)。
 
+## 实验 7: 自定义 CUDA Kernel 实战
+
+> 2026-06-04 | PyTorch C++ Extension | CUDA 11.7 | A16
+
+### 7.1 Vector Add (基础 kernel)
+
+| 数据量 | MB | 时间 (ms) | 带宽 (GB/s) |
+|--------|-----|-----------|------------|
+| 2^16 (64K) | 1 | 0.005 | 144 |
+| 2^20 (1M) | 13 | 0.076 | 165 |
+| 2^22 (4M) | 50 | 0.298 | **169** |
+| 2^24 (16M) | 201 | 1.183 | **170** |
+
+**对比 PyTorch**: Custom=0.298ms vs PyTorch=0.301ms (1.01x)，几乎相同。说明 PyTorch 的 element-wise op 已经充分优化。
+
+**带宽分析**: 3×n×4 bytes (读x+读y+写out)，170 GB/s 是 A16 实测 HBM 带宽的 ~220%（双倍是因为 GPU 可能利用了 L2 cache 写合并）。
+
+### 7.2 Fused Bias + ReLU (kernel fusion)
+
+| 方法 | 时间 (ms) | 带宽 (GB/s) |
+|------|-----------|------------|
+| Fused CUDA (1 kernel) | 0.216 | 155 |
+| Separate PyTorch (2 kernels) | 0.503 | - |
+| **Speedup** | **2.32x** | - |
+
+**关键发现**: Kernel fusion 节省了一次全局内存读写。Separate 模式需要 x+bias 的中间结果写回 HBM 再被 ReLU 读取, fused 模式在 register/SMEM 中直接传递, 节省 ~50% 时间。
+
+### 7.3 Triton 兼容性问题
+
+| 配置 | 状态 |
+|------|------|
+| Triton 3.1.0 + CUDA 11.7 + SM 8.6 | kernel image invalid |
+| Triton 3.4.0 + CUDA 11.7 + SM 8.6 | kernel image invalid |
+
+**根因**: Driver 510.54 只支持 CUDA 11.7, Triton 编译出的 PTX 需要更高 CUDA 版本。A16 (SM 8.6) 需要 CUDA 11.7+ driver 才能运行 Triton kernel。
+
 ## 关键发现
 
 1. **A16 FP16 算力很强**: 14.64 TFLOPS, Tensor Core 利用率 ~99.6%
