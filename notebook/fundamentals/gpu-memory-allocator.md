@@ -310,6 +310,166 @@ llm = LLM(model="...")
 - vLLM 固定大小 block 完全消除碎片化
 - Prefix Caching 通过引用计数共享公共前缀 block
 
+## 7. vLLM V1 源码深度解析
+
+基于 vLLM V1 源码 (`vllm/v1/core/`) 的深度分析。
+
+### 7.1 BlockPool 核心数据结构
+
+```python
+# block_pool.py — V1 BlockPool
+class BlockPool:
+    blocks: list[KVCacheBlock]                    # 所有 block (按 block_id 索引)
+    free_block_queue: FreeKVCacheBlockQueue        # 空闲 block 双向链表 (LRU)
+    cached_block_hash_to_block: BlockHashToBlockMap # prefix cache 哈希表 (1:N)
+    null_block: KVCacheBlock                       # block_id=0 占位符
+```
+
+### 7.2 FreeKVCacheBlockQueue — O(1) 双向链表
+
+核心设计：**不分配任何 Python 对象**，直接操作 `prev_free_block` / `next_free_block` 属性：
+
+```
+fake_head ←→ [Block_3] ←→ [Block_7] ←→ [Block_1] ←→ fake_tail
+             ↑ LRU (最先驱逐)                    ↑ MRU (最后驱逐)
+
+popleft()  : 从 fake_head 端弹出 (驱逐最久未用的)
+append()   : 从 fake_tail 端插入 (刚释放的 block)
+remove()   : O(1) 删除中间节点 (prefix cache hit 时)
+```
+
+设计要点：
+- **fake_head / fake_tail**：哨兵节点，减少边界判断分支
+- **LRU 顺序**：释放时 block 被反转后 append，保证同请求的尾部 block 先被驱逐
+- **popleft_n()**：批量弹出，单次遍历，重置所有 prev/next 指针
+
+### 7.3 KVCacheBlock 元数据
+
+```python
+# kv_cache_utils.py
+@dataclass(slots=True)
+class KVCacheBlock:
+    block_id: int                           # 0 ~ num_gpu_blocks-1
+    ref_cnt: int = 0                        # 引用计数
+    _block_hash: BlockHashWithGroupId | None # 仅 full+cached 时设置
+    prev_free_block: KVCacheBlock | None    # 双向链表
+    next_free_block: KVCacheBlock | None
+    is_null: bool = False                   # null_block 占位
+```
+
+**生命周期**：
+1. 初始化：`ref_cnt=0`, 在 `free_block_queue` 中
+2. 分配：`get_new_blocks()` → `ref_cnt += 1`, 从 `free_queue` 移除
+3. Prefix cache hit：`touch()` → `ref_cnt += 1` (共享 block)
+4. 释放：`free_blocks()` → `ref_cnt -= 1`, 若 ==0 则放回 `free_queue`
+5. 驱逐：`_maybe_evict_cached_block()` → 清除 hash, 从 cache map 移除
+
+### 7.4 BlockHashToBlockMap — 1:N Hash Map
+
+```python
+class BlockHashToBlockMap:
+    _cache: dict[BlockHashWithGroupId, KVCacheBlock | dict[int, KVCacheBlock]]
+
+    # 1:1 常见情况 (单个 block):  hash → KVCacheBlock
+    # 1:N 重复前缀:               hash → {block_id: KVCacheBlock, ...}
+```
+
+**为什么允许 1:N？** prefix caching 不做去重。两个请求生成相同前缀时，各自有自己的 block，但 hash 相同。这样 block table 保持 append-only，不需要修改已有 block_id。
+
+### 7.5 Block Hash 计算链
+
+```python
+# 增量哈希链: 每个 block 的 hash = H(parent_hash + token_ids + extra_keys)
+hash = hash_function((parent_block_hash, tuple(token_ids), extra_keys))
+```
+
+- `parent_block_hash`：前一个 block 的 hash (链式依赖)
+- `extra_keys`：多模态 (mm_hash, offset)、LoRA name、cache_salt、prompt_embeds
+- 第一个 block 的 parent 是 `NONE_HASH` (随机种子或 PYTHONHASHSEED)
+
+### 7.6 Hybrid KV Cache Group
+
+混合注意力模型 (如 Gemma3: 5 SW + 1 Full) 的 KV cache 管理：
+
+```
+模型层: [Full, SW, SW, SW, SW, SW] × N 组
+
+KV Cache Group:
+  Group 0 (Full): [full_0, full_1, ..., full_N-1] — 共享 block_table[0]
+  Group 1 (SW):   [sw_0, sw_1, ..., sw_N-1]      — 共享 block_table[1]
+  ...
+
+内存约束: 所有 group 的 page_size_bytes 必须相同 (防碎片化)
+```
+
+分组算法 (`_get_kv_cache_groups_uniform_page_size`):
+1. 按 KVCacheSpec 类型分组
+2. 用最小层数的组作为 group_size
+3. 按 PP stage 分配层 (跨 stage 均匀分布)
+
+### 7.7 Auto-fit max_model_len
+
+当 `max_model_len=-1` 时，二分搜索最大可用上下文长度：
+
+```python
+def estimate_max_model_len(vllm_config, kv_cache_spec, available_memory):
+    # 二分搜索
+    left, right = 1, original_max_model_len
+    while left <= right:
+        mid = (left + right) // 2
+        vllm_config.model_config.max_model_len = mid
+        memory_needed = max_memory_usage_bytes(vllm_config, kv_cache_spec.values())
+        if memory_needed <= available_memory:
+            result = mid
+            left = mid + 1
+        else:
+            right = mid - 1
+    return result
+```
+
+关键：跨所有 worker (PP) 取最小值，保证最受限的 worker 也能运行。
+
+### 7.8 PyTorch ExpandableSegment (2.x)
+
+PyTorch 2.x 引入 `ExpandableSegment` 解决碎片化：
+
+```python
+# 使用 CUDA 虚拟内存管理 API:
+cuMemAddressReserve(256 * TiB)    # 预留虚拟地址空间
+cuMemCreate(physical_page)         # 按需创建物理页
+cuMemMap(vaddr, physical_page)     # 映射到虚拟地址
+cuMemSetAccess(vaddr, READ_WRITE)  # 设置权限
+
+# 增长: 新分配 → cuMemCreate + cuMemMap → append to segment
+# 收缩: OOM 时 cuMemUnmap → 释放物理页给 CUDA
+```
+
+**优势**：N→N+1 batch size 变化时，在同一 segment 内增长，不产生碎片。
+**限制**：不支持 IPC (多进程)，`cudaDeviceEnablePeerAccess` 不兼容。
+
+### 7.9 两种分配器的根本区别
+
+| 维度 | PyTorch CachingAllocator | vLLM Paged BlockPool |
+|------|-------------------------|---------------------|
+| 内存来源 | 按 segment 从 CUDA malloc | 启动时预分配扁平 buffer |
+| 分配单元 | 可变大小 Block | 固定大小 KVCacheBlock |
+| 查找结构 | std::set (best-fit) | 双向链表 FIFO (LRU) |
+| 碎片化策略 | split/merge/expandable_segments | 固定大小完全避免 |
+| 共享机制 | 无 | BlockHashToBlockMap (prefix) |
+| 引用计数 | event_count (stream sync) | ref_cnt (跨请求共享) |
+| 适用场景 | 通用 tensor 工作负载 | KV cache 专用 |
+
+## 8. 关键源码文件
+
+| 文件 | 行数 | 核心内容 |
+|------|------|---------|
+| `vllm/v1/core/kv_cache_utils.py` | ~2150 | KVCacheBlock, FreeKVCacheBlockQueue, 哈希计算, auto-fit |
+| `vllm/v1/core/block_pool.py` | ~520 | BlockPool, BlockHashToBlockMap, LRU 驱逐 |
+| `vllm/v1/core/kv_cache_manager.py` | ~600 | KVCacheManager 接口, 分配/释放/前缀查找 |
+| `vllm/v1/worker/gpu_worker.py` | ~500 | 内存 profiling, available_memory 计算 |
+| `vllm/v1/worker/gpu/model_runner.py` | ~1200 | KV cache tensor 分配, block table 初始化 |
+| `c10/cuda/CUDACachingAllocator.cpp` | ~4800 | PyTorch CachingAllocator C++ 实现 |
+
 ## 参考资料
 
 - [PyTorch CUDA Memory Management](https://pytorch.org/docs/stable/notes/cuda.html#memory-management)
