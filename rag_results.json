@@ -1,0 +1,10 @@
+{
+  "chunking": {
+    "fixed-64-0": 200,
+    "fixed-64-16": 200,
+    "fixed-128-0": 100,
+    "recursive": 52
+  },
+  "retrieval_accuracy": 0.062,
+  "gpu_memory_mb": 11.9
+}
