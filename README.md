@@ -97,6 +97,7 @@
 - [vLLM 权重加载管线源码阅读](notebook/projects/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
 - [vLLM P/D 分离架构源码阅读](notebook/projects/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
 - [vLLM CUDA Graph 源码阅读](notebook/projects/vllm-cuda-graph-reading.md) — FULL/PIECEWISE 模式、捕获回放流程、Attention 兼容、Breakable Graph
+- [vLLM V1 架构全景图](notebook/projects/vllm-v1-architecture-map.md) — 请求生命周期、四层架构、模块依赖关系、已学清单
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
@@ -163,6 +164,7 @@
 | [cuda_kernel_simulator.py](tools/cuda_kernel_simulator.py) | CUDA Kernel 执行模拟器（Grid/Block、内存层次、Occupancy、Roofline 分析） | 已验证 |
 | [cuda_stream_simulator.py](tools/cuda_stream_simulator.py) | CUDA Stream 并发模型模拟器（通信计算重叠、TP overlap、vLLM 多 Stream） | 已验证 |
 | [nccl_tuning_cheatsheet.py](tools/nccl_tuning_cheatsheet.py) | NCCL 调优速查表（算法选择、通道调优、多节点配置、问题排查） | 已验证 |
+| [llm_latency_estimator.py](tools/llm_latency_estimator.py) | LLM 推理延迟估算器（Prefill/Decode 分解、TP 影响、场景估算、GPU 对比） | 已验证 |
 
 ### 日志记录规范
 
@@ -203,10 +205,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 45 篇 |
-| 项目源码阅读 | 24 篇 |
+| 项目源码阅读 | 25 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 53 个 |
-| **总计** | **125 项** |
+| 实用工具脚本 | 54 个 |
+| **总计** | **126 项** |
 
 ## GitHub
 
