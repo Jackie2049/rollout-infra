@@ -1,0 +1,351 @@
+{
+  "prefill_decode": [
+    {
+      "model": "125M-like",
+      "phase": "prefill",
+      "seq": 32,
+      "ms": 3.7,
+      "tps": 8649.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "prefill",
+      "seq": 64,
+      "ms": 3.8,
+      "tps": 16830.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "prefill",
+      "seq": 128,
+      "ms": 4.18,
+      "tps": 30592.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "prefill",
+      "seq": 256,
+      "ms": 7.92,
+      "tps": 32321.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "prefill",
+      "seq": 512,
+      "ms": 14.74,
+      "tps": 34737.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "decode",
+      "batch": 1,
+      "ms": 3.442,
+      "tps": 291.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "decode",
+      "batch": 4,
+      "ms": 3.653,
+      "tps": 1095.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "decode",
+      "batch": 8,
+      "ms": 3.741,
+      "tps": 2139.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "decode",
+      "batch": 16,
+      "ms": 3.61,
+      "tps": 4432.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "decode",
+      "batch": 32,
+      "ms": 4.334,
+      "tps": 7383.0
+    },
+    {
+      "model": "125M-like",
+      "phase": "decode",
+      "batch": 64,
+      "ms": 6.789,
+      "tps": 9427.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "prefill",
+      "seq": 32,
+      "ms": 7.15,
+      "tps": 4473.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "prefill",
+      "seq": 64,
+      "ms": 8.41,
+      "tps": 7613.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "prefill",
+      "seq": 128,
+      "ms": 10.84,
+      "tps": 11806.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "prefill",
+      "seq": 256,
+      "ms": 19.47,
+      "tps": 13148.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "prefill",
+      "seq": 512,
+      "ms": 37.73,
+      "tps": 13568.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "decode",
+      "batch": 1,
+      "ms": 7.018,
+      "tps": 142.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "decode",
+      "batch": 4,
+      "ms": 7.508,
+      "tps": 533.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "decode",
+      "batch": 8,
+      "ms": 7.62,
+      "tps": 1050.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "decode",
+      "batch": 16,
+      "ms": 8.638,
+      "tps": 1852.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "decode",
+      "batch": 32,
+      "ms": 11.11,
+      "tps": 2880.0
+    },
+    {
+      "model": "350M-like",
+      "phase": "decode",
+      "batch": 64,
+      "ms": 16.487,
+      "tps": 3882.0
+    }
+  ],
+  "batch_throughput": [
+    {
+      "batch": 1,
+      "ms": 3.607,
+      "tps": 277.0,
+      "scaling": 1.0
+    },
+    {
+      "batch": 2,
+      "ms": 3.616,
+      "tps": 553.0,
+      "scaling": 2.0
+    },
+    {
+      "batch": 4,
+      "ms": 3.814,
+      "tps": 1049.0,
+      "scaling": 3.8
+    },
+    {
+      "batch": 8,
+      "ms": 3.781,
+      "tps": 2116.0,
+      "scaling": 7.6
+    },
+    {
+      "batch": 16,
+      "ms": 3.805,
+      "tps": 4206.0,
+      "scaling": 15.2
+    },
+    {
+      "batch": 32,
+      "ms": 4.21,
+      "tps": 7601.0,
+      "scaling": 27.4
+    },
+    {
+      "batch": 64,
+      "ms": 6.721,
+      "tps": 9522.0,
+      "scaling": 34.3
+    },
+    {
+      "batch": 128,
+      "ms": 10.295,
+      "tps": 12434.0,
+      "scaling": 44.8
+    },
+    {
+      "batch": 256,
+      "ms": 20.043,
+      "tps": 12772.0,
+      "scaling": 46.1
+    },
+    {
+      "batch": 512,
+      "ms": 38.819,
+      "tps": 13190.0,
+      "scaling": 47.6
+    }
+  ],
+  "roofline": [
+    {
+      "batch": 1,
+      "actual_ms": 3.481,
+      "mem_bound_ms": 1976.598,
+      "ratio": 0.0,
+      "ai": 1.0
+    },
+    {
+      "batch": 4,
+      "actual_ms": 3.728,
+      "mem_bound_ms": 1976.598,
+      "ratio": 0.0,
+      "ai": 1.0
+    },
+    {
+      "batch": 16,
+      "actual_ms": 3.559,
+      "mem_bound_ms": 1976.598,
+      "ratio": 0.0,
+      "ai": 1.0
+    },
+    {
+      "batch": 64,
+      "actual_ms": 6.714,
+      "mem_bound_ms": 1976.598,
+      "ratio": 0.0,
+      "ai": 1.0
+    },
+    {
+      "batch": 128,
+      "actual_ms": 10.298,
+      "mem_bound_ms": 1976.598,
+      "ratio": 0.01,
+      "ai": 1.0
+    }
+  ],
+  "prefill_analysis": [
+    {
+      "seq": 32,
+      "actual_ms": 3.67,
+      "flops_est_ms": 645.5,
+      "utilization_pct": 17599.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 64,
+      "actual_ms": 3.87,
+      "flops_est_ms": 1295.67,
+      "utilization_pct": 33494.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 128,
+      "actual_ms": 4.22,
+      "flops_est_ms": 2610.04,
+      "utilization_pct": 61869.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 256,
+      "actual_ms": 8.05,
+      "flops_est_ms": 5294.9,
+      "utilization_pct": 65778.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 512,
+      "actual_ms": 14.69,
+      "flops_est_ms": 10889.08,
+      "utilization_pct": 74123.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 1024,
+      "actual_ms": 33.21,
+      "flops_est_ms": 22975.24,
+      "utilization_pct": 69188.0,
+      "bound": "compute"
+    }
+  ],
+  "continuous_batching": [
+    {
+      "active": 128,
+      "ms": 10.313,
+      "tps": 12411.0,
+      "efficiency_pct": 100.0
+    },
+    {
+      "active": 64,
+      "ms": 6.72,
+      "tps": 9524.0,
+      "efficiency_pct": 77.0
+    },
+    {
+      "active": 32,
+      "ms": 4.22,
+      "tps": 7582.0,
+      "efficiency_pct": 61.0
+    },
+    {
+      "active": 16,
+      "ms": 3.599,
+      "tps": 4446.0,
+      "efficiency_pct": 36.0
+    },
+    {
+      "active": 8,
+      "ms": 3.731,
+      "tps": 2144.0,
+      "efficiency_pct": 17.0
+    },
+    {
+      "active": 4,
+      "ms": 3.583,
+      "tps": 1116.0,
+      "efficiency_pct": 9.0
+    },
+    {
+      "active": 2,
+      "ms": 3.589,
+      "tps": 557.0,
+      "efficiency_pct": 5.0
+    },
+    {
+      "active": 1,
+      "ms": 3.482,
+      "tps": 287.0,
+      "efficiency_pct": 2.0
+    }
+  ]
+}
