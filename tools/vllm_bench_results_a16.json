@@ -1,0 +1,233 @@
+{
+  "exp1_max_model_len": [
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 256,
+      "num_gpu_blocks": 22382,
+      "block_size": 16,
+      "max_concurrent": 1398.875,
+      "gpu_mem_allocated_gb": 13.48,
+      "gpu_mem_reserved_gb": 13.5,
+      "time_s": 0.241,
+      "total_tokens": 256,
+      "throughput_tok_s": 1060.8,
+      "avg_latency_ms": 30.2
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22359,
+      "block_size": 16,
+      "max_concurrent": 698.71875,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.5,
+      "time_s": 0.239,
+      "total_tokens": 256,
+      "throughput_tok_s": 1071.2,
+      "avg_latency_ms": 29.9
+    }
+  ],
+  "exp2_opt350m": [
+    {
+      "model": "facebook/opt-350m",
+      "max_len": 512,
+      "num_gpu_blocks": 8120,
+      "block_size": 16,
+      "max_concurrent": 253.75,
+      "gpu_mem_allocated_gb": 13.46,
+      "gpu_mem_reserved_gb": 13.49,
+      "time_s": 0.385,
+      "total_tokens": 256,
+      "throughput_tok_s": 664.8,
+      "avg_latency_ms": 48.1
+    }
+  ],
+  "exp3_batch_size": [
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.197,
+      "total_tokens": 32,
+      "throughput_tok_s": 162.7,
+      "avg_latency_ms": 196.7
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.218,
+      "total_tokens": 128,
+      "throughput_tok_s": 587.4,
+      "avg_latency_ms": 54.5
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.24,
+      "total_tokens": 256,
+      "throughput_tok_s": 1068.2,
+      "avg_latency_ms": 30.0
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.271,
+      "total_tokens": 512,
+      "throughput_tok_s": 1889.5,
+      "avg_latency_ms": 16.9
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.343,
+      "total_tokens": 1024,
+      "throughput_tok_s": 2986.0,
+      "avg_latency_ms": 10.7
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.549,
+      "total_tokens": 2048,
+      "throughput_tok_s": 3728.8,
+      "avg_latency_ms": 8.6
+    }
+  ],
+  "exp4_gpu_util": [
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 17038,
+      "block_size": 16,
+      "max_concurrent": 532.4375,
+      "gpu_mem_allocated_gb": 10.32,
+      "gpu_mem_reserved_gb": 10.36,
+      "time_s": 0.271,
+      "total_tokens": 512,
+      "throughput_tok_s": 1887.3,
+      "avg_latency_ms": 17.0
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 19688,
+      "block_size": 16,
+      "max_concurrent": 615.25,
+      "gpu_mem_allocated_gb": 11.88,
+      "gpu_mem_reserved_gb": 11.92,
+      "time_s": 0.271,
+      "total_tokens": 512,
+      "throughput_tok_s": 1892.4,
+      "avg_latency_ms": 16.9
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.816,
+      "total_tokens": 512,
+      "throughput_tok_s": 627.1,
+      "avg_latency_ms": 51.0
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 23663,
+      "block_size": 16,
+      "max_concurrent": 739.46875,
+      "gpu_mem_allocated_gb": 14.23,
+      "gpu_mem_reserved_gb": 14.26,
+      "time_s": 0.27,
+      "total_tokens": 512,
+      "throughput_tok_s": 1893.2,
+      "avg_latency_ms": 16.9
+    }
+  ],
+  "exp5_gen_length": [
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.12,
+      "total_tokens": 128,
+      "throughput_tok_s": 1063.2,
+      "avg_latency_ms": 15.0
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.239,
+      "total_tokens": 256,
+      "throughput_tok_s": 1069.1,
+      "avg_latency_ms": 29.9
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.47,
+      "total_tokens": 512,
+      "throughput_tok_s": 1088.7,
+      "avg_latency_ms": 58.8
+    },
+    {
+      "model": "facebook/opt-125m",
+      "max_len": 512,
+      "num_gpu_blocks": 22338,
+      "block_size": 16,
+      "max_concurrent": 698.0625,
+      "gpu_mem_allocated_gb": 13.45,
+      "gpu_mem_reserved_gb": 13.48,
+      "time_s": 0.921,
+      "total_tokens": 1024,
+      "throughput_tok_s": 1112.4,
+      "avg_latency_ms": 115.1
+    }
+  ]
+}
