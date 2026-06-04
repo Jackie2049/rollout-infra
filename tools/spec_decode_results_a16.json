@@ -1,0 +1,407 @@
+{
+  "greedy_rejection": [
+    {
+      "noise": 0.0,
+      "avg_accept": 1.0,
+      "accept_rates": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "speedup": 6
+    },
+    {
+      "noise": 0.5,
+      "avg_accept": 0.365,
+      "accept_rates": [
+        0.361,
+        0.362,
+        0.365,
+        0.376,
+        0.361
+      ],
+      "speedup": 1.56
+    },
+    {
+      "noise": 1.0,
+      "avg_accept": 0.134,
+      "accept_rates": [
+        0.135,
+        0.136,
+        0.132,
+        0.131,
+        0.136
+      ],
+      "speedup": 1.16
+    },
+    {
+      "noise": 2.0,
+      "avg_accept": 0.032,
+      "accept_rates": [
+        0.032,
+        0.032,
+        0.033,
+        0.034,
+        0.031
+      ],
+      "speedup": 1.03
+    },
+    {
+      "noise": 5.0,
+      "avg_accept": 0.006,
+      "accept_rates": [
+        0.005,
+        0.006,
+        0.005,
+        0.007,
+        0.008
+      ],
+      "speedup": 1.0
+    }
+  ],
+  "temperature_effect": [
+    {
+      "temperature": 0.1,
+      "accept_rate": 0.139,
+      "speedup": 1.16
+    },
+    {
+      "temperature": 0.3,
+      "accept_rate": 0.148,
+      "speedup": 1.17
+    },
+    {
+      "temperature": 0.5,
+      "accept_rate": 0.15,
+      "speedup": 1.18
+    },
+    {
+      "temperature": 0.8,
+      "accept_rate": 0.181,
+      "speedup": 1.22
+    },
+    {
+      "temperature": 1.0,
+      "accept_rate": 0.213,
+      "speedup": 1.27
+    },
+    {
+      "temperature": 1.5,
+      "accept_rate": 0.307,
+      "speedup": 1.44
+    },
+    {
+      "temperature": 2.0,
+      "accept_rate": 0.383,
+      "speedup": 1.62
+    },
+    {
+      "temperature": 3.0,
+      "accept_rate": 0.507,
+      "speedup": 1.99
+    }
+  ],
+  "k_vs_speedup": [
+    {
+      "draft_noise": 0.5,
+      "K": 1,
+      "expected_tokens": 1.59,
+      "speedup": 1.59,
+      "p_all_accept": 0.5914,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 2,
+      "expected_tokens": 1.94,
+      "speedup": 1.94,
+      "p_all_accept": 0.3498,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 3,
+      "expected_tokens": 2.15,
+      "speedup": 2.15,
+      "p_all_accept": 0.2068,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 4,
+      "expected_tokens": 2.27,
+      "speedup": 2.27,
+      "p_all_accept": 0.1223,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 5,
+      "expected_tokens": 2.34,
+      "speedup": 2.34,
+      "p_all_accept": 0.0723,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 8,
+      "expected_tokens": 2.43,
+      "speedup": 2.43,
+      "p_all_accept": 0.015,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 10,
+      "expected_tokens": 2.44,
+      "speedup": 2.44,
+      "p_all_accept": 0.0052,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 16,
+      "expected_tokens": 2.45,
+      "speedup": 2.45,
+      "p_all_accept": 0.0002,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 0.5,
+      "K": 32,
+      "expected_tokens": 2.45,
+      "speedup": 2.45,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.591
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 1,
+      "expected_tokens": 1.21,
+      "speedup": 1.21,
+      "p_all_accept": 0.212,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 2,
+      "expected_tokens": 1.26,
+      "speedup": 1.26,
+      "p_all_accept": 0.0449,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 3,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.0095,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 4,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.002,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 5,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.0004,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 8,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 10,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 16,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 1.0,
+      "K": 32,
+      "expected_tokens": 1.27,
+      "speedup": 1.27,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.212
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 1,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0336,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 2,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0011,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 3,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 4,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 5,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 8,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 10,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 16,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    },
+    {
+      "draft_noise": 2.0,
+      "K": 32,
+      "expected_tokens": 1.03,
+      "speedup": 1.03,
+      "p_all_accept": 0.0,
+      "per_pos_rate": 0.034
+    }
+  ],
+  "ngram_proposer": [
+    {
+      "n": 2,
+      "match_rate": 0.0,
+      "correct_rate": 0.0,
+      "expected_speedup": 1.0
+    },
+    {
+      "n": 3,
+      "match_rate": 0.0,
+      "correct_rate": 0.0,
+      "expected_speedup": 1.0
+    },
+    {
+      "n": 4,
+      "match_rate": 0.0,
+      "correct_rate": 0.0,
+      "expected_speedup": 1.0
+    },
+    {
+      "n": 5,
+      "match_rate": 0.0,
+      "correct_rate": 0.0,
+      "expected_speedup": 1.0
+    },
+    {
+      "n": 6,
+      "match_rate": 0.0,
+      "correct_rate": 0.0,
+      "expected_speedup": 1.0
+    }
+  ],
+  "distribution_sharpness": [
+    {
+      "sharpness": 0.1,
+      "entropy": 6.9,
+      "top1_prob": 0.001,
+      "accept_rate": 0.237,
+      "speedup": 1.31
+    },
+    {
+      "sharpness": 0.3,
+      "entropy": 6.86,
+      "top1_prob": 0.003,
+      "accept_rate": 0.297,
+      "speedup": 1.42
+    },
+    {
+      "sharpness": 0.5,
+      "entropy": 6.78,
+      "top1_prob": 0.005,
+      "accept_rate": 0.39,
+      "speedup": 1.63
+    },
+    {
+      "sharpness": 1.0,
+      "entropy": 6.41,
+      "top1_prob": 0.017,
+      "accept_rate": 0.583,
+      "speedup": 2.3
+    },
+    {
+      "sharpness": 2.0,
+      "entropy": 5.0,
+      "top1_prob": 0.109,
+      "accept_rate": 0.753,
+      "speedup": 3.31
+    },
+    {
+      "sharpness": 5.0,
+      "entropy": 1.71,
+      "top1_prob": 0.535,
+      "accept_rate": 0.88,
+      "speedup": 4.46
+    },
+    {
+      "sharpness": 10.0,
+      "entropy": 0.66,
+      "top1_prob": 0.774,
+      "accept_rate": 0.934,
+      "speedup": 5.1
+    }
+  ]
+}
