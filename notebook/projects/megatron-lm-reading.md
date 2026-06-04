@@ -431,6 +431,98 @@ assert torch.allclose(y_col, y_full)  # ✓
 
 ---
 
+## Data Parallelism (DP) & 分布式优化器
+
+### Megatron-LM 优化器架构
+
+```
+MegatronOptimizer (abstract base)
+  ├── MixedPrecisionOptimizer
+  │     ├── Float16Optimizer (FP16/BF16)
+  │     └── DistributedOptimizer (ZeRO-DP)
+  └── TorchFullyShardedDataParallel (FSDP2 集成)
+```
+
+### DistributedOptimizer (ZeRO-DP 实现)
+
+```python
+# 核心思想: 将优化器状态分片到各 DP rank
+# 每个 rank 只存储 1/N 的参数、梯度、优化器状态
+
+class DistributedOptimizer:
+    """
+    分片策略:
+    1. dp_zero_gather_scatter: 朴素 gather/scatter
+    2. fully_reshardable: 规范化状态表示
+    3. dp_reshardable: 基于桶的分片
+    4. fully_sharded_model_space: 按参数分片
+    """
+```
+
+### 混合精度训练流程
+
+```
+1. 前向传播: FP16/BF16 autocast
+2. 损失计算: FP32
+3. 反向传播: FP16 梯度 → 累加到 FP32 main_grad
+4. 梯度同步: AllReduce / ReduceScatter
+5. 梯度裁剪: FP32 clip_grad_norm
+6. 优化器更新: FP32 参数更新 → 复制回 FP16 模型
+```
+
+### 关键内存管理
+
+```python
+# _ParamAndGradBuffer: 管理连续参数和梯度缓冲区
+# - 将参数分组为桶(buckets)以提高通信效率
+# - 64 字节对齐优化 GPU 内存访问
+# - 支持 FP8/FP4 量化参数
+```
+
+## Gradient Accumulation Fusion
+
+### 自定义 autograd 函数
+
+```python
+class LinearWithGradAccumulationAndAsyncCommunication(torch.autograd.Function):
+    """
+    关键优化: 将梯度计算和累加融合为一个 CUDA kernel
+
+    标准:
+      grad = input.T @ grad_output  # 计算梯度
+      main_grad += grad             # 累加到 main_grad
+
+    融合:
+      fused_wgrad_gemm_accum_fp32(input, grad_output, main_grad)
+      # 一个 kernel 完成计算+累加, 省去一次内存读写
+    """
+```
+
+### 梯度延迟 (wgrad_deferral_limit)
+
+```python
+# 允许延迟权重梯度计算到多个 microbatch 之后
+# 减少大嵌入层的内存带宽使用
+
+wgrad_deferral_limit = N  # 延迟 N 个 microbatch
+grad_output_buffer = []   # 缓存梯度输出
+embedding_activation_buffer = []  # 缓存输入激活
+```
+
+## 与 PyTorch FSDP2 的集成
+
+```python
+class TorchFullyShardedDataParallel:
+    """
+    使用 PyTorch FSDP2 API (需要 PyTorch >= 2.4.0)
+    - 支持混合精度和 FP8 张量
+    - Just-in-time 参数获取
+    - 自定义属性保留 (FP8 transpose cache)
+    """
+```
+
+---
+
 ## 参考资料
 
 - [Megatron-LM Paper (2020)](https://arxiv.org/abs/1909.08053)
