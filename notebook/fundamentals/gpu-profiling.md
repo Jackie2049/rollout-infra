@@ -238,6 +238,292 @@ Step 5: 验证优化效果
   → 总时间缩短
 ```
 
+## 7. NVTX 标注 — 让 Trace 更可读
+
+NVTX (NVIDIA Tools Extension) 允许在代码中标记区域, 在 Nsight Systems 时间线中显示。
+
+```python
+import torch
+from torch.cuda.nvtx import range_push, range_pop, range_start, range_end
+
+# 方式 1: Push/Pop (嵌套)
+range_push("attention_layer_0")
+# ... attention 计算 ...
+range_pop()
+
+# 方式 2: Start/End (非嵌套)
+handle = range_start("mlp_layer_0")
+# ... MLP 计算 ...
+range_end(handle)
+
+# 方式 3: 装饰器
+def nvtx_range(name):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            range_push(name)
+            result = func(*args, **kwargs)
+            range_pop()
+            return result
+        return wrapper
+    return decorator
+
+@nvtx_range("forward_pass")
+def forward(x):
+    return model(x)
+
+# 方式 4: 上下文管理器
+from contextlib import contextmanager
+
+@contextmanager
+def nvtx(name):
+    range_push(name)
+    try:
+        yield
+    finally:
+        range_pop()
+
+# 使用
+with nvtx("prefill_phase"):
+    model.prefill(tokens)
+```
+
+## 8. vLLM Profiling 实战
+
+### 8.1 使用 Nsight Systems 分析 vLLM
+
+```bash
+# Profile vLLM 推理
+nsys profile \
+  -o vllm_trace \
+  -t cuda,nvtx,osrt,nw \
+  -s none \
+  --force-overwrite=true \
+  --duration=30 \
+  python -c "
+from vllm import LLM, SamplingParams
+
+llm = LLM(model='meta-llama/Llama-3.1-8B', enforce_eager=True)
+params = SamplingParams(max_tokens=256)
+
+# Warmup
+for i in range(3):
+    llm.generate(['Hello'] * 8, params)
+
+# Profile 这部分
+import torch.cuda as cuda
+cuda.profiler.start()
+for i in range(10):
+    llm.generate(['Explain quantum computing'] * 16, params)
+cuda.profiler.stop()
+"
+```
+
+### 8.2 vLLM 内置 NVTX 标注
+
+vLLM 源码中已经包含 NVTX 标注, 关键区域:
+
+```
+Timeline 上的标注:
+  ┌─ ModelRunner.execute_model ─────────────────────────────┐
+  │  ┌─ prepare_inputs ─┐  ┌─ forward ────────────────┐     │
+  │  │  prepare ATTN     │  │  Layer 0                 │     │
+  │  │  metadata         │  │  ├── Attention           │     │
+  │  │                   │  │  └── MLP                 │     │
+  │  │                   │  │  Layer 1                 │     │
+  │  │                   │  │  ├── Attention           │     │
+  │  │                   │  │  └── MLP                 │     │
+  │  │                   │  │  ...                     │     │
+  │  │                   │  │  Layer N                 │     │
+  │  │                   │  │  └── Sampling            │     │
+  │  └───────────────────┘  └─────────────────────────┘     │
+  └──────────────────────────────────────────────────────────┘
+
+GPU Stream:
+  Stream 0 (compute): [Kernel][Kernel][Kernel]...[Sampling]
+  Stream 1 (copy):         [D2H async]    [D2H async]
+                          ↑ copy_stream   ↑ copy_stream
+```
+
+### 8.3 vLLM 关键性能指标
+
+```python
+# 使用 vLLM 内置 metrics
+from vllm import LLM
+
+# 开启 Prometheus metrics
+llm = LLM(model="...", enable_prefix_caching=True)
+
+# 通过 /metrics 端点获取:
+# - vllm:num_requests_running  (并发数)
+# - vllm:gpu_cache_usage_perc  (KV Cache 使用率)
+# - vllm:e2e_request_latency   (端到端延迟)
+# - vllm:time_to_first_token   (TTFT)
+# - vllm:time_per_output_token  (TPOT)
+```
+
+### 8.4 常见 vLLM 性能瓶颈
+
+```
+症状 1: GPU-Util < 50%
+  原因: 请求不足 / CPU 调度瓶颈
+  定位: nsys 看 CPU 线程是否有阻塞
+  解决: 增加并发请求 / 检查 tokenizer 预处理
+
+症状 2: KV Cache 使用率 > 90%
+  原因: GPU 内存不足, 频繁抢占
+  定位: vllm:num_preemptions_total 持续增长
+  解决: 减少 max_model_len / 增加 gpu_memory_utilization
+
+症状 3: TTFT 高但 TPOT 正常
+  原因: Prefill 瓶颈 (长 prompt)
+  定位: nsys 看 prefill kernel 时间
+  解决: Chunked prefill / 增加前缀缓存
+
+症状 4: TPOT 高但 GPU-Util 正常
+  原因: KV Cache 大导致 memory-bound 加重
+  定位: nsys 看 attention kernel 时间占比
+  解决: 减少 batch size / 使用 FP8 KV cache
+
+症状 5: 请求排队 > 50
+  原因: 吞吐量不足
+  定位: vllm:num_requests_waiting 高
+  解决: 增加 replicas / 减小 max_model_len
+```
+
+## 9. 分布式训练 Profiling
+
+### 9.1 NCCL 通信分析
+
+```bash
+# Profile NCCL 通信
+nsys profile \
+  -t cuda,nvtx,nccl \
+  -s none \
+  torchrun --nproc_per_node=4 train.py
+
+# NCCL 环境变量 (启用详细日志)
+export NCCL_DEBUG=INFO
+export NCCL_DEBUG_SUBSYS=ALL
+
+# 查看 NCCL 拓扑
+nccl topo
+nvidia-smi topo -m  # 查看 GPU 拓扑
+
+# 常见拓扑:
+#   GPU0-GPU1: NVLink (600 GB/s)
+#   GPU0-GPU4: PCIe + NVSwitch (同节点)
+#   GPU0-GPU8: Ethernet/InfiniBand (跨节点)
+```
+
+### 9.2 通信与计算重叠验证
+
+```
+理想的时间线 (通信被计算隐藏):
+  GPU 0: [Compute]→[AllReduce ║ Compute]→[AllReduce ║ Compute]
+         ←────────── 通信被计算覆盖 ──────────→
+
+未重叠的时间线 (通信串行):
+  GPU 0: [Compute]→[AllReduce]→[Compute]→[AllReduce]
+                   ↑ GPU 空闲等待 ↑
+
+检查方法:
+  1. nsys 时间线中搜索 "nccl" kernel
+  2. 检查 nccl kernel 是否与 gemm/attention kernel 时间重叠
+  3. 如果不重叠, 检查是否启用了 overlap (e.g., ZeRO overlap)
+```
+
+### 9.3 ZeRO Stage 分析
+
+```python
+# Profiling ZeRO 各阶段
+import torch.profiler as profiler
+
+with profiler.profile(
+    activities=[profiler.ProfilerActivity.CPU, profiler.ProfilerActivity.CUDA],
+    record_shapes=True,
+    profile_memory=True,
+) as prof:
+    # 一个训练步
+    optimizer.zero_grad()
+    loss = model(batch)
+    loss.backward()
+    optimizer.step()
+
+# 查看 AllReduce/ReduceScatter 时间
+print(prof.key_averages().table(
+    sort_by="cuda_time_total",
+    row_limit=30,
+    filter_name="nccl|all_reduce|reduce_scatter"
+))
+```
+
+## 10. Memory Profiling
+
+### 10.1 CUDA 内存分析
+
+```python
+import torch
+
+# PyTorch 内存统计
+print(f"Allocated: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+print(f"Reserved:  {torch.cuda.memory_reserved() / 1e9:.2f} GB")
+print(f"Max allocated: {torch.cuda.max_memory_allocated() / 1e9:.2f} GB")
+
+# 内存快照 (详细分析)
+torch.cuda.memory._record_memory_history()
+# ... 运行代码 ...
+snapshot = torch.cuda.memory._snapshot()
+torch.cuda.memory._save_memory_snapshot("snapshot.pickle")
+
+# 用可视化工具打开
+# python -m torch.cuda.memory._snapshot_viz snapshot.pickle
+```
+
+### 10.2 Nsight Systems 内存追踪
+
+```bash
+# 跟踪内存分配
+nsys profile \
+  -t cuda,nvtx,osrt \
+  --cuda-memory-usage=true \
+  -o mem_trace \
+  python train.py
+
+# 在 Nsight Systems GUI 中:
+# View → CUDA Memory → 查看分配/释放事件
+# 可以看到:
+#   - 每次分配的大小和地址
+#   - 峰值内存使用
+#   - 内存碎片 (分配/释放的间隙)
+```
+
+## 11. 常用 Profile 命令速查
+
+```bash
+# === 快速检查 ===
+nvidia-smi                                    # GPU 状态
+nvidia-smi dmon -s pucvmet -i 0 -d 1         # 持续监控
+
+# === Nsight Systems ===
+nsys profile -t cuda,nvtx -o trace python app.py       # 基本
+nsys profile -t cuda,nvtx,nccl -o trace torchrun ...    # 含 NCCL
+nsys profile --duration=10 -o trace python app.py       # 限时
+nsys profile -c cudaProfilerApi -o trace python app.py  # 手动控制
+nsys stats trace.nsys-rep                               # 文本报告
+
+# === Nsight Compute ===
+ncu --set full -o profile python app.py                 # 完整分析
+ncu --set roofline -o profile python app.py             # Roofline
+ncu --kernel-name "regex:.*cutlass.*" -o profile ...    # 过滤 kernel
+ncu --launch-skip 100 --launch-count 10 -o profile ...  # 跳过+限制
+
+# === PyTorch Profiler ===
+# 见第 4 节
+
+# === 内存分析 ===
+torch.cuda.memory._snapshot()                           # PyTorch 内存快照
+```
+
 ## 参考
 
 - [NVIDIA Nsight Systems Documentation](https://docs.nvidia.com/nsight-systems/)
