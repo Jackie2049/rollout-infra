@@ -143,7 +143,7 @@ def estimate_max_concurrent(model_name, gpu="rtx4090", precision="fp16", seq_len
     kv_budget_gb = gpu_p["vram_gb"] * kv_fraction - model_gb
 
     if kv_budget_gb <= 0:
-        return {"max_concurrent": 0, "error": "Model doesn't fit in VRAM"}
+        return {"max_concurrent": 0, "model_gb": model_gb, "kv_budget_gb": 0, "kv_per_request_mb": 0, "error": "Model doesn't fit in VRAM"}
 
     kv = estimate_kv_cache(model_name, seq_len, 1, precision)
     max_concurrent = int(kv_budget_gb * 1e9 / (kv["kv_per_token_bytes"] * seq_len))
