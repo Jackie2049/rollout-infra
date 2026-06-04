@@ -296,7 +296,106 @@ kv_group_num = 8 (Llama-70B):
   - 这是 GQA 在推理时的核心优势
 ```
 
-## 6. 关键洞察
+## 6. MoE Fused Kernel
+
+**文件**: `vllm/model_executor/layers/fused_moe/fused_moe.py` (~1740 行)
+
+### 6.1 MoE 推理核心流程
+
+```
+输入: hidden_states [num_tokens, hidden_dim]
+  ↓
+Router → topk_ids [num_tokens, top_k], topk_weights [num_tokens, top_k]
+  ↓
+moe_align_block_size → sorted_token_ids, expert_ids, num_tokens_post_padded
+  ↓
+fused_moe_kernel → 对每个 expert 做 GEMM
+  ↓
+加权求和 → output [num_tokens, hidden_dim]
+```
+
+### 6.2 Block Alignment (关键预处理)
+
+```python
+# moe_align_block_size: 将 token 按 expert 分组并对齐到 block_size
+# 目的: 让 GEMM 的 M 维度是 block_size 的整数倍
+
+# 例: topk_ids = [[2,3,4], [1,2,4], [1,3,4], [1,2,3]], top_k=3, block_size=4
+# 12 个 token-expert 对, 4 个 expert, 每个 expert 3 个 token
+# 填充: 每个 expert 补 1 个 padding token → 每个 expert 4 tokens (block_size)
+
+# 排序后:
+#   Expert 1: [token_3, token_6, token_9, PAD]  ← 4 tokens
+#   Expert 2: [token_0, token_4, token_10, PAD]
+#   Expert 3: [token_1, token_7, token_11, PAD]
+#   Expert 4: [token_2, token_5, token_8, PAD]
+
+# 输出:
+#   sorted_token_ids: [3,6,9,12, 0,4,10,12, 1,7,11,12, 2,5,8,12]
+#   expert_ids: [1, 2, 3, 4]  ← 每个 block 对应的 expert
+#   num_tokens_post_padded: 16
+```
+
+### 6.3 Fused MoE GEMM Kernel
+
+```python
+@triton.jit
+def fused_moe_kernel(...):
+    # Grid: 按 2D tile 分配
+    # pid_m = program_id(0)  ← M 维度 (token 块)
+    # pid_n = program_id(1)  ← N 维度 (输出特征块)
+
+    # 1. 确定当前 block 处理的 expert
+    expert_id = load(expert_ids + pid_m // BLOCK_SIZE_M)
+    if expert_id == -1:
+        return  # Padding expert, 跳过
+
+    # 2. 加载该 expert 的权重
+    b_ptr += expert_id * stride_be  # 跳到对应 expert 的权重
+
+    # 3. 分块 GEMM: C[M,N] = A[M,K] × B[K,N]
+    for k in range(0, K, BLOCK_SIZE_K):
+        a = load(A + ...)  # 加载输入 tile
+        b = load(B + ...)  # 加载权重 tile
+        acc += dot(a, b)   # Tensor Core 矩阵乘
+
+    # 4. 加权输出 (MUL_ROUTED_WEIGHT)
+    if MUL_ROUTED_WEIGHT:
+        weight = load(topk_weights + ...)
+        acc = acc * weight
+
+    # 5. 存储结果
+    store(C + ..., acc)
+```
+
+### 6.4 Split-K 并行
+
+```
+类似 decode attention 的 Split-KV:
+  将 K 维度分成 SPLIT_K 份, 每个 program 处理一份
+  最后通过 atomic_add 合并结果
+
+优势: 增加 GPU 并行度 (特别是 M 较小时)
+  M=4 (每个 expert 只有 4 个 token): 单 program 利用率低
+  SPLIT_K=4: 4 个 program 并行, 利用率提升
+```
+
+### 6.5 性能特点
+
+```
+MoE GEMM 的特殊性:
+  - 每个 expert 的 token 数不均匀 (load imbalance)
+  - M 维度通常很小 (4-64), kernel 难以饱和 GPU
+  - block_size padding 损失: 最多 block_size-1 个 padding token
+
+优化手段:
+  - EP (Expert Parallelism): 将 expert 分配到不同 GPU
+  - Block alignment: 确保每个 expert 的 token 数是 block_size 倍数
+  - Split-K: 增加 K 维度并行
+  - Per-token quantization: 减少权重读取量
+```
+
+## 7. 关键洞察
 
 1. **两阶段设计**: Split-KV 并行 + Reduce 合并, 解决 decode Q=1 的并行度不足
 2. **在线 Softmax**: 避免 materialize 完整注意力矩阵, O(1) 额外内存
@@ -306,6 +405,9 @@ kv_group_num = 8 (Llama-70B):
 6. **FP8 即时反量化**: 在 kernel 内完成 FP8→FP16, 避免额外 kernel launch
 7. **Head-Major 布局**: [Block, Head, Dim, Slot] 对 decode 逐 head 加载更友好
 8. **软件流水线**: num_stages=2 重叠 load 和 compute, 隐藏内存延迟
+9. **MoE Block Alignment**: token 按 expert 分组后 padding 到 block_size, 确保高效 GEMM
+10. **Split-K**: 通用技术 (Decode + MoE), 增加 K 维度并行以饱和 GPU
+11. **Padding 损失**: MoE 每个 expert 最多浪费 block_size-1 个 padding token
 
 ## 参考资料
 
