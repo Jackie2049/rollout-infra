@@ -177,6 +177,7 @@
 | [dp_serving_simulator.py](tools/dp_serving_simulator.py) | Data Parallel Serving 模拟器（DP vs TP 扩展、MoE EP、Wave 协调、DBO、生产选型） | 已验证 |
 | [engine_core_simulator.py](tools/engine_core_simulator.py) | Engine Core 模拟器（step 循环、Batch Queue、ZMQ 通信、KV auto-fit、GPU 利用率） | 已验证 |
 | [triton_practice.py](tools/triton_practice.py) | Triton Kernel 实战练习（Vector Add、Fused OP、Softmax、Tiled GEMM、Flash Attention） | 已验证 |
+| [rlhf_training_simulator.py](tools/rlhf_training_simulator.py) | RLHF/GRPO 训练模拟器（PPO vs GRPO、KL 惩罚、Prefix Caching、分布式扩展） | 已验证 |
 
 ### 日志记录规范
 
@@ -219,8 +220,8 @@
 | 基础知识笔记 | 45 篇 |
 | 项目源码阅读 | 33 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 58 个 |
-| **总计** | **138 项** |
+| 实用工具脚本 | 59 个 |
+| **总计** | **139 项** |
 
 ## GitHub
 
