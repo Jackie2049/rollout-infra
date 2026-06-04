@@ -1,0 +1,222 @@
+{
+  "timing_precision": [
+    {
+      "op": "empty kernel",
+      "event_ms": 0.0033,
+      "wall_ms": 0.0033,
+      "ratio": 1.0
+    },
+    {
+      "op": "small GEMM (64x64)",
+      "event_ms": 0.0307,
+      "wall_ms": 0.0307,
+      "ratio": 1.0
+    },
+    {
+      "op": "medium GEMM (512x512)",
+      "event_ms": 0.1391,
+      "wall_ms": 0.1394,
+      "ratio": 1.0
+    },
+    {
+      "op": "large GEMM (2048x2048)",
+      "event_ms": 7.0035,
+      "wall_ms": 7.1357,
+      "ratio": 1.02
+    },
+    {
+      "op": "memcpy 1MB",
+      "event_ms": 0.0204,
+      "wall_ms": 0.02,
+      "ratio": 0.98
+    },
+    {
+      "op": "memcpy 64MB",
+      "event_ms": 1.3676,
+      "wall_ms": 1.377,
+      "ratio": 1.01
+    },
+    {
+      "op": "elementwise 1M",
+      "event_ms": 0.0905,
+      "wall_ms": 0.0902,
+      "ratio": 1.0
+    }
+  ],
+  "multi_stream_gemm": [
+    {
+      "n_ops": 1,
+      "single_ms": 0.77,
+      "multi_ms": 0.15,
+      "speedup": 5.19,
+      "efficiency_pct": 518.9
+    },
+    {
+      "n_ops": 2,
+      "single_ms": 1.58,
+      "multi_ms": 0.18,
+      "speedup": 8.99,
+      "efficiency_pct": 449.7
+    },
+    {
+      "n_ops": 4,
+      "single_ms": 3.48,
+      "multi_ms": 0.33,
+      "speedup": 10.48,
+      "efficiency_pct": 262.0
+    },
+    {
+      "n_ops": 8,
+      "single_ms": 7.12,
+      "multi_ms": 6.32,
+      "speedup": 1.13,
+      "efficiency_pct": 14.1
+    }
+  ],
+  "overlap_sim": [
+    {
+      "copy_mb": 1,
+      "gemm_n": 512,
+      "compute_ms": 0.15,
+      "copy_ms": 0.01,
+      "overlap_ms": 0.19,
+      "overlap_pct": 0
+    },
+    {
+      "copy_mb": 1,
+      "gemm_n": 1024,
+      "compute_ms": 0.85,
+      "copy_ms": 0.02,
+      "overlap_ms": 0.22,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 1,
+      "gemm_n": 2048,
+      "compute_ms": 6.56,
+      "copy_ms": 0.01,
+      "overlap_ms": 0.36,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 4,
+      "gemm_n": 512,
+      "compute_ms": 0.13,
+      "copy_ms": 0.06,
+      "overlap_ms": 0.27,
+      "overlap_pct": 0
+    },
+    {
+      "copy_mb": 4,
+      "gemm_n": 1024,
+      "compute_ms": 0.83,
+      "copy_ms": 0.05,
+      "overlap_ms": 0.24,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 4,
+      "gemm_n": 2048,
+      "compute_ms": 6.58,
+      "copy_ms": 0.06,
+      "overlap_ms": 0.33,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 16,
+      "gemm_n": 512,
+      "compute_ms": 0.12,
+      "copy_ms": 0.21,
+      "overlap_ms": 0.26,
+      "overlap_pct": 34.9
+    },
+    {
+      "copy_mb": 16,
+      "gemm_n": 1024,
+      "compute_ms": 0.79,
+      "copy_ms": 0.25,
+      "overlap_ms": 0.14,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 16,
+      "gemm_n": 2048,
+      "compute_ms": 6.58,
+      "copy_ms": 0.21,
+      "overlap_ms": 0.52,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 64,
+      "gemm_n": 512,
+      "compute_ms": 0.12,
+      "copy_ms": 0.82,
+      "overlap_ms": 0.16,
+      "overlap_pct": 94.7
+    },
+    {
+      "copy_mb": 64,
+      "gemm_n": 1024,
+      "compute_ms": 0.78,
+      "copy_ms": 1.12,
+      "overlap_ms": 0.11,
+      "overlap_pct": 100
+    },
+    {
+      "copy_mb": 64,
+      "gemm_n": 2048,
+      "compute_ms": 6.55,
+      "copy_ms": 9.67,
+      "overlap_ms": 38.4,
+      "overlap_pct": 0
+    }
+  ],
+  "cuda_graph": [
+    {
+      "model": "2-layer MLP 512",
+      "normal_ms": 0.0776,
+      "graph_ms": 0.0204,
+      "speedup": 3.81,
+      "launch_saved_ms": 0.0573
+    },
+    {
+      "n_layers": 2,
+      "normal_ms": 0.095,
+      "graph_ms": 0.0176,
+      "speedup": 5.4,
+      "launch_per_layer_ms": 0.0387
+    },
+    {
+      "n_layers": 4,
+      "normal_ms": 0.1744,
+      "graph_ms": 0.0379,
+      "speedup": 4.6,
+      "launch_per_layer_ms": 0.0341
+    },
+    {
+      "n_layers": 8,
+      "normal_ms": 0.3388,
+      "graph_ms": 0.0707,
+      "speedup": 4.79,
+      "launch_per_layer_ms": 0.0335
+    },
+    {
+      "n_layers": 16,
+      "normal_ms": 0.748,
+      "graph_ms": 0.1384,
+      "speedup": 5.4,
+      "launch_per_layer_ms": 0.0381
+    }
+  ],
+  "stream_sync": [
+    {
+      "n_ops": 4,
+      "gemm_size": 2048,
+      "launch_all_ms": 0.59,
+      "sync_each_ms": 27.05,
+      "event_wait_ms": 26.86,
+      "sync_each_ratio": 45.57,
+      "event_wait_ratio": 45.26
+    }
+  ]
+}
