@@ -1,0 +1,78 @@
+{
+  "learned": {
+    "params": 887040,
+    "train_loss": 1.0952,
+    "test_loss": 1.1029,
+    "extrapolation": {
+      "64": {
+        "loss": 1.8758,
+        "ppl": 6.53
+      },
+      "128": {
+        "loss": 2.9816,
+        "ppl": 19.72
+      },
+      "256": {
+        "loss": 4.0108,
+        "ppl": 55.19
+      }
+    }
+  },
+  "sinusoidal": {
+    "params": 821504,
+    "train_loss": 0.9225,
+    "test_loss": 0.9224,
+    "extrapolation": {
+      "64": {
+        "loss": 1.284,
+        "ppl": 3.61
+      },
+      "128": {
+        "loss": 3.0688,
+        "ppl": 21.52
+      },
+      "256": {
+        "loss": 4.1775,
+        "ppl": 65.21
+      }
+    }
+  },
+  "rope": {
+    "params": 821504,
+    "train_loss": 0.4883,
+    "test_loss": 0.4856,
+    "extrapolation": {
+      "64": {
+        "loss": 1.1849,
+        "ppl": 3.27
+      },
+      "128": {
+        "loss": 2.882,
+        "ppl": 17.85
+      },
+      "256": {
+        "loss": 3.9245,
+        "ppl": 50.63
+      }
+    }
+  },
+  "none": {
+    "params": 821504,
+    "train_loss": 0.6011,
+    "test_loss": 0.5998,
+    "extrapolation": {
+      "64": {
+        "loss": 1.2892,
+        "ppl": 3.63
+      },
+      "128": {
+        "loss": 3.0754,
+        "ppl": 21.66
+      },
+      "256": {
+        "loss": 3.5727,
+        "ppl": 35.61
+      }
+    }
+  }
+}
