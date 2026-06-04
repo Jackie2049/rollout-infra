@@ -1,0 +1,306 @@
+{
+  "fcfs_throughput": [
+    {
+      "prompt_len": 128,
+      "output_len": 64,
+      "time_steps": 275,
+      "throughput": 23.7,
+      "preemptions": 0,
+      "max_queue": 69
+    },
+    {
+      "prompt_len": 128,
+      "output_len": 128,
+      "time_steps": 512,
+      "throughput": 24.9,
+      "preemptions": 0,
+      "max_queue": 69
+    },
+    {
+      "prompt_len": 128,
+      "output_len": 256,
+      "time_steps": 999,
+      "throughput": 25.4,
+      "preemptions": 0,
+      "max_queue": 67
+    },
+    {
+      "prompt_len": 256,
+      "output_len": 64,
+      "time_steps": 451,
+      "throughput": 13.6,
+      "preemptions": 0,
+      "max_queue": 83
+    },
+    {
+      "prompt_len": 256,
+      "output_len": 128,
+      "time_steps": 854,
+      "throughput": 14.2,
+      "preemptions": 0,
+      "max_queue": 82
+    },
+    {
+      "prompt_len": 256,
+      "output_len": 256,
+      "time_steps": 1811,
+      "throughput": 13.5,
+      "preemptions": 0,
+      "max_queue": 86
+    },
+    {
+      "prompt_len": 512,
+      "output_len": 64,
+      "time_steps": 927,
+      "throughput": 6.7,
+      "preemptions": 0,
+      "max_queue": 93
+    },
+    {
+      "prompt_len": 512,
+      "output_len": 128,
+      "time_steps": 1734,
+      "throughput": 7.6,
+      "preemptions": 0,
+      "max_queue": 92
+    },
+    {
+      "prompt_len": 512,
+      "output_len": 256,
+      "time_steps": 3420,
+      "throughput": 7.7,
+      "preemptions": 0,
+      "max_queue": 89
+    }
+  ],
+  "block_capacity": [
+    {
+      "gpu": "A16-15GB",
+      "total_blocks": 2500,
+      "seq_len": 512,
+      "blocks_per_req": 32,
+      "max_concurrent": 78
+    },
+    {
+      "gpu": "A16-15GB",
+      "total_blocks": 2500,
+      "seq_len": 1024,
+      "blocks_per_req": 64,
+      "max_concurrent": 39
+    },
+    {
+      "gpu": "A16-15GB",
+      "total_blocks": 2500,
+      "seq_len": 2048,
+      "blocks_per_req": 128,
+      "max_concurrent": 19
+    },
+    {
+      "gpu": "A16-15GB",
+      "total_blocks": 2500,
+      "seq_len": 4096,
+      "blocks_per_req": 256,
+      "max_concurrent": 9
+    },
+    {
+      "gpu": "A100-40GB",
+      "total_blocks": 20000,
+      "seq_len": 512,
+      "blocks_per_req": 32,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "A100-40GB",
+      "total_blocks": 20000,
+      "seq_len": 1024,
+      "blocks_per_req": 64,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "A100-40GB",
+      "total_blocks": 20000,
+      "seq_len": 2048,
+      "blocks_per_req": 128,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "A100-40GB",
+      "total_blocks": 20000,
+      "seq_len": 4096,
+      "blocks_per_req": 256,
+      "max_concurrent": 78
+    },
+    {
+      "gpu": "A100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 512,
+      "blocks_per_req": 32,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "A100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 1024,
+      "blocks_per_req": 64,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "A100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 2048,
+      "blocks_per_req": 128,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "A100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 4096,
+      "blocks_per_req": 256,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "H100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 512,
+      "blocks_per_req": 32,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "H100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 1024,
+      "blocks_per_req": 64,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "H100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 2048,
+      "blocks_per_req": 128,
+      "max_concurrent": 128
+    },
+    {
+      "gpu": "H100-80GB",
+      "total_blocks": 45000,
+      "seq_len": 4096,
+      "blocks_per_req": 256,
+      "max_concurrent": 128
+    }
+  ],
+  "decode_batch_scale": [
+    {
+      "batch": 1,
+      "ms": 0.103,
+      "toks_per_s": 9669.0,
+      "mem_mb": 0.8
+    },
+    {
+      "batch": 2,
+      "ms": 0.203,
+      "toks_per_s": 9853.0,
+      "mem_mb": 1.6
+    },
+    {
+      "batch": 4,
+      "ms": 0.104,
+      "toks_per_s": 38435.0,
+      "mem_mb": 3.2
+    },
+    {
+      "batch": 8,
+      "ms": 0.102,
+      "toks_per_s": 78177.0,
+      "mem_mb": 6.3
+    },
+    {
+      "batch": 16,
+      "ms": 0.103,
+      "toks_per_s": 155061.0,
+      "mem_mb": 12.6
+    },
+    {
+      "batch": 32,
+      "ms": 0.127,
+      "toks_per_s": 251138.0,
+      "mem_mb": 25.2
+    },
+    {
+      "batch": 64,
+      "ms": 0.227,
+      "toks_per_s": 281574.0,
+      "mem_mb": 50.4
+    },
+    {
+      "batch": 128,
+      "ms": 0.426,
+      "toks_per_s": 300746.0,
+      "mem_mb": 100.9
+    }
+  ],
+  "preemption_overhead": [
+    {
+      "seq_len": 128,
+      "recompute_ms": 0.048,
+      "swap_out_ms": 0.04,
+      "swap_in_ms": 0.04,
+      "total_swap_ms": 0.08,
+      "winner": "Recompute"
+    },
+    {
+      "seq_len": 256,
+      "recompute_ms": 0.039,
+      "swap_out_ms": 0.067,
+      "swap_in_ms": 0.067,
+      "total_swap_ms": 0.135,
+      "winner": "Recompute"
+    },
+    {
+      "seq_len": 512,
+      "recompute_ms": 0.039,
+      "swap_out_ms": 0.121,
+      "swap_in_ms": 0.122,
+      "total_swap_ms": 0.243,
+      "winner": "Recompute"
+    },
+    {
+      "seq_len": 1024,
+      "recompute_ms": 0.046,
+      "swap_out_ms": 0.234,
+      "swap_in_ms": 0.235,
+      "total_swap_ms": 0.469,
+      "winner": "Recompute"
+    }
+  ],
+  "slo_tracking": [
+    {
+      "load": "Low",
+      "arrival_rate": 2,
+      "ttft_p50": 0,
+      "ttft_p99": 0,
+      "tpot_p99": 0.01,
+      "e2e_p99": 2.43,
+      "ttft_violations_pct": 0,
+      "tpot_violations_pct": 0.0
+    },
+    {
+      "load": "Medium",
+      "arrival_rate": 5,
+      "ttft_p50": 0,
+      "ttft_p99": 0,
+      "tpot_p99": 0.018,
+      "e2e_p99": 2.634,
+      "ttft_violations_pct": 0,
+      "tpot_violations_pct": 0.0
+    },
+    {
+      "load": "High",
+      "arrival_rate": 15,
+      "ttft_p50": 0,
+      "ttft_p99": 0,
+      "tpot_p99": 0.825,
+      "e2e_p99": 19.694,
+      "ttft_violations_pct": 0,
+      "tpot_violations_pct": 43.5
+    }
+  ]
+}
