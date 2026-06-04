@@ -1,0 +1,170 @@
+{
+  "gemm": [
+    {
+      "size": 128,
+      "ms": 0.0107,
+      "tflops": 0.39
+    },
+    {
+      "size": 256,
+      "ms": 0.0099,
+      "tflops": 3.38
+    },
+    {
+      "size": 512,
+      "ms": 0.0359,
+      "tflops": 7.47
+    },
+    {
+      "size": 1024,
+      "ms": 0.1645,
+      "tflops": 13.06
+    },
+    {
+      "size": 2048,
+      "ms": 1.1379,
+      "tflops": 15.1
+    },
+    {
+      "size": 4096,
+      "ms": 9.6568,
+      "tflops": 14.23
+    }
+  ],
+  "memory_bw": [
+    {
+      "op": "sum (read)",
+      "bw_gbs": 171.9
+    },
+    {
+      "op": "zeros (write)",
+      "bw_gbs": 167.4
+    },
+    {
+      "op": "clone (R+W)",
+      "bw_gbs": 163.9
+    },
+    {
+      "op": "add (R+R+W)",
+      "bw_gbs": 168.4
+    }
+  ],
+  "attention": [
+    {
+      "type": "prefill",
+      "seq": 128,
+      "ms": 0.0227,
+      "tflops": 1.48
+    },
+    {
+      "type": "prefill",
+      "seq": 256,
+      "ms": 0.0194,
+      "tflops": 6.93
+    },
+    {
+      "type": "prefill",
+      "seq": 512,
+      "ms": 0.0544,
+      "tflops": 9.88
+    },
+    {
+      "type": "prefill",
+      "seq": 1024,
+      "ms": 0.1696,
+      "tflops": 12.67
+    },
+    {
+      "type": "prefill",
+      "seq": 2048,
+      "ms": 0.607,
+      "tflops": 14.15
+    },
+    {
+      "type": "decode",
+      "kv_len": 128,
+      "ms": 0.0192,
+      "bw_gbs": 13.6
+    },
+    {
+      "type": "decode",
+      "kv_len": 256,
+      "ms": 0.0191,
+      "bw_gbs": 27.5
+    },
+    {
+      "type": "decode",
+      "kv_len": 512,
+      "ms": 0.0246,
+      "bw_gbs": 42.6
+    },
+    {
+      "type": "decode",
+      "kv_len": 1024,
+      "ms": 0.0248,
+      "bw_gbs": 84.7
+    },
+    {
+      "type": "decode",
+      "kv_len": 2048,
+      "ms": 0.0408,
+      "bw_gbs": 102.8
+    }
+  ],
+  "kernel_overhead": [
+    {
+      "overhead_us": 6.8
+    }
+  ],
+  "batch_decode": [
+    {
+      "batch": 1,
+      "ms": 0.025,
+      "throughput": 20466640.0,
+      "kv_bw": 41.9,
+      "efficiency": 24.7
+    },
+    {
+      "batch": 2,
+      "ms": 0.029,
+      "throughput": 35373186.0,
+      "kv_bw": 72.4,
+      "efficiency": 42.6
+    },
+    {
+      "batch": 4,
+      "ms": 0.053,
+      "throughput": 38343557.0,
+      "kv_bw": 78.5,
+      "efficiency": 46.2
+    },
+    {
+      "batch": 8,
+      "ms": 0.09,
+      "throughput": 45651677.0,
+      "kv_bw": 93.5,
+      "efficiency": 55.0
+    },
+    {
+      "batch": 16,
+      "ms": 0.163,
+      "throughput": 50368317.0,
+      "kv_bw": 103.2,
+      "efficiency": 60.7
+    },
+    {
+      "batch": 32,
+      "ms": 0.337,
+      "throughput": 48562843.0,
+      "kv_bw": 99.5,
+      "efficiency": 58.5
+    },
+    {
+      "batch": 64,
+      "ms": 0.703,
+      "throughput": 46606468.0,
+      "kv_bw": 95.5,
+      "efficiency": 56.1
+    }
+  ]
+}
