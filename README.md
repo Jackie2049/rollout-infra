@@ -179,6 +179,7 @@
 | [engine_core_simulator.py](tools/engine_core_simulator.py) | Engine Core 模拟器（step 循环、Batch Queue、ZMQ 通信、KV auto-fit、GPU 利用率） | 已验证 |
 | [triton_practice.py](tools/triton_practice.py) | Triton Kernel 实战练习（Vector Add、Fused OP、Softmax、Tiled GEMM、Flash Attention） | 已验证 |
 | [rlhf_training_simulator.py](tools/rlhf_training_simulator.py) | RLHF/GRPO 训练模拟器（PPO vs GRPO、KL 惩罚、Prefix Caching、分布式扩展） | 已验证 |
+| [distributed_training_comm_simulator.py](tools/distributed_training_comm_simulator.py) | 分布式训练通信模拟器（AllReduce、ZeRO、MoE A2A、1F1B overlap、生产配置） | 已验证 |
 
 ### 日志记录规范
 
@@ -221,8 +222,8 @@
 | 基础知识笔记 | 45 篇 |
 | 项目源码阅读 | 34 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 59 个 |
-| **总计** | **140 项** |
+| 实用工具脚本 | 60 个 |
+| **总计** | **141 项** |
 
 ## GitHub
 
