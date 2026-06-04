@@ -315,6 +315,8 @@ CudagraphDispatcher
 | LoRA Serving | `vllm-lora-serving-reading.md` | Punica Multi-LoRA, Triton kernel |
 | Multi-Modal | `vllm-multimodal-reading.md` | EncoderRunner, Hash Cache |
 | Structured Output | `vllm-structured-output-reading.md` | Bitmask FSM, 4种后端 |
+| Async Engine Frontend | `vllm-async-engine-frontend-reading.md` | 双进程 ZMQ, output_handler |
+| Engine Core Detail | `vllm-engine-core-reading.md` | step() 循环, busy loop, ZMQ IO |
 | 模型压缩 | — | 蒸馏/剪枝/量化/综合策略 |
 
 ## 14. 待探索模块
@@ -325,8 +327,8 @@ CudagraphDispatcher
 - [x] vLLM 日志和可观测性 (metrics/tracing)
 - [x] vLLM 数据并行 (Data Parallelism)
 - [x] Structured Output (JSON/Grammar/Regex Bitmask)
-- [ ] vLLM V1 Async Engine Frontend (AsyncLLM)
-- [ ] vLLM V1 Engine Core Detail (step loop, scheduling)
+- [x] vLLM V1 Async Engine Frontend (AsyncLLM)
+- [x] vLLM V1 Engine Core Detail (step loop, scheduling)
 - [ ] vLLM V1 Prompt Adapter (非 LoRA adapter)
 
 ## 参考资料
