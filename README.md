@@ -104,6 +104,7 @@
 - [vLLM LoRA Serving 源码阅读](notebook/projects/vllm-lora-serving-reading.md) — Punica Multi-LoRA、批量 LoRA kernel、MoE+LoRA、权重管理
 - [vLLM Multi-Modal Processing 源码阅读](notebook/projects/vllm-multimodal-reading.md) — MM 数据流、EncoderRunner、Hash-based Caching、Vision Encoder 集成
 - [vLLM Structured Output 源码阅读](notebook/projects/vllm-structured-output-reading.md) — JSON/Grammar/Regex Bitmask 过滤、FSM 驱动、XGrammar 后端
+- [vLLM AsyncLLM Engine Frontend 源码阅读](notebook/projects/vllm-async-engine-frontend-reading.md) — 双进程架构、output_handler、InputProcessor/OutputProcessor、ZMQ 通信
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
@@ -213,10 +214,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 45 篇 |
-| 项目源码阅读 | 31 篇 |
+| 项目源码阅读 | 32 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 56 个 |
-| **总计** | **134 项** |
+| **总计** | **135 项** |
 
 ## GitHub
 

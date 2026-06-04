@@ -309,16 +309,25 @@ CudagraphDispatcher
 | Speculative Decoding | `vllm-spec-decode-reading.md` | 8+ proposer |
 | P/D Disaggregation | `vllm-pd-disaggregation-reading.md` | NIXL 等 |
 | CUDA Graph | `vllm-cuda-graph-reading.md` | 5 模式 |
-| Sampling Pipeline | (进行中) | Sampler |
+| Sampling Pipeline | `vllm-sampling-pipeline-reading.md` | 顺序管线, 3种Top-K/P实现 |
+| Data Parallelism | `vllm-data-parallel-reading.md` | MoE EP, Wave协调, DBO |
+| Observability | `vllm-observability-reading.md` | Stats/Logger/Prometheus 三层 |
+| LoRA Serving | `vllm-lora-serving-reading.md` | Punica Multi-LoRA, Triton kernel |
+| Multi-Modal | `vllm-multimodal-reading.md` | EncoderRunner, Hash Cache |
+| Structured Output | `vllm-structured-output-reading.md` | Bitmask FSM, 4种后端 |
+| 模型压缩 | — | 蒸馏/剪枝/量化/综合策略 |
 
 ## 14. 待探索模块
 
-- [ ] Sampling Pipeline (logits → penalties → sample → output)
-- [ ] vLLM V1 Multi-Modal 处理
-- [ ] vLLM V1 LoRA Serving
-- [ ] vLLM V1 Prompt Adapter
-- [ ] vLLM 日志和可观测性 (metrics/tracing)
-- [ ] vLLM 数据并行 (Data Parallelism)
+- [x] Sampling Pipeline (logits → penalties → sample → output)
+- [x] vLLM V1 Multi-Modal 处理
+- [x] vLLM V1 LoRA Serving
+- [x] vLLM 日志和可观测性 (metrics/tracing)
+- [x] vLLM 数据并行 (Data Parallelism)
+- [x] Structured Output (JSON/Grammar/Regex Bitmask)
+- [ ] vLLM V1 Async Engine Frontend (AsyncLLM)
+- [ ] vLLM V1 Engine Core Detail (step loop, scheduling)
+- [ ] vLLM V1 Prompt Adapter (非 LoRA adapter)
 
 ## 参考资料
 
