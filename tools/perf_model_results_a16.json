@@ -1,0 +1,218 @@
+{
+  "decode_model": [
+    {
+      "name": "Small (2L,256)",
+      "n_params": 4144520,
+      "predicted_ms": 0.049,
+      "actual_ms": 1.222,
+      "error_pct": 96.0
+    },
+    {
+      "name": "Med (4L,512)",
+      "n_params": 17734536,
+      "predicted_ms": 0.209,
+      "actual_ms": 2.399,
+      "error_pct": 91.0
+    },
+    {
+      "name": "Large (4L,768)",
+      "n_params": 36036488,
+      "predicted_ms": 0.424,
+      "actual_ms": 2.529,
+      "error_pct": 83.0
+    }
+  ],
+  "prefill_model": [
+    {
+      "seq": 32,
+      "predicted_ms": 84.895,
+      "actual_ms": 2.711,
+      "error_pct": 3031.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 64,
+      "predicted_ms": 170.349,
+      "actual_ms": 2.8,
+      "error_pct": 5984.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 128,
+      "predicted_ms": 342.935,
+      "actual_ms": 2.726,
+      "error_pct": 12481.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 256,
+      "predicted_ms": 694.817,
+      "actual_ms": 2.769,
+      "error_pct": 24994.0,
+      "bound": "compute"
+    },
+    {
+      "seq": 512,
+      "predicted_ms": 1425.426,
+      "actual_ms": 2.789,
+      "error_pct": 51000.0,
+      "bound": "compute"
+    }
+  ],
+  "tp_comm_model": [
+    {
+      "model": "LLaMA-7B",
+      "tp1_ms": 82.354,
+      "tp2_ms": 41.179,
+      "tp4_ms": 20.591,
+      "tp8_ms": 10.297,
+      "comm_pct_tp8": 0.0
+    },
+    {
+      "model": "LLaMA-13B",
+      "tp1_ms": 152.942,
+      "tp2_ms": 76.474,
+      "tp4_ms": 38.24,
+      "tp8_ms": 19.123,
+      "comm_pct_tp8": 0.0
+    },
+    {
+      "model": "LLaMA-70B",
+      "tp1_ms": 823.53,
+      "tp2_ms": 411.774,
+      "tp4_ms": 205.896,
+      "tp8_ms": 102.957,
+      "comm_pct_tp8": 0.0
+    }
+  ],
+  "spec_model": [
+    {
+      "model": "OPT-125M",
+      "draft": "n-gram",
+      "accept": 0.7,
+      "speedup": 2.94,
+      "effective": 2.06
+    },
+    {
+      "model": "LLaMA-7B",
+      "draft": "7B draft",
+      "accept": 0.8,
+      "speedup": 3.69,
+      "effective": 2.58
+    },
+    {
+      "model": "LLaMA-70B",
+      "draft": "7B draft",
+      "accept": 0.9,
+      "speedup": 4.69,
+      "effective": 3.28
+    }
+  ],
+  "cost_model": [
+    {
+      "model": "7B FP16",
+      "gpu": "A100 40GB",
+      "weight_gb": 14.0,
+      "throughput_kps": 775000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP16",
+      "gpu": "A100 80GB",
+      "weight_gb": 14.0,
+      "throughput_kps": 1019500000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP16",
+      "gpu": "H100 80GB",
+      "weight_gb": 14.0,
+      "throughput_kps": 1675000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP16",
+      "gpu": "H200 141GB",
+      "weight_gb": 14.0,
+      "throughput_kps": 2400000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP8",
+      "gpu": "A100 40GB",
+      "weight_gb": 7.0,
+      "throughput_kps": 1550000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP8",
+      "gpu": "A100 80GB",
+      "weight_gb": 7.0,
+      "throughput_kps": 2039000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP8",
+      "gpu": "H100 80GB",
+      "weight_gb": 7.0,
+      "throughput_kps": 3350000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "7B FP8",
+      "gpu": "H200 141GB",
+      "weight_gb": 7.0,
+      "throughput_kps": 4800000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B FP8",
+      "gpu": "A100 80GB",
+      "weight_gb": 70.0,
+      "throughput_kps": 2039000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B FP8",
+      "gpu": "H100 80GB",
+      "weight_gb": 70.0,
+      "throughput_kps": 3350000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B FP8",
+      "gpu": "H200 141GB",
+      "weight_gb": 70.0,
+      "throughput_kps": 4800000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B INT4",
+      "gpu": "A100 40GB",
+      "weight_gb": 35.0,
+      "throughput_kps": 3100000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B INT4",
+      "gpu": "A100 80GB",
+      "weight_gb": 35.0,
+      "throughput_kps": 4078000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B INT4",
+      "gpu": "H100 80GB",
+      "weight_gb": 35.0,
+      "throughput_kps": 6700000000.0,
+      "cost_per_mtok": 0.0
+    },
+    {
+      "model": "70B INT4",
+      "gpu": "H200 141GB",
+      "weight_gb": 35.0,
+      "throughput_kps": 9600000000.0,
+      "cost_per_mtok": 0.0
+    }
+  ]
+}
