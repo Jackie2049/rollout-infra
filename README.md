@@ -93,6 +93,7 @@
 - [vLLM V1 Executor 源码阅读](notebook/projects/vllm-v1-executor-reading.md) — Executor→Worker→ModelRunner→AttentionBackend 完整执行路径、CUDA Graph、20+ Attention Backend
 - [vLLM MoE Serving 源码阅读](notebook/projects/vllm-moe-serving-reading.md) — 模块化 MoE kernel 架构、8+ All-to-All 后端、Router/Experts/Prepare-Finalize 分离
 - [verl 源码架构阅读](notebook/projects/verl-source-reading.md) — HybridFlow RL 训练框架、PPO/GRPO 循环、FSDP+混合推理引擎、Prefix Grouper
+- [verl RL Infra 架构源码阅读](notebook/projects/verl-rl-infra-reading.md) — SyncPPOTrainer、ActorRolloutRefWorker、GRPO/GAE、TransferQueue、vLLM Rollout
 - [vLLM 量化推理管线源码阅读](notebook/projects/vllm-quantization-pipeline-reading.md) — 量化方法注册表、Kernel 选择逻辑、离线/在线量化、QuantKey 系统
 - [vLLM 权重加载管线源码阅读](notebook/projects/vllm-weight-loading-reading.md) — safetensors 到 GPU 全流程、TP/PP/EP 分片、weight_loader 机制
 - [vLLM P/D 分离架构源码阅读](notebook/projects/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
@@ -218,10 +219,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 45 篇 |
-| 项目源码阅读 | 33 篇 |
+| 项目源码阅读 | 34 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 59 个 |
-| **总计** | **139 项** |
+| **总计** | **140 项** |
 
 ## GitHub
 
