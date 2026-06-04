@@ -1,0 +1,132 @@
+{
+  "memory_comparison": [
+    {
+      "name": "Small (4L, H=512)",
+      "n_params": 17735560,
+      "no_ckpt_mb": 236,
+      "ckpt_mb": 131,
+      "saving_pct": 45
+    },
+    {
+      "name": "Medium (8L, H=768)",
+      "n_params": 64389512,
+      "no_ckpt_mb": 547,
+      "ckpt_mb": 330,
+      "saving_pct": 40
+    },
+    {
+      "name": "Large (12L, H=1024)",
+      "n_params": 161401736,
+      "no_ckpt_mb": 1045,
+      "ckpt_mb": 726,
+      "saving_pct": 30
+    }
+  ],
+  "compute_overhead": [
+    {
+      "no_ckpt_ms": 325.7,
+      "ckpt_ms": 414.5,
+      "overhead_pct": 27.0
+    }
+  ],
+  "selective_checkpoint": [
+    {
+      "strategy": "None",
+      "n_ckpt_layers": 0,
+      "mem_mb": 786,
+      "time_ms": 324.7,
+      "overhead_pct": 0
+    },
+    {
+      "strategy": "Every layer",
+      "n_ckpt_layers": 12,
+      "mem_mb": 443,
+      "time_ms": 416.4,
+      "overhead_pct": 28
+    },
+    {
+      "strategy": "Every 2nd",
+      "n_ckpt_layers": 6,
+      "mem_mb": 474,
+      "time_ms": 371.1,
+      "overhead_pct": 14
+    },
+    {
+      "strategy": "Every 3rd",
+      "n_ckpt_layers": 4,
+      "mem_mb": 559,
+      "time_ms": 355.7,
+      "overhead_pct": 10
+    },
+    {
+      "strategy": "First+Last only",
+      "n_ckpt_layers": 2,
+      "mem_mb": 732,
+      "time_ms": 340.3,
+      "overhead_pct": 5
+    }
+  ],
+  "memory_time_tradeoff": [
+    {
+      "ckpt_every": 0,
+      "label": "None",
+      "mem_mb": 3090,
+      "time_ms": 1294.7,
+      "n_ckpt_layers": 0
+    },
+    {
+      "ckpt_every": 1,
+      "label": "Every 1",
+      "mem_mb": 748,
+      "time_ms": 1667.8,
+      "n_ckpt_layers": 12
+    },
+    {
+      "ckpt_every": 2,
+      "label": "Every 2",
+      "mem_mb": 1729,
+      "time_ms": 1469.0,
+      "n_ckpt_layers": 6
+    },
+    {
+      "ckpt_every": 3,
+      "label": "Every 3",
+      "mem_mb": 2183,
+      "time_ms": 1406.0,
+      "n_ckpt_layers": 4
+    },
+    {
+      "ckpt_every": 4,
+      "label": "Every 4",
+      "mem_mb": 2409,
+      "time_ms": 1376.5,
+      "n_ckpt_layers": 3
+    },
+    {
+      "ckpt_every": 6,
+      "label": "Every 6",
+      "mem_mb": 2636,
+      "time_ms": 1345.2,
+      "n_ckpt_layers": 2
+    },
+    {
+      "ckpt_every": 12,
+      "label": "Every 12",
+      "mem_mb": 2863,
+      "time_ms": 1313.2,
+      "n_ckpt_layers": 1
+    }
+  ],
+  "batch_size_tuning": [
+    {
+      "strategy": "No CKPT",
+      "max_batch": 32,
+      "max_mem_mb": 11527
+    },
+    {
+      "strategy": "Checkpoint",
+      "max_batch": 64,
+      "max_mem_mb": 4584
+    }
+  ]
+}
