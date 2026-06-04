@@ -1,0 +1,217 @@
+{
+  "distributed_training": [
+    {
+      "step": 0,
+      "single_loss": 1.0391,
+      "tp_loss": 1.0039,
+      "single_ms": 111.92,
+      "tp_ms": 18.99,
+      "overhead_pct": -83.0
+    },
+    {
+      "step": 20,
+      "single_loss": NaN,
+      "tp_loss": NaN,
+      "single_ms": 0.96,
+      "tp_ms": 1.35,
+      "overhead_pct": 40.4
+    },
+    {
+      "step": 40,
+      "single_loss": NaN,
+      "tp_loss": NaN,
+      "single_ms": 0.95,
+      "tp_ms": 1.38,
+      "overhead_pct": 44.6
+    },
+    {
+      "step": 60,
+      "single_loss": NaN,
+      "tp_loss": NaN,
+      "single_ms": 0.94,
+      "tp_ms": 1.31,
+      "overhead_pct": 39.9
+    },
+    {
+      "step": 80,
+      "single_loss": NaN,
+      "tp_loss": NaN,
+      "single_ms": 0.94,
+      "tp_ms": 1.37,
+      "overhead_pct": 45.6
+    },
+    {
+      "step": 99,
+      "single_loss": NaN,
+      "tp_loss": NaN,
+      "single_ms": 0.97,
+      "tp_ms": 1.35,
+      "overhead_pct": 39.1
+    }
+  ],
+  "allreduce_simulation": [
+    {
+      "model": "125M",
+      "interconnect": "NVLink (300 GB/s)",
+      "bw": 300,
+      "tp2_ms": 833.33,
+      "tp4_ms": 1250.0,
+      "tp8_ms": 1458.33
+    },
+    {
+      "model": "125M",
+      "interconnect": "NVLink (600 GB/s)",
+      "bw": 600,
+      "tp2_ms": 416.67,
+      "tp4_ms": 625.0,
+      "tp8_ms": 729.17
+    },
+    {
+      "model": "125M",
+      "interconnect": "PCIe Gen4 (64 GB/s)",
+      "bw": 64,
+      "tp2_ms": 3906.25,
+      "tp4_ms": 5859.38,
+      "tp8_ms": 6835.94
+    },
+    {
+      "model": "125M",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "tp2_ms": 20000.0,
+      "tp4_ms": 30000.0,
+      "tp8_ms": 35000.0
+    },
+    {
+      "model": "1.3B",
+      "interconnect": "NVLink (300 GB/s)",
+      "bw": 300,
+      "tp2_ms": 8666.67,
+      "tp4_ms": 13000.0,
+      "tp8_ms": 15166.67
+    },
+    {
+      "model": "1.3B",
+      "interconnect": "NVLink (600 GB/s)",
+      "bw": 600,
+      "tp2_ms": 4333.33,
+      "tp4_ms": 6500.0,
+      "tp8_ms": 7583.33
+    },
+    {
+      "model": "1.3B",
+      "interconnect": "PCIe Gen4 (64 GB/s)",
+      "bw": 64,
+      "tp2_ms": 40625.0,
+      "tp4_ms": 60937.5,
+      "tp8_ms": 71093.75
+    },
+    {
+      "model": "1.3B",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "tp2_ms": 208000.0,
+      "tp4_ms": 312000.0,
+      "tp8_ms": 364000.0
+    },
+    {
+      "model": "7B",
+      "interconnect": "NVLink (300 GB/s)",
+      "bw": 300,
+      "tp2_ms": 46666.67,
+      "tp4_ms": 70000.0,
+      "tp8_ms": 81666.67
+    },
+    {
+      "model": "7B",
+      "interconnect": "NVLink (600 GB/s)",
+      "bw": 600,
+      "tp2_ms": 23333.33,
+      "tp4_ms": 35000.0,
+      "tp8_ms": 40833.33
+    },
+    {
+      "model": "7B",
+      "interconnect": "PCIe Gen4 (64 GB/s)",
+      "bw": 64,
+      "tp2_ms": 218750.0,
+      "tp4_ms": 328125.0,
+      "tp8_ms": 382812.5
+    },
+    {
+      "model": "7B",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "tp2_ms": 1120000.0,
+      "tp4_ms": 1680000.0,
+      "tp8_ms": 1960000.0
+    },
+    {
+      "model": "70B",
+      "interconnect": "NVLink (300 GB/s)",
+      "bw": 300,
+      "tp2_ms": 466666.67,
+      "tp4_ms": 700000.0,
+      "tp8_ms": 816666.67
+    },
+    {
+      "model": "70B",
+      "interconnect": "NVLink (600 GB/s)",
+      "bw": 600,
+      "tp2_ms": 233333.33,
+      "tp4_ms": 350000.0,
+      "tp8_ms": 408333.33
+    },
+    {
+      "model": "70B",
+      "interconnect": "PCIe Gen4 (64 GB/s)",
+      "bw": 64,
+      "tp2_ms": 2187500.0,
+      "tp4_ms": 3281250.0,
+      "tp8_ms": 3828125.0
+    },
+    {
+      "model": "70B",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "tp2_ms": 11200000.0,
+      "tp4_ms": 16800000.0,
+      "tp8_ms": 19600000.0
+    }
+  ],
+  "data_parallel": [],
+  "zero_simulation": [
+    {
+      "model": "125M",
+      "n_params": 125000000.0,
+      "zero0": "2.0GB",
+      "zero1": "1.0GB",
+      "zero2": "768MB",
+      "zero3_dp8": "256MB"
+    },
+    {
+      "model": "1.3B",
+      "n_params": 1300000000.0,
+      "zero0": "20.8GB",
+      "zero1": "10.4GB",
+      "zero2": "7.8GB",
+      "zero3_dp8": "2.6GB"
+    },
+    {
+      "model": "7B",
+      "n_params": 7000000000.0,
+      "zero0": "112.0GB",
+      "zero1": "56.0GB",
+      "zero2": "42.0GB",
+      "zero3_dp8": "14.0GB"
+    },
+    {
+      "model": "70B",
+      "n_params": 70000000000.0,
+      "zero0": "1120.0GB",
+      "zero1": "560.0GB",
+      "zero2": "420.0GB",
+      "zero3_dp8": "140.0GB"
+    }
+  ]
+}

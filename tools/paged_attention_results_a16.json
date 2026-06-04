@@ -1,0 +1,331 @@
+{
+  "paged_vs_contiguous": [
+    {
+      "seq_len": 256,
+      "paged_ms": 0.976,
+      "contig_ms": 0.398,
+      "overhead_pct": 145.0,
+      "paged_mem_mb": 2.4,
+      "contig_mem_mb": 2.1
+    },
+    {
+      "seq_len": 512,
+      "paged_ms": 1.025,
+      "contig_ms": 0.407,
+      "overhead_pct": 151.7,
+      "paged_mem_mb": 4.5,
+      "contig_mem_mb": 4.2
+    },
+    {
+      "seq_len": 1024,
+      "paged_ms": 1.137,
+      "contig_ms": 0.408,
+      "overhead_pct": 178.4,
+      "paged_mem_mb": 8.7,
+      "contig_mem_mb": 8.4
+    },
+    {
+      "seq_len": 2048,
+      "paged_ms": 1.49,
+      "contig_ms": 0.525,
+      "overhead_pct": 183.7,
+      "paged_mem_mb": 17.1,
+      "contig_mem_mb": 16.8
+    },
+    {
+      "seq_len": 4096,
+      "paged_ms": 2.523,
+      "contig_ms": 0.584,
+      "overhead_pct": 332.3,
+      "paged_mem_mb": 33.9,
+      "contig_mem_mb": 33.6
+    }
+  ],
+  "prefix_sharing": [
+    {
+      "prefix_len": 64,
+      "num_requests": 2,
+      "prefix_blocks": 4,
+      "saved_blocks": 4,
+      "saved_pct": 5.6,
+      "mem_saved_mb": 0.1
+    },
+    {
+      "prefix_len": 64,
+      "num_requests": 4,
+      "prefix_blocks": 4,
+      "saved_blocks": 12,
+      "saved_pct": 8.3,
+      "mem_saved_mb": 0.4
+    },
+    {
+      "prefix_len": 64,
+      "num_requests": 8,
+      "prefix_blocks": 4,
+      "saved_blocks": 28,
+      "saved_pct": 9.7,
+      "mem_saved_mb": 0.9
+    },
+    {
+      "prefix_len": 64,
+      "num_requests": 16,
+      "prefix_blocks": 4,
+      "saved_blocks": 60,
+      "saved_pct": 10.4,
+      "mem_saved_mb": 2.0
+    },
+    {
+      "prefix_len": 64,
+      "num_requests": 32,
+      "prefix_blocks": 4,
+      "saved_blocks": 124,
+      "saved_pct": 10.8,
+      "mem_saved_mb": 4.1
+    },
+    {
+      "prefix_len": 128,
+      "num_requests": 2,
+      "prefix_blocks": 8,
+      "saved_blocks": 8,
+      "saved_pct": 10.0,
+      "mem_saved_mb": 0.3
+    },
+    {
+      "prefix_len": 128,
+      "num_requests": 4,
+      "prefix_blocks": 8,
+      "saved_blocks": 24,
+      "saved_pct": 15.0,
+      "mem_saved_mb": 0.8
+    },
+    {
+      "prefix_len": 128,
+      "num_requests": 8,
+      "prefix_blocks": 8,
+      "saved_blocks": 56,
+      "saved_pct": 17.5,
+      "mem_saved_mb": 1.8
+    },
+    {
+      "prefix_len": 128,
+      "num_requests": 16,
+      "prefix_blocks": 8,
+      "saved_blocks": 120,
+      "saved_pct": 18.8,
+      "mem_saved_mb": 3.9
+    },
+    {
+      "prefix_len": 128,
+      "num_requests": 32,
+      "prefix_blocks": 8,
+      "saved_blocks": 248,
+      "saved_pct": 19.4,
+      "mem_saved_mb": 8.1
+    },
+    {
+      "prefix_len": 256,
+      "num_requests": 2,
+      "prefix_blocks": 16,
+      "saved_blocks": 16,
+      "saved_pct": 16.7,
+      "mem_saved_mb": 0.5
+    },
+    {
+      "prefix_len": 256,
+      "num_requests": 4,
+      "prefix_blocks": 16,
+      "saved_blocks": 48,
+      "saved_pct": 25.0,
+      "mem_saved_mb": 1.6
+    },
+    {
+      "prefix_len": 256,
+      "num_requests": 8,
+      "prefix_blocks": 16,
+      "saved_blocks": 112,
+      "saved_pct": 29.2,
+      "mem_saved_mb": 3.7
+    },
+    {
+      "prefix_len": 256,
+      "num_requests": 16,
+      "prefix_blocks": 16,
+      "saved_blocks": 240,
+      "saved_pct": 31.2,
+      "mem_saved_mb": 7.9
+    },
+    {
+      "prefix_len": 256,
+      "num_requests": 32,
+      "prefix_blocks": 16,
+      "saved_blocks": 496,
+      "saved_pct": 32.3,
+      "mem_saved_mb": 16.3
+    },
+    {
+      "prefix_len": 512,
+      "num_requests": 2,
+      "prefix_blocks": 32,
+      "saved_blocks": 32,
+      "saved_pct": 25.0,
+      "mem_saved_mb": 1.0
+    },
+    {
+      "prefix_len": 512,
+      "num_requests": 4,
+      "prefix_blocks": 32,
+      "saved_blocks": 96,
+      "saved_pct": 37.5,
+      "mem_saved_mb": 3.1
+    },
+    {
+      "prefix_len": 512,
+      "num_requests": 8,
+      "prefix_blocks": 32,
+      "saved_blocks": 224,
+      "saved_pct": 43.8,
+      "mem_saved_mb": 7.3
+    },
+    {
+      "prefix_len": 512,
+      "num_requests": 16,
+      "prefix_blocks": 32,
+      "saved_blocks": 480,
+      "saved_pct": 46.9,
+      "mem_saved_mb": 15.7
+    },
+    {
+      "prefix_len": 512,
+      "num_requests": 32,
+      "prefix_blocks": 32,
+      "saved_blocks": 992,
+      "saved_pct": 48.4,
+      "mem_saved_mb": 32.5
+    }
+  ],
+  "block_size_analysis": [
+    {
+      "block_size": 8,
+      "blocks_per_seq": 64,
+      "internal_frag": 0,
+      "waste_pct": 0.0,
+      "block_kb": 16.0,
+      "gather_overhead_ms": 0.064
+    },
+    {
+      "block_size": 16,
+      "blocks_per_seq": 32,
+      "internal_frag": 0,
+      "waste_pct": 0.0,
+      "block_kb": 32.0,
+      "gather_overhead_ms": 0.032
+    },
+    {
+      "block_size": 32,
+      "blocks_per_seq": 16,
+      "internal_frag": 0,
+      "waste_pct": 0.0,
+      "block_kb": 64.0,
+      "gather_overhead_ms": 0.016
+    },
+    {
+      "block_size": 64,
+      "blocks_per_seq": 8,
+      "internal_frag": 0,
+      "waste_pct": 0.0,
+      "block_kb": 128.0,
+      "gather_overhead_ms": 0.008
+    },
+    {
+      "block_size": 128,
+      "blocks_per_seq": 4,
+      "internal_frag": 0,
+      "waste_pct": 0.0,
+      "block_kb": 256.0,
+      "gather_overhead_ms": 0.004
+    },
+    {
+      "block_size": 256,
+      "blocks_per_seq": 2,
+      "internal_frag": 0,
+      "waste_pct": 0.0,
+      "block_kb": 512.0,
+      "gather_overhead_ms": 0.002
+    }
+  ],
+  "preemption": [
+    {
+      "tokens_evicted": 64,
+      "data_mb": 0.1,
+      "swap_ms": 0.022,
+      "recompute_ms": 9.13,
+      "winner": "Swap"
+    },
+    {
+      "tokens_evicted": 128,
+      "data_mb": 0.3,
+      "swap_ms": 0.044,
+      "recompute_ms": 18.261,
+      "winner": "Swap"
+    },
+    {
+      "tokens_evicted": 256,
+      "data_mb": 0.5,
+      "swap_ms": 0.087,
+      "recompute_ms": 36.522,
+      "winner": "Swap"
+    },
+    {
+      "tokens_evicted": 512,
+      "data_mb": 1.0,
+      "swap_ms": 0.175,
+      "recompute_ms": 73.044,
+      "winner": "Swap"
+    },
+    {
+      "tokens_evicted": 1024,
+      "data_mb": 2.1,
+      "swap_ms": 0.35,
+      "recompute_ms": 146.087,
+      "winner": "Swap"
+    }
+  ],
+  "continuous_batching": [
+    {
+      "avg_seq_len": 512,
+      "blocks_per_req": 32,
+      "max_concurrent": 14171,
+      "step_time_ms": 87.41,
+      "throughput_toks": 162125.0,
+      "total_blocks": 453491,
+      "kv_utilization_pct": 100.0
+    },
+    {
+      "avg_seq_len": 1024,
+      "blocks_per_req": 64,
+      "max_concurrent": 7085,
+      "step_time_ms": 87.4,
+      "throughput_toks": 81062.0,
+      "total_blocks": 453491,
+      "kv_utilization_pct": 100.0
+    },
+    {
+      "avg_seq_len": 2048,
+      "blocks_per_req": 128,
+      "max_concurrent": 3542,
+      "step_time_ms": 87.39,
+      "throughput_toks": 40531.0,
+      "total_blocks": 453491,
+      "kv_utilization_pct": 100.0
+    },
+    {
+      "avg_seq_len": 4096,
+      "blocks_per_req": 256,
+      "max_concurrent": 1771,
+      "step_time_ms": 87.39,
+      "throughput_toks": 20266.0,
+      "total_blocks": 453491,
+      "kv_utilization_pct": 100.0
+    }
+  ]
+}
