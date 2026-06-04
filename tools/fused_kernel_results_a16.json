@@ -1,0 +1,85 @@
+{
+  "fused_layernorm": [
+    {
+      "B": 8,
+      "S": 256,
+      "H": 512,
+      "unfused_ms": 0.3052,
+      "fused_ms": 0.0562,
+      "speedup": 5.43
+    },
+    {
+      "B": 16,
+      "S": 512,
+      "H": 768,
+      "unfused_ms": 1.5895,
+      "fused_ms": 0.2629,
+      "speedup": 6.05
+    },
+    {
+      "B": 32,
+      "S": 512,
+      "H": 1024,
+      "unfused_ms": 4.2453,
+      "fused_ms": 0.6147,
+      "speedup": 6.91
+    },
+    {
+      "B": 1,
+      "S": 4096,
+      "H": 4096,
+      "unfused_ms": 4.1943,
+      "fused_ms": 0.5106,
+      "speedup": 8.21
+    }
+  ],
+  "fused_bias_gelu": [
+    {
+      "B": 1,
+      "S": 128,
+      "H": 2048,
+      "unfused": 0.122,
+      "fused": 0.116,
+      "speedup": 1.05
+    },
+    {
+      "B": 8,
+      "S": 256,
+      "H": 2048,
+      "unfused": 1.465,
+      "fused": 1.321,
+      "speedup": 1.11
+    },
+    {
+      "B": 32,
+      "S": 512,
+      "H": 2048,
+      "unfused": 13.03,
+      "fused": 10.233,
+      "speedup": 1.27
+    }
+  ],
+  "fused_qkv": [
+    {
+      "separate_ms": 1.11,
+      "fused_ms": 1.364,
+      "speedup": 0.81
+    }
+  ],
+  "fused_mlp": [
+    {
+      "unfused_ms": 3.11,
+      "chained_ms": 3.154,
+      "speedup": 0.99
+    }
+  ],
+  "transformer_block": [
+    {
+      "naive_ms": 9.216,
+      "opt_ms": 9.43,
+      "speedup": 0.98,
+      "naive_mem_mb": 166,
+      "opt_mem_mb": 153
+    }
+  ]
+}
