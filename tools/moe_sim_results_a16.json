@@ -1,0 +1,462 @@
+{
+  "dense_vs_moe": [
+    {
+      "dense_ms": 0.194,
+      "moe_ms": 5.834,
+      "dense_params": 2097152,
+      "moe_params": 2101248,
+      "active_params": 529408.0,
+      "moe_overhead": 30.05
+    }
+  ],
+  "routing_overhead": [
+    {
+      "n_experts": 4,
+      "top_k": 1,
+      "router_ms": 0.063,
+      "topk_ms": 0.134,
+      "total_ms": 0.197
+    },
+    {
+      "n_experts": 4,
+      "top_k": 2,
+      "router_ms": 0.063,
+      "topk_ms": 0.346,
+      "total_ms": 0.409
+    },
+    {
+      "n_experts": 4,
+      "top_k": 4,
+      "router_ms": 0.063,
+      "topk_ms": 0.416,
+      "total_ms": 0.479
+    },
+    {
+      "n_experts": 8,
+      "top_k": 1,
+      "router_ms": 0.08,
+      "topk_ms": 0.137,
+      "total_ms": 0.217
+    },
+    {
+      "n_experts": 8,
+      "top_k": 2,
+      "router_ms": 0.08,
+      "topk_ms": 0.334,
+      "total_ms": 0.414
+    },
+    {
+      "n_experts": 8,
+      "top_k": 4,
+      "router_ms": 0.08,
+      "topk_ms": 0.416,
+      "total_ms": 0.496
+    },
+    {
+      "n_experts": 16,
+      "top_k": 1,
+      "router_ms": 0.09,
+      "topk_ms": 0.139,
+      "total_ms": 0.229
+    },
+    {
+      "n_experts": 16,
+      "top_k": 2,
+      "router_ms": 0.09,
+      "topk_ms": 0.328,
+      "total_ms": 0.418
+    },
+    {
+      "n_experts": 16,
+      "top_k": 4,
+      "router_ms": 0.089,
+      "topk_ms": 0.411,
+      "total_ms": 0.5
+    },
+    {
+      "n_experts": 32,
+      "top_k": 1,
+      "router_ms": 0.105,
+      "topk_ms": 0.135,
+      "total_ms": 0.239
+    },
+    {
+      "n_experts": 32,
+      "top_k": 2,
+      "router_ms": 0.108,
+      "topk_ms": 0.319,
+      "total_ms": 0.427
+    },
+    {
+      "n_experts": 32,
+      "top_k": 4,
+      "router_ms": 0.107,
+      "topk_ms": 0.399,
+      "total_ms": 0.506
+    },
+    {
+      "n_experts": 64,
+      "top_k": 1,
+      "router_ms": 0.07,
+      "topk_ms": 0.194,
+      "total_ms": 0.264
+    },
+    {
+      "n_experts": 64,
+      "top_k": 2,
+      "router_ms": 0.07,
+      "topk_ms": 0.408,
+      "total_ms": 0.479
+    },
+    {
+      "n_experts": 64,
+      "top_k": 4,
+      "router_ms": 0.071,
+      "topk_ms": 0.544,
+      "total_ms": 0.615
+    },
+    {
+      "n_experts": 128,
+      "top_k": 1,
+      "router_ms": 0.093,
+      "topk_ms": 0.373,
+      "total_ms": 0.466
+    },
+    {
+      "n_experts": 128,
+      "top_k": 2,
+      "router_ms": 0.093,
+      "topk_ms": 0.666,
+      "total_ms": 0.759
+    },
+    {
+      "n_experts": 128,
+      "top_k": 4,
+      "router_ms": 0.092,
+      "topk_ms": 0.9,
+      "total_ms": 0.992
+    }
+  ],
+  "expert_parallel": [
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 2,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 134.0,
+      "latency_ms": 0.45
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 2,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 134.0,
+      "latency_ms": 0.22
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 2,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 134.0,
+      "latency_ms": 2.1
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 2,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 134.0,
+      "latency_ms": 5.37
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 4,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 201.0,
+      "latency_ms": 0.67
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 4,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 201.0,
+      "latency_ms": 0.34
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 4,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 201.0,
+      "latency_ms": 3.15
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 4,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 201.0,
+      "latency_ms": 8.05
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 8,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 235.0,
+      "latency_ms": 0.78
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 8,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 235.0,
+      "latency_ms": 0.39
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 8,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 235.0,
+      "latency_ms": 3.67
+    },
+    {
+      "model": "Mixtral-8x7B",
+      "ep": 8,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 235.0,
+      "latency_ms": 9.4
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 2,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 168.0,
+      "latency_ms": 0.56
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 2,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 168.0,
+      "latency_ms": 0.28
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 2,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 168.0,
+      "latency_ms": 2.62
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 2,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 168.0,
+      "latency_ms": 6.71
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 4,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 252.0,
+      "latency_ms": 0.84
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 4,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 252.0,
+      "latency_ms": 0.42
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 4,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 252.0,
+      "latency_ms": 3.93
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 4,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 252.0,
+      "latency_ms": 10.07
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 8,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 294.0,
+      "latency_ms": 0.98
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 8,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 294.0,
+      "latency_ms": 0.49
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 8,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 294.0,
+      "latency_ms": 4.59
+    },
+    {
+      "model": "DeepSeek-V2",
+      "ep": 8,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 294.0,
+      "latency_ms": 11.74
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 2,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 235.0,
+      "latency_ms": 0.78
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 2,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 235.0,
+      "latency_ms": 0.39
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 2,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 235.0,
+      "latency_ms": 3.67
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 2,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 235.0,
+      "latency_ms": 9.4
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 4,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 352.0,
+      "latency_ms": 1.17
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 4,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 352.0,
+      "latency_ms": 0.59
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 4,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 352.0,
+      "latency_ms": 5.51
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 4,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 352.0,
+      "latency_ms": 14.09
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 8,
+      "interconnect": "NVLink 300GB/s",
+      "send_mb": 411.0,
+      "latency_ms": 1.37
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 8,
+      "interconnect": "NVLink 600GB/s",
+      "send_mb": 411.0,
+      "latency_ms": 0.69
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 8,
+      "interconnect": "PCIe 64GB/s",
+      "send_mb": 411.0,
+      "latency_ms": 6.42
+    },
+    {
+      "model": "DeepSeek-V3",
+      "ep": 8,
+      "interconnect": "IB 200Gbps",
+      "send_mb": 411.0,
+      "latency_ms": 16.44
+    }
+  ],
+  "moe_memory": [
+    {
+      "name": "Dense-7B",
+      "params_b": 7.0,
+      "total_fp16_gb": 14.0,
+      "active_fp16_gb": 14.0,
+      "active_pct": 100.0,
+      "train_gb": 112.0
+    },
+    {
+      "name": "Mixtral-8x7B",
+      "params_b": 46.7,
+      "total_fp16_gb": 93.4,
+      "active_fp16_gb": 46.7,
+      "active_pct": 50.0,
+      "train_gb": 747.0
+    },
+    {
+      "name": "DeepSeek-V2-21B",
+      "params_b": 21.0,
+      "total_fp16_gb": 42.0,
+      "active_fp16_gb": 16.6,
+      "active_pct": 40.0,
+      "train_gb": 336.0
+    },
+    {
+      "name": "DeepSeek-V3-671B",
+      "params_b": 671.0,
+      "total_fp16_gb": 1342.0,
+      "active_fp16_gb": 474.9,
+      "active_pct": 35.0,
+      "train_gb": 10736.0
+    }
+  ],
+  "moe_throughput": [
+    {
+      "name": "Dense-7B",
+      "total_gb": 14.0,
+      "active_gb": 14.0,
+      "toks_per_s": 21.0,
+      "active_pct": 100.0,
+      "dense_equiv_b": 7.0
+    },
+    {
+      "name": "Mixtral-8x7B",
+      "total_gb": 93.4,
+      "active_gb": 25.8,
+      "toks_per_s": 12.0,
+      "active_pct": 28.0,
+      "dense_equiv_b": 12.9
+    },
+    {
+      "name": "Dense-70B",
+      "total_gb": 140.0,
+      "active_gb": 140.0,
+      "toks_per_s": 2.0,
+      "active_pct": 100.0,
+      "dense_equiv_b": 70.0
+    },
+    {
+      "name": "DeepSeek-V3-671B",
+      "total_gb": 1342.0,
+      "active_gb": 74.0,
+      "toks_per_s": 4.0,
+      "active_pct": 6.0,
+      "dense_equiv_b": 37.0
+    }
+  ]
+}
