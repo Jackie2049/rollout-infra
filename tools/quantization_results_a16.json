@@ -1,0 +1,70 @@
+{
+  "quant_perf": [
+    {
+      "fp32_ms": 1.95,
+      "fp16_ms": 0.46,
+      "int8_cpu_ms": 5.22,
+      "fp16_speedup": 4.27,
+      "fp16_mse": 0.0001432229473721236,
+      "fp16_max_err": 0.057268667966127396
+    }
+  ],
+  "weight_only_int8": [
+    {
+      "fp16_ms": 0.42,
+      "int8_sim_ms": 0.69,
+      "memory_saving": 0.5,
+      "overhead_ratio": 1.63
+    }
+  ],
+  "quant_accuracy": [
+    {
+      "logit_mse": 6.279012726428945e-11,
+      "logit_max_err": 3.0491501092910767e-05,
+      "top1_agreement": 1.0,
+      "top5_overlap": 0.96
+    }
+  ],
+  "size_scaling": [
+    {
+      "hidden": 256,
+      "fp32_ms": 0.17,
+      "fp16_ms": 0.19,
+      "speedup": 0.89,
+      "fp16_mb": 0.5,
+      "fp32_mb": 1.0
+    },
+    {
+      "hidden": 512,
+      "fp32_ms": 0.18,
+      "fp16_ms": 0.17,
+      "speedup": 1.1,
+      "fp16_mb": 2.1,
+      "fp32_mb": 4.2
+    },
+    {
+      "hidden": 1024,
+      "fp32_ms": 0.49,
+      "fp16_ms": 0.17,
+      "speedup": 2.93,
+      "fp16_mb": 8.4,
+      "fp32_mb": 16.8
+    },
+    {
+      "hidden": 2048,
+      "fp32_ms": 2.3,
+      "fp16_ms": 0.45,
+      "speedup": 5.09,
+      "fp16_mb": 33.6,
+      "fp32_mb": 67.1
+    },
+    {
+      "hidden": 4096,
+      "fp32_ms": 7.39,
+      "fp16_ms": 1.55,
+      "speedup": 4.77,
+      "fp16_mb": 134.2,
+      "fp32_mb": 268.4
+    }
+  ]
+}
