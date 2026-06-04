@@ -1,0 +1,28 @@
+{
+  "pretrain": {
+    "params": 837888,
+    "final_loss": 2.9461
+  },
+  "sft": {
+    "final_loss": 1.1581
+  },
+  "dpo": {
+    "final_loss": 0.1391,
+    "final_accuracy": 0.9965,
+    "final_margin": 2.4936,
+    "chosen_reward": -1.3177,
+    "rejected_reward": -3.8114
+  },
+  "beta_sweep": {
+    "0.05": 1.5072,
+    "0.1": 2.5472,
+    "0.3": 4.0546,
+    "0.5": 5.6929,
+    "1.0": 9.0369
+  },
+  "length_norm_comparison": {
+    "normalized": 0.0464,
+    "unnormalized": 0.0806
+  },
+  "gpu_memory_mb": 294.8
+}
