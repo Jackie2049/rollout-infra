@@ -61,13 +61,16 @@ per-channel 相对误差 **~0.8%**，per-tensor **~1.2%**。实际训练模型�
 
 ---
 
-## 实验 5: 待完成 (bug fix)
+## 实验 5: Softmax 量化误差放大 (已修复)
 
-Softmax 量化误差放大——脚本 bug 需修复：
-```python
-# bug: topk on [1, S] tensor returns shape [1, 5]
-top5 = sf_fp.topk(5).indices.tolist()  # → [[ids]] instead of [ids]
-```
+| Quant | Top-1 | Top-5 | Max Err | KL Div |
+|-------|:---:|:---:|:---:|:---:|
+| **INT4** | False | 1.00 | 0.277 | 0.398 |
+| INT6 | True | 1.00 | 0.032 | 0.008 |
+| INT8 | True | 1.00 | 0.021 | 0.001 |
+| INT16 | True | 1.00 | 0.0002 | 0.000002 |
+
+**结论**: INT4 在 Softmax 前量化会丢失 Top-1 正确性。INT8 是最低安全精度。Softmax 会放大量化误差 10-100x，attention score 必须保持 FP16 及以上。
 
 ---
 
