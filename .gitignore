@@ -22,9 +22,10 @@ venv/
 Thumbs.db
 
 # Large files / source repos
-vllm/
-megatron-lm/
-verl/
+/vllm/
+/vllm-latest/
+/megatron-lm/
+/verl/
 
 # Logs
 *.log
