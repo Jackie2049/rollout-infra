@@ -329,7 +329,7 @@ CudagraphDispatcher
 - [x] Structured Output (JSON/Grammar/Regex Bitmask)
 - [x] vLLM V1 Async Engine Frontend (AsyncLLM)
 - [x] vLLM V1 Engine Core Detail (step loop, scheduling)
-- [ ] vLLM V1 Prompt Adapter (非 LoRA adapter)
+- [x] vLLM V1 Prompt Adapter (V1 中不存在独立 PromptAdapter，功能已合并到 LoRA)
 
 ## 参考资料
 

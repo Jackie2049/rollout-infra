@@ -48,6 +48,7 @@
 - [GPU 内存分配器](notebook/fundamentals/gpu-memory-allocator.md) — PyTorch Caching Allocator、vLLM Paged Memory、碎片化分析
 - [CUDA Graphs](notebook/fundamentals/cuda-graphs.md) — 推理场景 kernel launch 开销优化，录制重放机制
 - [GPU 性能分析](notebook/fundamentals/gpu-profiling.md) — 四层方法：nvidia-smi → nsys → ncu → ncu detail
+- [LLM 推理服务框架](notebook/fundamentals/inference-serving.md) — vLLM/SGLang/TGI/Triton 对比，K8s 生产部署，负载均衡策略
 
 ## RL 训练基础设施
 
@@ -219,11 +220,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 45 篇 |
+| 基础知识笔记 | 46 篇 |
 | 项目源码阅读 | 34 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 61 个 |
-| **总计** | **142 项** |
+| **总计** | **143 项** |
 
 ## GitHub
 
