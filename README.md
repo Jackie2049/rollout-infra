@@ -102,6 +102,7 @@
 - [vLLM Data Parallel Serving 源码阅读](notebook/projects/vllm-data-parallel-reading.md) — DP vs TP 扩展、MoE EP、Wave 协调、DBO、Elastic EP
 - [vLLM V1 可观测性与指标体系 源码阅读](notebook/projects/vllm-observability-reading.md) — Stats 采集、Prometheus 指标、Logging、告警建议
 - [vLLM LoRA Serving 源码阅读](notebook/projects/vllm-lora-serving-reading.md) — Punica Multi-LoRA、批量 LoRA kernel、MoE+LoRA、权重管理
+- [vLLM Multi-Modal Processing 源码阅读](notebook/projects/vllm-multimodal-reading.md) — MM 数据流、EncoderRunner、Hash-based Caching、Vision Encoder 集成
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
@@ -211,10 +212,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 45 篇 |
-| 项目源码阅读 | 29 篇 |
+| 项目源码阅读 | 30 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 56 个 |
-| **总计** | **132 项** |
+| **总计** | **133 项** |
 
 ## GitHub
 
