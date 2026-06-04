@@ -1,0 +1,246 @@
+{
+  "ring_vs_tree": [
+    {
+      "data": "7B weights (14GB)",
+      "interconnect": "NVLink 300GB/s",
+      "bw": 300,
+      "ring_P2": 46.69,
+      "tree_P2": 23.34,
+      "ring_P8": 81.81,
+      "tree_P8": 17.53
+    },
+    {
+      "data": "7B weights (14GB)",
+      "interconnect": "NVLink 600GB/s",
+      "bw": 600,
+      "ring_P2": 23.34,
+      "tree_P2": 11.67,
+      "ring_P8": 40.9,
+      "tree_P8": 8.77
+    },
+    {
+      "data": "7B weights (14GB)",
+      "interconnect": "PCIe Gen4 64GB/s",
+      "bw": 64,
+      "ring_P2": 218.79,
+      "tree_P2": 109.39,
+      "ring_P8": 383.09,
+      "tree_P8": 82.09
+    },
+    {
+      "data": "7B weights (14GB)",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "ring_P2": 1120.4,
+      "tree_P2": 560.2,
+      "ring_P8": 1962.8,
+      "tree_P8": 420.6
+    },
+    {
+      "data": "70B weights (140GB)",
+      "interconnect": "NVLink 300GB/s",
+      "bw": 300,
+      "ring_P2": 466.69,
+      "tree_P2": 233.34,
+      "ring_P8": 816.81,
+      "tree_P8": 175.03
+    },
+    {
+      "data": "70B weights (140GB)",
+      "interconnect": "NVLink 600GB/s",
+      "bw": 600,
+      "ring_P2": 233.34,
+      "tree_P2": 116.67,
+      "ring_P8": 408.4,
+      "tree_P8": 87.52
+    },
+    {
+      "data": "70B weights (140GB)",
+      "interconnect": "PCIe Gen4 64GB/s",
+      "bw": 64,
+      "ring_P2": 2187.54,
+      "tree_P2": 1093.77,
+      "ring_P8": 3828.41,
+      "tree_P8": 820.37
+    },
+    {
+      "data": "70B weights (140GB)",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "ring_P2": 11200.4,
+      "tree_P2": 5600.2,
+      "ring_P8": 19602.8,
+      "tree_P8": 4200.6
+    },
+    {
+      "data": "gradient 1GB",
+      "interconnect": "NVLink 300GB/s",
+      "bw": 300,
+      "ring_P2": 3.35,
+      "tree_P2": 1.68,
+      "ring_P8": 5.97,
+      "tree_P8": 1.28
+    },
+    {
+      "data": "gradient 1GB",
+      "interconnect": "NVLink 600GB/s",
+      "bw": 600,
+      "ring_P2": 1.68,
+      "tree_P2": 0.84,
+      "ring_P8": 2.99,
+      "tree_P8": 0.64
+    },
+    {
+      "data": "gradient 1GB",
+      "interconnect": "PCIe Gen4 64GB/s",
+      "bw": 64,
+      "ring_P2": 15.66,
+      "tree_P2": 7.83,
+      "ring_P8": 27.62,
+      "tree_P8": 5.92
+    },
+    {
+      "data": "gradient 1GB",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "ring_P2": 80.4,
+      "tree_P2": 40.2,
+      "ring_P8": 142.8,
+      "tree_P8": 30.6
+    },
+    {
+      "data": "gradient 64MB",
+      "interconnect": "NVLink 300GB/s",
+      "bw": 300,
+      "ring_P2": 0.23,
+      "tree_P2": 0.12,
+      "ring_P8": 0.51,
+      "tree_P8": 0.11
+    },
+    {
+      "data": "gradient 64MB",
+      "interconnect": "NVLink 600GB/s",
+      "bw": 600,
+      "ring_P2": 0.12,
+      "tree_P2": 0.06,
+      "ring_P8": 0.26,
+      "tree_P8": 0.06
+    },
+    {
+      "data": "gradient 64MB",
+      "interconnect": "PCIe Gen4 64GB/s",
+      "bw": 64,
+      "ring_P2": 1.04,
+      "tree_P2": 0.52,
+      "ring_P8": 2.03,
+      "tree_P8": 0.43
+    },
+    {
+      "data": "gradient 64MB",
+      "interconnect": "Ethernet 100Gbps",
+      "bw": 12.5,
+      "ring_P2": 5.52,
+      "tree_P2": 2.76,
+      "ring_P8": 11.76,
+      "tree_P8": 2.52
+    }
+  ],
+  "gpu_allreduce": [
+    {
+      "data_mb": 1,
+      "p8_ms": 0.134,
+      "effective_bw_gbs": 13.0
+    },
+    {
+      "data_mb": 4,
+      "p8_ms": 0.218,
+      "effective_bw_gbs": 32.0
+    },
+    {
+      "data_mb": 16,
+      "p8_ms": 0.989,
+      "effective_bw_gbs": 28.0
+    },
+    {
+      "data_mb": 64,
+      "p8_ms": 3.809,
+      "effective_bw_gbs": 29.0
+    },
+    {
+      "data_mb": 256,
+      "p8_ms": 15.085,
+      "effective_bw_gbs": 30.0
+    }
+  ],
+  "reduce_scatter": [
+    {
+      "P": 2,
+      "full_sum_ms": 2.159,
+      "chunked_ms": 4.011,
+      "ratio": 1.86
+    },
+    {
+      "P": 4,
+      "full_sum_ms": 2.159,
+      "chunked_ms": 3.864,
+      "ratio": 1.79
+    },
+    {
+      "P": 8,
+      "full_sum_ms": 2.159,
+      "chunked_ms": 3.809,
+      "ratio": 1.76
+    }
+  ],
+  "comm_overhead": [
+    {
+      "model": "125M",
+      "weights_mb": 57.0,
+      "compute_ms": 0.333,
+      "comm_ms": 0.0,
+      "comm_pct": 0.1,
+      "overlap": "Yes"
+    },
+    {
+      "model": "350M",
+      "weights_mb": 201.0,
+      "compute_ms": 1.184,
+      "comm_ms": 0.001,
+      "comm_pct": 0.1,
+      "overlap": "Yes"
+    },
+    {
+      "model": "1.3B",
+      "weights_mb": 805.0,
+      "compute_ms": 4.737,
+      "comm_ms": 0.002,
+      "comm_pct": 0.0,
+      "overlap": "Yes"
+    },
+    {
+      "model": "7B",
+      "weights_mb": 4295.0,
+      "compute_ms": 25.265,
+      "comm_ms": 0.006,
+      "comm_pct": 0.0,
+      "overlap": "Yes"
+    },
+    {
+      "model": "13B",
+      "weights_mb": 8389.0,
+      "compute_ms": 49.345,
+      "comm_ms": 0.01,
+      "comm_pct": 0.0,
+      "overlap": "Yes"
+    },
+    {
+      "model": "70B",
+      "weights_mb": 42950.0,
+      "compute_ms": 252.645,
+      "comm_ms": 0.031,
+      "comm_pct": 0.0,
+      "overlap": "Yes"
+    }
+  ],
+  "nccl_tuning": []
+}
