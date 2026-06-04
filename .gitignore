@@ -31,3 +31,4 @@ rollout-neuron/
 # Logs
 *.log
 gpu_log.csv
+sglang/
