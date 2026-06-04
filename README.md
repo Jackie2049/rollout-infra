@@ -176,6 +176,7 @@
 | [model_compression_analyzer.py](tools/model_compression_analyzer.py) | LLM 模型压缩策略分析器（蒸馏/剪枝/量化/综合策略对比、生产部署选型） | 已验证 |
 | [dp_serving_simulator.py](tools/dp_serving_simulator.py) | Data Parallel Serving 模拟器（DP vs TP 扩展、MoE EP、Wave 协调、DBO、生产选型） | 已验证 |
 | [engine_core_simulator.py](tools/engine_core_simulator.py) | Engine Core 模拟器（step 循环、Batch Queue、ZMQ 通信、KV auto-fit、GPU 利用率） | 已验证 |
+| [triton_practice.py](tools/triton_practice.py) | Triton Kernel 实战练习（Vector Add、Fused OP、Softmax、Tiled GEMM、Flash Attention） | 已验证 |
 
 ### 日志记录规范
 
@@ -218,8 +219,8 @@
 | 基础知识笔记 | 45 篇 |
 | 项目源码阅读 | 33 篇 |
 | 实验记录 | 3 篇 |
-| 实用工具脚本 | 57 个 |
-| **总计** | **137 项** |
+| 实用工具脚本 | 58 个 |
+| **总计** | **138 项** |
 
 ## GitHub
 
