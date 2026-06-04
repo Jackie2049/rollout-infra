@@ -98,6 +98,7 @@
 - [vLLM P/D 分离架构源码阅读](notebook/projects/vllm-pd-disaggregation-reading.md) — KV Connector 抽象、NIXL 实现、异步传输、异构 TP、部署配置
 - [vLLM CUDA Graph 源码阅读](notebook/projects/vllm-cuda-graph-reading.md) — FULL/PIECEWISE 模式、捕获回放流程、Attention 兼容、Breakable Graph
 - [vLLM V1 架构全景图](notebook/projects/vllm-v1-architecture-map.md) — 请求生命周期、四层架构、模块依赖关系、已学清单
+- [vLLM Sampling Pipeline 源码阅读](notebook/projects/vllm-sampling-pipeline-reading.md) — Logits 到 Token 完整管线、Top-K/P 实现、Penalty、CUDA Graph 兼容
 - [GRPO 实战指南](notebook/projects/grpo-practical-guide.md) — verl 框架 GRPO 训练完整流程、数据格式、配置参数、奖励函数
 - [SGLang 架构深度分析](notebook/projects/sglang-architecture.md) — RadixAttention 基数树、DSL 前端、FlashInfer 集成、vs vLLM 对比
 - [分布式训练排错指南](notebook/projects/troubleshooting-guide.md) — NCCL 超时、OOM、梯度异常等常见问题
@@ -205,10 +206,10 @@
 | 类别 | 数量 |
 |------|------|
 | 基础知识笔记 | 45 篇 |
-| 项目源码阅读 | 25 篇 |
+| 项目源码阅读 | 26 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 54 个 |
-| **总计** | **126 项** |
+| **总计** | **127 项** |
 
 ## GitHub
 
