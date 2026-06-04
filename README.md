@@ -50,6 +50,7 @@
 - [GPU 性能分析](notebook/fundamentals/gpu-profiling.md) — 四层方法：nvidia-smi → nsys → ncu → ncu detail
 - [LLM 推理服务框架](notebook/fundamentals/inference-serving.md) — vLLM/SGLang/TGI/Triton 对比，K8s 生产部署，负载均衡策略
 - [SGLang RadixAttention](notebook/fundamentals/sglang-radix-attention.md) — 基数树前缀缓存、节点分裂机制、缓存感知调度、与 vLLM Hash-based 对比
+- [推理服务监控与可观测性](notebook/fundamentals/inference-observability.md) — vLLM 30+ Prometheus 指标、SLO 定义、告警规则、DCGM GPU 监控、瓶颈定位
 
 ## RL 训练基础设施
 
@@ -221,11 +222,11 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 47 篇 |
+| 基础知识笔记 | 48 篇 |
 | 项目源码阅读 | 34 篇 |
 | 实验记录 | 3 篇 |
 | 实用工具脚本 | 61 个 |
-| **总计** | **144 项** |
+| **总计** | **145 项** |
 
 ## GitHub
 
