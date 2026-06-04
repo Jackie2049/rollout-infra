@@ -1,0 +1,148 @@
+{
+  "correctness": [
+    {
+      "dist": "sharp",
+      "n": 1.0,
+      "surviving": 22,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "sharp",
+      "n": 2.0,
+      "surviving": 148,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "sharp",
+      "n": 3.0,
+      "surviving": 460,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "medium",
+      "n": 1.0,
+      "surviving": 31,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "medium",
+      "n": 2.0,
+      "surviving": 181,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "medium",
+      "n": 3.0,
+      "surviving": 532,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "flat",
+      "n": 1.0,
+      "surviving": 14,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "flat",
+      "n": 2.0,
+      "surviving": 100,
+      "argmax_preserved": true
+    },
+    {
+      "dist": "flat",
+      "n": 3.0,
+      "surviving": 371,
+      "argmax_preserved": true
+    }
+  ],
+  "vectorized_vs_row": [
+    {
+      "vocab": 32000,
+      "batch": 1,
+      "vectorized_ms": 0.105,
+      "rowbyrow_ms": 0.168,
+      "speedup": 1.6
+    },
+    {
+      "vocab": 32000,
+      "batch": 8,
+      "vectorized_ms": 0.105,
+      "rowbyrow_ms": 1.176,
+      "speedup": 11.2
+    },
+    {
+      "vocab": 32000,
+      "batch": 32,
+      "vectorized_ms": 0.248,
+      "rowbyrow_ms": 4.777,
+      "speedup": 19.2
+    },
+    {
+      "vocab": 32000,
+      "batch": 128,
+      "vectorized_ms": 0.841,
+      "rowbyrow_ms": 18.659,
+      "speedup": 22.2
+    },
+    {
+      "vocab": 50257,
+      "batch": 1,
+      "vectorized_ms": 0.103,
+      "rowbyrow_ms": 0.17,
+      "speedup": 1.7
+    },
+    {
+      "vocab": 50257,
+      "batch": 8,
+      "vectorized_ms": 0.109,
+      "rowbyrow_ms": 1.246,
+      "speedup": 11.5
+    },
+    {
+      "vocab": 50257,
+      "batch": 32,
+      "vectorized_ms": 0.383,
+      "rowbyrow_ms": 5.063,
+      "speedup": 13.2
+    }
+  ],
+  "sampling_comparison": [
+    {
+      "method": "top_k(50)",
+      "ms": 0.4921,
+      "surviving": 50.0
+    },
+    {
+      "method": "top_p(0.9)",
+      "ms": 2.2813,
+      "surviving": 19567.0
+    },
+    {
+      "method": "min_p(0.05)",
+      "ms": 0.2776,
+      "surviving": 4166.0
+    },
+    {
+      "method": "top_n_sigma(2.0)",
+      "ms": 0.2488,
+      "surviving": 574.0
+    },
+    {
+      "method": "top_n_sigma(1.0)",
+      "ms": 0.2486,
+      "surviving": 34.0
+    }
+  ],
+  "dtype_perf": [
+    {
+      "dtype": "FP32",
+      "ms": 0.2485,
+      "bw_gbs": 33.0
+    },
+    {
+      "dtype": "FP16",
+      "ms": 0.159,
+      "bw_gbs": 26.0
+    }
+  ]
+}
