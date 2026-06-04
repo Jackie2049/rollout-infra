@@ -1,0 +1,72 @@
+{
+  "teacher": {
+    "params": 4823552,
+    "train_loss": 1.2778,
+    "test_loss": 2.0628,
+    "test_ppl": 7.87
+  },
+  "student_baseline": {
+    "params": 443648,
+    "compression_ratio": 10.9,
+    "train_loss": 2.5994,
+    "test_loss": 2.4918,
+    "test_ppl": 12.08,
+    "top5_agreement": 0.405
+  },
+  "student_distilled": {
+    "train_loss": 1.6779,
+    "test_loss": 2.6772,
+    "test_ppl": 14.54,
+    "top5_agreement": 0.366
+  },
+  "temperature_sweep": {
+    "1.0": {
+      "loss": 2.6835,
+      "ppl": 14.64,
+      "agreement": 0.383
+    },
+    "2.0": {
+      "loss": 2.8061,
+      "ppl": 16.55,
+      "agreement": 0.355
+    },
+    "4.0": {
+      "loss": 3.0055,
+      "ppl": 20.2,
+      "agreement": 0.327
+    },
+    "8.0": {
+      "loss": 3.2115,
+      "ppl": 24.82,
+      "agreement": 0.31
+    },
+    "16.0": {
+      "loss": 3.3082,
+      "ppl": 27.34,
+      "agreement": 0.291
+    }
+  },
+  "alpha_sweep": {
+    "0.0": {
+      "loss": 2.6996,
+      "ppl": 14.87
+    },
+    "0.3": {
+      "loss": 2.7484,
+      "ppl": 15.62
+    },
+    "0.5": {
+      "loss": 2.8073,
+      "ppl": 16.56
+    },
+    "0.7": {
+      "loss": 3.0112,
+      "ppl": 20.31
+    },
+    "1.0": {
+      "loss": 3.4594,
+      "ppl": 31.8
+    }
+  },
+  "gpu_memory_mb": 767.1
+}
