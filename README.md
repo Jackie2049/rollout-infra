@@ -6,6 +6,7 @@
 
 ## 工作日志
 
+- [2026-06-05](diary/2026-06-05.md) — RTX 4090 全面 benchmark、MiniGPT 训练、论文精读 8 篇、DPO/LoRA/RLHF/GRPO 实验、DeepSeek-V3 验证、Top-nσ PR 评估、开源贡献
 - [2026-06-04](diary/2026-06-04.md) — vLLM 安装、推理性能估算工具、LoRA/Tokenizer 笔记
 - [2026-06-03](diary/2026-06-03.md) — GPU 基准测试、vLLM 安装、HuggingFace 推理实验、笔记体系搭建
 
@@ -79,6 +80,20 @@
 
 ## 开源项目源码阅读
 
+## 论文精读
+
+- [Attention is All You Need](notebook/papers/attention-is-all-you-need.md) — Transformer 原始论文, QK^T/√d_k 缩放, 多头注意力, 现代架构对比
+- [DeepSeek-R1](notebook/papers/deepseek-r1.md) — GRPO, "Aha Moment", Cold-start SFT → GRPO → Rejection Sampling SFT → DPO
+- [InstructGPT](notebook/papers/instructgpt.md) — RLHF 三步 pipeline, 1.3B InstructGPT > 175B GPT-3
+- [LLaMA 3](notebook/papers/llama3.md) — 简单架构+大数据=强模型, 405B 16K H100 训练, DPO 对齐
+- [FlashAttention](notebook/papers/flashattention.md) — Tiling + online softmax + recomputation, O(N) 内存
+- [Chinchilla Scaling Laws](notebook/papers/chinchilla.md) — L(N,D) 最优 ~20 tok/param, 推翻 Kaplan "大模型少数据"
+- [PPO](notebook/papers/ppo.md) — L^{CLIP}, RLHF 核心算法, GRPO 简化版
+- [GPT-4](notebook/papers/gpt4.md) — 可预测扩展, RLHF 无损, RBRMs 安全
+- [Mamba](notebook/papers/mamba.md) — 选择性 SSM, 线性时间, 2.8B 匹配 GPT-J-6B
+- [Top-nσ](notebook/papers/top-n-sigma.md) — ACL 2025, logit 空间统计阈值, 温度稳定性 1.00x
+- [DeepSeek-V3](notebook/papers/deepseek-v3.md) — 671B/37B MoE, 辅助无关负载均衡, FP8 tile-wise, MTP, DualPipe
+
 - [vLLM V1 架构](notebook/projects/vllm-architecture.md) — V1 整体架构、Scheduler/Executor 分离、混合推理
 - [vLLM KV Transfer Connector](notebook/projects/vllm-kv-transfer-connector.md) — NIXL 连接器架构、P/D 分离、ZMQ 握手、TP 聚合
 - [vLLM V1 Scheduler 源码阅读](notebook/projects/vllm-v1-scheduler-reading.md) — 调度循环、抢占策略、KV Cache 管理、Prefix Caching 集成
@@ -119,6 +134,20 @@
 - [A16 基准测试](notebook/experiments/gpu-a16-benchmark.md) — GEMM 14.64 TFLOPS、HBM 76 GB/s、混合精度 3.9x 加速
 - [vLLM GPT-2 推理](notebook/experiments/vllm-a16-gpt2-benchmark.md) — vLLM 0.6.4+cu118, Batch=16 达 1875 tok/s, Flash Attention 后端
 - [GPU Profiling 深度实验](notebook/experiments/gpu-profiling-a16.md) — GEMM/带宽/Attention/Kernel Launch 五类操作 profiling，A16 约为 A100 的 1/10 性能
+- [RTX 4090 全面 Benchmark](notebook/experiments/rtx4090-benchmark.md) — SDPA 162 TFLOPS, Decode 529K tok/s, CUDA Graph 1.02x, KV Cache 分析
+- [RTX 4090 MoE Layer](notebook/experiments/rtx4090-moe-layer.md) — MoE vs Dense, Python 循环 5.8-26.3x 开销, aux_loss ≈ 1.0
+- [RTX 4090 Training Techniques](notebook/experiments/rtx4090-training-techniques.md) — AdamW>>Adam 4.13 vs 6.57, BF16 省 29%, cosine warmup
+- [RTX 4090 PPO Training](notebook/experiments/rtx4090-ppo-training.md) — PPO 比 Vanilla PG 好 24%, KL β=0.01 最优
+- [RTX 4090 KV Cache Compression](notebook/experiments/rtx4090-kv-cache-compress.md) — INT8 cos=0.9999 安全, SW-4K 省 97%
+- [RTX 4090 Ring Attention](notebook/experiments/rtx4090-ring-attention.md) — Online softmax 精确 err<6e-7, 通信量与 P 无关
+- [RTX 4090 Mini LLM Training](notebook/experiments/rtx4090-mini-train.md) — Pretrain loss 4.92→2.46, SFT loss 1.68→1.11
+- [RTX 4090 DPO Training](notebook/experiments/rtx4090-dpo-train.md) — DPO preference accuracy 99.7%, β=0.3 最优
+- [RTX 4090 LoRA Fine-tuning](notebook/experiments/rtx4090-lora-finetune.md) — LoRA r=8 仅 7.13% 参数, merge 零推理开销
+- [RTX 4090 Multi-GPU DDP](notebook/experiments/rtx4090-multigpu-ddp.md) — 4 GPU 3.23x (80.7% 效率), PCIe AllReduce 4.9 GB/s
+- [RTX 4090 RLHF/GRPO](notebook/experiments/rtx4090-rlhf-grpo.md) — GRPO 比 PPO 稳定, group size n=2-4 最优
+- [RTX 4090 Triton Kernels](notebook/experiments/rtx4090-triton-kernels.md) — RMSNorm 1.8x, memory BW 945 GB/s = 93.7% peak
+- [RTX 4090 Top-nσ Sampling](notebook/experiments/rtx4090-top-n-sigma.md) — 温度稳定性 1.00x vs top-p 19,665x
+- [RTX 4090 DeepSeek-V3 MoE](notebook/experiments/rtx4090-deepseek-v3-moe.md) — Bias-based 零性能损失, FP8 tile-wise cos=1.0
 
 ## 工具脚本
 
@@ -222,11 +251,13 @@
 
 | 类别 | 数量 |
 |------|------|
-| 基础知识笔记 | 48 篇 |
-| 项目源码阅读 | 34 篇 |
-| 实验记录 | 3 篇 |
-| 实用工具脚本 | 61 个 |
-| **总计** | **145 项** |
+| 基础知识笔记 | 48+ 篇 |
+| 项目源码阅读 | 34+ 篇 |
+| 论文精读 | 11 篇 |
+| 实验记录 (RTX 4090) | 17 篇 |
+| 实用工具脚本 | 137+ 个 |
+| Claude Code Skills | 5 个 |
+| **总计** | **312+ 项** |
 
 ## GitHub
 
