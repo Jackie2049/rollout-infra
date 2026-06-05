@@ -1,0 +1,123 @@
+{
+  "rmsnorm": {
+    "256": {
+      "pytorch_ms": 0.052,
+      "triton_ms": 0.028,
+      "speedup": 1.84
+    },
+    "512": {
+      "pytorch_ms": 0.051,
+      "triton_ms": 0.029,
+      "speedup": 1.79
+    },
+    "1024": {
+      "pytorch_ms": 0.051,
+      "triton_ms": 0.027,
+      "speedup": 1.88
+    },
+    "2048": {
+      "pytorch_ms": 0.051,
+      "triton_ms": 0.028,
+      "speedup": 1.84
+    },
+    "4096": {
+      "pytorch_ms": 0.051,
+      "triton_ms": 0.027,
+      "speedup": 1.86
+    }
+  },
+  "softmax": {
+    "256": {
+      "pytorch_ms": 0.007,
+      "triton_ms": 0.025,
+      "speedup": 0.28
+    },
+    "512": {
+      "pytorch_ms": 0.007,
+      "triton_ms": 0.025,
+      "speedup": 0.27
+    },
+    "1024": {
+      "pytorch_ms": 0.007,
+      "triton_ms": 0.039,
+      "speedup": 0.18
+    },
+    "2048": {
+      "pytorch_ms": 0.007,
+      "triton_ms": 0.026,
+      "speedup": 0.27
+    },
+    "4096": {
+      "pytorch_ms": 0.007,
+      "triton_ms": 0.027,
+      "speedup": 0.25
+    },
+    "8192": {
+      "pytorch_ms": 0.007,
+      "triton_ms": 0.024,
+      "speedup": 0.29
+    }
+  },
+  "fused_qkv": {
+    "512": {
+      "separate_ms": 0.041,
+      "stacked_ms": 0.021,
+      "speedup": 1.98
+    },
+    "1024": {
+      "separate_ms": 0.042,
+      "stacked_ms": 0.021,
+      "speedup": 1.97
+    },
+    "2048": {
+      "separate_ms": 0.045,
+      "stacked_ms": 0.031,
+      "speedup": 1.48
+    }
+  },
+  "ln_vs_rms": {
+    "256": {
+      "layernorm_ms": 0.019,
+      "rmsnorm_ms": 0.051,
+      "speedup": 0.37
+    },
+    "512": {
+      "layernorm_ms": 0.019,
+      "rmsnorm_ms": 0.051,
+      "speedup": 0.37
+    },
+    "1024": {
+      "layernorm_ms": 0.019,
+      "rmsnorm_ms": 0.051,
+      "speedup": 0.38
+    },
+    "2048": {
+      "layernorm_ms": 0.019,
+      "rmsnorm_ms": 0.051,
+      "speedup": 0.37
+    },
+    "4096": {
+      "layernorm_ms": 0.019,
+      "rmsnorm_ms": 0.051,
+      "speedup": 0.38
+    }
+  },
+  "memory_bw": {
+    "vector_add": {
+      "ms": 0.107,
+      "gb_s": 944.8,
+      "efficiency_pct": 93.7
+    },
+    "elem_mul": {
+      "ms": 0.107,
+      "gb_s": 944.4,
+      "efficiency_pct": 93.7
+    },
+    "reduction": {
+      "ms": 0.013,
+      "gb_s": 2638.3
+    },
+    "peak_bw_gbs": 1008
+  },
+  "gpu_memory_mb": 122.0
+}
