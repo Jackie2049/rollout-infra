@@ -1,0 +1,99 @@
+{
+  "routing_e4": {
+    "aux_loss": 1.0000863075256348,
+    "load_std": 0.004580484237521887,
+    "max_load": 0.2529296875,
+    "min_load": 0.2431640625
+  },
+  "routing_e8": {
+    "aux_loss": 1.0013835430145264,
+    "load_std": 0.010805414989590645,
+    "max_load": 0.138671875,
+    "min_load": 0.111328125
+  },
+  "routing_e16": {
+    "aux_loss": 1.0009448528289795,
+    "load_std": 0.005595739930868149,
+    "max_load": 0.07470703125,
+    "min_load": 0.05224609375
+  },
+  "routing_e32": {
+    "aux_loss": 1.0026652812957764,
+    "load_std": 0.005019507836550474,
+    "max_load": 0.041015625,
+    "min_load": 0.02294921875
+  },
+  "params_e4": {
+    "dense_K": 786.432,
+    "moe_total_K": 3146.752,
+    "moe_active_K": 1573.888,
+    "sparse_ratio": 1.9993493819128172
+  },
+  "params_e8": {
+    "dense_K": 786.432,
+    "moe_total_K": 6293.504,
+    "moe_active_K": 1574.912,
+    "sparse_ratio": 3.996098829648895
+  },
+  "params_e16": {
+    "dense_K": 786.432,
+    "moe_total_K": 12587.008,
+    "moe_active_K": 1576.96,
+    "sparse_ratio": 7.9818181818181815
+  },
+  "throughput_e4": {
+    "dense_ms": 2.114396095275879,
+    "moe_ms": 12.273340225219727,
+    "overhead": 5.804655169692008
+  },
+  "throughput_e8": {
+    "dense_ms": 1.3368797302246094,
+    "moe_ms": 18.356122970581055,
+    "overhead": 13.730571685380434
+  },
+  "throughput_e16": {
+    "dense_ms": 1.3207340240478516,
+    "moe_ms": 34.73611354827881,
+    "overhead": 26.300612323000383
+  },
+  "topk_1": {
+    "time_ms": 3.705587387084961,
+    "active_ratio": 0.125,
+    "aux_loss": 1.0012879371643066
+  },
+  "topk_2": {
+    "time_ms": 7.2196149826049805,
+    "active_ratio": 0.25,
+    "aux_loss": 1.0002213716506958
+  },
+  "topk_4": {
+    "time_ms": 14.17795181274414,
+    "active_ratio": 0.5,
+    "aux_loss": 1.0003703832626343
+  },
+  "topk_8": {
+    "time_ms": 28.106484413146973,
+    "active_ratio": 1.0,
+    "aux_loss": 1.0
+  },
+  "balance_bs4": {
+    "load_std": 0.009568319655954838,
+    "max_min_ratio": 1.25
+  },
+  "balance_bs16": {
+    "load_std": 0.007375194691121578,
+    "max_min_ratio": 1.1563169164882228
+  },
+  "balance_bs64": {
+    "load_std": 0.0065416316501796246,
+    "max_min_ratio": 1.1635786130227634
+  },
+  "balance_bs128": {
+    "load_std": 0.006169814616441727,
+    "max_min_ratio": 1.1584582441113491
+  },
+  "balance_bs256": {
+    "load_std": 0.005839603953063488,
+    "max_min_ratio": 1.1501601708489055
+  }
+}
