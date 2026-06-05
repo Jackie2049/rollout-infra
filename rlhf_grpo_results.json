@@ -1,0 +1,53 @@
+{
+  "ppo_vs_grpo": {
+    "ppo_final_reward": 0.4111328125,
+    "grpo_final_reward": 0.678515613079071,
+    "ppo_params": 116609,
+    "grpo_params": 112384
+  },
+  "grpo_n_samples": {
+    "2": {
+      "final": 0.807812511920929,
+      "improvement": 0.09062498807907104
+    },
+    "4": {
+      "final": 0.807812511920929,
+      "improvement": 0.09062498807907104
+    },
+    "8": {
+      "final": 0.78125,
+      "improvement": 0.07949221134185791
+    },
+    "16": {
+      "final": 0.7928711175918579,
+      "improvement": 0.07890629768371582
+    }
+  },
+  "kl_penalty": {
+    "0.0": {
+      "final_reward": 0.807812511920929,
+      "final_kl": -0.3170778751373291
+    },
+    "0.01": {
+      "final_reward": 0.78125,
+      "final_kl": -1.1474852561950684
+    },
+    "0.05": {
+      "final_reward": 0.78125,
+      "final_kl": -2.1256091594696045
+    },
+    "0.1": {
+      "final_reward": 0.78125,
+      "final_kl": -2.246737480163574
+    },
+    "0.5": {
+      "final_reward": 0.78125,
+      "final_kl": -2.7144837379455566
+    }
+  },
+  "reward_model": {
+    "final_rm_acc": 0.585,
+    "grpo_with_rm": 0.33901867270469666
+  },
+  "gpu_memory_mb": 67.6
+}
