@@ -1,0 +1,139 @@
+{
+  "cot_vs_direct": {
+    "cot_accs": [
+      0.0,
+      0.0,
+      0.03125,
+      0.015625,
+      0.078125,
+      0.0,
+      0.0,
+      0.046875,
+      0.0,
+      0.0,
+      0.03125,
+      0.0,
+      0.015625,
+      0.0,
+      0.015625,
+      0.046875,
+      0.0,
+      0.0,
+      0.0,
+      0.03125,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.015625
+    ],
+    "direct_accs": [
+      0.125,
+      0.125,
+      0.1875,
+      0.0625,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0625,
+      0.0625,
+      0.0,
+      0.0,
+      0.125,
+      0.0,
+      0.125,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0625,
+      0.0,
+      0.0,
+      0.0,
+      0.125
+    ],
+    "cot_final": 0.015625,
+    "direct_final": 0.125
+  },
+  "thinking_length": {
+    "4": {
+      "final": 0.03125,
+      "improvement": 0.03125
+    },
+    "8": {
+      "final": 0.046875,
+      "improvement": 0.03125
+    },
+    "16": {
+      "final": 0.015625,
+      "improvement": 0.015625
+    },
+    "24": {
+      "final": 0.0,
+      "improvement": 0.0
+    },
+    "32": {
+      "final": 0.0,
+      "improvement": 0.0
+    }
+  },
+  "task_difficulty": {
+    "arithmetic_d1": {
+      "final": 0.03125,
+      "improvement": 0.0
+    },
+    "logic_d1": {
+      "final": 0.09375,
+      "improvement": 0.0625
+    },
+    "pattern_d1": {
+      "final": 0.0,
+      "improvement": 0.0
+    },
+    "arithmetic_d2": {
+      "final": 0.015625,
+      "improvement": 0.015625
+    },
+    "logic_d2": {
+      "final": 0.078125,
+      "improvement": 0.03125
+    },
+    "pattern_d2": {
+      "final": 0.0,
+      "improvement": 0.0
+    },
+    "arithmetic_d3": {
+      "final": 0.0,
+      "improvement": 0.0
+    },
+    "logic_d3": {
+      "final": 0.109375,
+      "improvement": 0.09375
+    },
+    "pattern_d3": {
+      "final": 0.0,
+      "improvement": 0.0
+    }
+  },
+  "budget_forcing": {
+    "0.0": {
+      "final_acc": 0.03125,
+      "avg_think_len": 1.2729166666666667
+    },
+    "0.1": {
+      "final_acc": 0.015625,
+      "avg_think_len": 1.3520833333333333
+    },
+    "0.3": {
+      "final_acc": 0.03125,
+      "avg_think_len": 1.3208333333333333
+    },
+    "0.5": {
+      "final_acc": 0.046875,
+      "avg_think_len": 1.3229166666666667
+    }
+  },
+  "gpu_memory_mb": 34.0
+}
