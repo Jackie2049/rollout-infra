@@ -169,3 +169,39 @@ actor_rollout_ref:
 4. **交错排列**: `repeat(interleave=True)` 使同一 prompt 的 response 相邻 → 适合 PrefixGrouper
 5. **异步 Rollout**: rollout 和 actor 训练可以异步 (vLLM/SGLang 引擎)
 6. **LoRA 优化**: ref_in_actor=True 避免加载第二个模型 → 50% 内存节省
+
+## 9. 所有可用优势估计器 (core_algos.py)
+
+| 估计器 | 全称 | 需要Critic | 说明 |
+|--------|------|-----------|------|
+| GAE | Generalized Advantage Estimation | ✓ | 标准 PPO |
+| GRPO | Group Relative Policy Optimization | ✗ | 组内归一化 |
+| GRPO_VECTORIZED | GRPO (向量化) | ✗ | 更高效的组操作 |
+| GRPO_PASSK | Pass@k GRPO | ✗ | 基于 top-k |
+| GDPO | 解耦归一化 | ✗ | 每维度独立归一化 |
+| REINFORCE_PLUS_PLUS | 增强版 REINFORCE | ✗ | 折扣回报 |
+| RLOO | REINFORCE Leave-One-Out | ✗ | 从其他样本剔除基线 |
+| REMAX | ReMax | ✗ | 贪婪基线 |
+| GPG | 广义策略梯度 | ✗ | 无裁剪 |
+
+## 10. 所有策略损失函数 (core_algos.py:50)
+
+| 损失 | 说明 |
+|------|------|
+| vanilla | 标准 PPO 裁剪损失 |
+| gpg | 无裁剪 REINFORCE |
+| bypass_mode | 2策略模式 (rollout=old policy) |
+| dppo_tv / dppo_kl | 总变差 / KL 约束 |
+| gspo | 几何均值序列级比率 |
+| sapo | 平滑策略优化 |
+| cispo | 裁剪重要性采样 |
+| clip_cov / kl_cov | 协方差裁剪损失 |
+| geo_mean | GMPO 几何均值策略 |
+
+## 11. 权重同步机制
+
+训练后 actor 权重需同步到 rollout 引擎:
+```python
+self.checkpoint_manager.update_weights(self.global_steps)
+```
+支持三种后端: naive (保存+加载) / NCCL (直接传输) / NIXL (RDMA)

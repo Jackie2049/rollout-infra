@@ -4,9 +4,9 @@
 
 ## Comment (English)
 
-Thanks for the great RFC! I've been studying verl's existing PrefixGrouper implementation and have some analysis that might be helpful for this RFC.
+Thanks for the great RFC! I've been studying verl's existing PrefixGrouper implementation and have some analysis that might be helpful.
 
-### Current PrefixGrouper Architecture
+### Current PrefixGrouper Architecture (PR #4368)
 
 The existing `prefix_grouper` (external package, integrated via `verl/trainer/ppo/prefix_grouper_utils.py`) works as follows:
 
@@ -18,31 +18,70 @@ The existing `prefix_grouper` (external package, integrated via `verl/trainer/pp
 
 Performance (Qwen3-4B, 4×H800): 1.26x @ 4K, 1.56-1.70x @ 8K context.
 
-### Gap to RFC #6401
+### Gap Between PrefixGrouper and RFC #6401
 
-| Aspect | Current | RFC #6401 |
-|--------|---------|-----------|
+| Aspect | PrefixGrouper (PR #4368) | RFC #6401 (Magi-based) |
+|--------|--------------------------|------------------------|
 | Grouping | Flat (same uid) | Tree (arbitrary depth) |
-| Attention backend | FA2/FA3/SDPA | Magi Attention (sparse mask) |
+| Attention backend | FA2/FA3/SDPA | Magi FFA (block-sparse mask) |
 | Prefix detection | uid-based (implicit) | hash-based prefix_segments |
 | Backend support | FSDP only | Megatron + FSDP |
+| Approach | Decompose into prefix+suffix attn | Flat packing with sparse mask |
 | Cross batch | No | Future: cache-based |
 
-### Potential Contribution Path
+### Key Observation: Loss Discrepancy
+
+Following @Kirrito-k423's observation about step-2+ loss divergence — this could be related to:
+1. The `FSDPEngineWithLMHead.forward_step()` not passing `prefix_grouper` kwargs properly
+2. Numerical precision differences in Magi's dispatch solver for sparse patterns
+3. Activation checkpoint offloading differences between steps
+
+A gradient equivalence debug flag (as suggested) would be very helpful.
+
+### Potential Contribution
 
 I've been working on a `prefix-sharing` project that implements:
 - `TriePrefixDetector`: Tree-based prefix detection using tries
 - `PrefixSharingConfig`: Full configuration dataclass
 - KV injection + recovery logic
 
-These could potentially contribute to the tree-based prefix detection module needed for this RFC.
+These could contribute to the tree-based prefix detection module needed for this RFC.
 
-### Questions for the RFC
+### Questions
 
-1. **Prefix tree depth**: What's the expected tree depth in typical GRPO workloads? For n=8 responses, the tree is quite flat (1 prefix + 8 suffixes). Multi-turn would increase depth, but how deep in practice?
+1. **Prefix tree depth**: For GRPO n=8, the tree is flat (1 prefix + 8 suffixes). Multi-turn would increase depth — what's the target depth? rStar-Math MCTS trees could be quite deep.
+2. **Magi Attention version**: The RFC uses MagiAttention 1.1.0 with FFA kernel — is the Blackwell (FA4) fork ready for production use?
+3. **Dispatch solver overhead**: How significant is the dispatch solver's chunk-level sharding overhead for typical GRPO batch sizes?
 
-2. **FSDP integration**: The current `FSDPEngineWithLMHead.forward_step()` doesn't pass `prefix_grouper` kwargs — is this already addressed in the RFC design?
+Looking forward to contributing!
 
-3. **Magi Attention backend**: Is there an open-source implementation available, or is the plan to implement from scratch?
+---
 
-Looking forward to contributing to this effort!
+## RFC #6401 Research Summary (from agent)
+
+### Issue Details
+- **Author**: arvyanh
+- **Date**: May 19, 2026
+- **URL**: https://github.com/volcengine/verl/issues/6401
+
+### Main Proposal
+Pack GRPO samples into flat token layout `[prefix | leaf_0 | ... | leaf_{n-1}]` with block-sparse attention masks. Shared prefix computed once at O(P) instead of O(P²) × n.
+
+### Benchmark Results
+- Dataset A: 42% faster, 30% less memory
+- Dataset B: ~3x forward speedup over FA3
+
+### Related Work
+- **Magi Attention**: https://github.com/SandAI-org/MagiAttention (840 stars, Apache 2.0)
+  - FFA (Flex-Flash-Attention): Generalized attention with AttnSlice masks
+  - Dispatch Solver: Fine-grained chunk-level sharding for load balance
+  - Integrations: Megatron-LM, FSDP, HuggingFace
+- **PR #4368**: PrefixGrouper (alternative FSDP-only approach, decomposition-based)
+- **PR #6271**: Multi-trajectory support in async pipeline (88 commits, open)
+- **Use cases**: rStar-Math (MCTS), TreeRL, DeepSearch (ICLR 2026)
+
+### Existing Comment (Kirrito-k423, May 21)
+- Confirmed prefix-tree masking approach is sound
+- Flagged step-2+ loss discrepancy (step 1 matches, step 2+ diverges)
+- Recommended gradient equivalence debug flag
+- Offered to collaborate on Magi integration
