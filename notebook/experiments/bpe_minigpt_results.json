@@ -1,0 +1,75 @@
+{
+  "bpe_v512": {
+    "vocab_size": 512,
+    "n_tokens": 3664,
+    "compression": 1.9800764192139737,
+    "unique_tokens": 269
+  },
+  "bpe_v1024": {
+    "vocab_size": 1024,
+    "n_tokens": 2825,
+    "compression": 2.568141592920354,
+    "unique_tokens": 545
+  },
+  "bpe_v2048": {
+    "vocab_size": 1370,
+    "n_tokens": 2479,
+    "compression": 2.926583299717628,
+    "unique_tokens": 554
+  },
+  "char": {
+    "vocab_size": 45,
+    "n_tokens": 7255,
+    "compression": 1.0
+  },
+  "exp2_comparison": {
+    "bpe_val_loss": 6.086555099487304,
+    "bpe_time": 24.278986930847168,
+    "bpe_tokens": 3297,
+    "char_val_loss": 3.710431957244873,
+    "char_time": 23.779085874557495,
+    "char_tokens": 6529
+  },
+  "exp3_vocab512": {
+    "val_loss": 6.018840026855469,
+    "time": 17.888360738754272,
+    "n_tokens": 3297,
+    "compression": 2.200485289657264
+  },
+  "exp3_vocab1024": {
+    "val_loss": 6.767047977447509,
+    "time": 17.90550470352173,
+    "n_tokens": 2542,
+    "compression": 2.8540519276160503
+  },
+  "exp3_vocab2048": {
+    "val_loss": 7.1045653343200685,
+    "time": 17.918733835220337,
+    "n_tokens": 2231,
+    "compression": 3.2519049753473777
+  },
+  "exp4_tiny": {
+    "params_M": 0.139328,
+    "val_loss": 6.226622009277344,
+    "time": 11.246765613555908,
+    "sample": "Once upon a time,\u0015\ufffdforest\u0007\ufffdsmallTheyilhe7vfrom\ufffdabout\"//\ufffd\u0019\n\n]\ufffdSnowballir\ufffdAglowshevvabthingroBch\ufffd\ufffdsp3denvareSnowball\ufffdsmcontwasold\ufffdstor3stor4\ufffd\ufffd\ufffdventure\u0165\ufffd;adstor\ufffds.disI\u000eomomcamebuil\ufffd\ufffdfullagwinterhom\ufffd"
+  },
+  "exp4_small": {
+    "params_M": 0.868992,
+    "val_loss": 6.121036434173584,
+    "time": 18.265395164489746,
+    "sample": "Once upon a time,,\ufffdschoogoldgoldith \ufffd\ufffd\ufffd\ufffdeveryeverygreat\ufffd\ufffd\ufffdgreendleis\u001b\ufffdEvery ith\ufffdstories\ufffdaboutni\ufffd] al\ufffdmagic\ufffdjvillagege\ufffdMabout2colgold\ufffdoundound\ufffdgarfe\ufffdac\ufffdZby\ufffd\ufffdvent\ufffd\\\ufffd\ufffdni\ufffd\u0012villageSnowvillagegold\ufffdgold\ufffder\ufffdf"
+  },
+  "exp4_medium": {
+    "params_M": 2.779584,
+    "val_loss": 5.946579456329346,
+    "time": 24.186198711395264,
+    "sample": "Once upon a time,\ufffdenchanted\u0172ild\ufffdwh\ufffd;andandvedupIEveryny\ufffd'from\ufffds\u0011wonder\u0200\ufffdni\u0011ildoreitfromxx\ufffd\n\n\u0686 blcame frdiscoEvery\ufffd\ufffdThomp\n\n\ufffdild\ufffd\ufffdht\ufffdEverywhwhrabbit\ufffd\ufffdfucl''\ufffdbook3\ufffd\n\n\ufffd`abexfris\ufffdr"
+  },
+  "exp4_large": {
+    "params_M": 6.455552,
+    "val_loss": 5.605904388427734,
+    "time": 30.569106578826904,
+    "sample": "Once upon a time,\ufffd\ufffdendfullse\ufffd\u0012 \u0010\ufffdke\ufffdsonwkcolorsu\ufffdqill\ufffdsidesonill\ufffd\u0264suby\u000eir\ufffd\ufffd\ufffdbyThompeace\u0002\u0017wondside>dchild\u0012evmagicnight\ufffd\ufffdldpeaceillforeseildse co whiteside^or\ufffd rabon   \ufffd3\ufffdTheevmagicstor "
+  }
+}

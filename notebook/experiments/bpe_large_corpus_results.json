@@ -1,0 +1,85 @@
+{
+  "comparison": {
+    "bpe": {
+      "loss": 5.588504981994629,
+      "bpc": 3.8882647044927143,
+      "ppl": 267.33564919755486,
+      "time": 116.31497263908386,
+      "tokens": 249615,
+      "compression": 2.0735492658694388
+    },
+    "char": {
+      "loss": 3.613528776168823,
+      "bpc": 5.213220045488327,
+      "ppl": 37.0967281674858,
+      "time": 115.36042833328247,
+      "tokens": 465830,
+      "compression": 1.0
+    },
+    "corpus_chars": 517589
+  },
+  "scale_tiny": {
+    "params_M": 0.14752,
+    "val_loss": 6.21963062286377,
+    "bpc": 4.327377411987512,
+    "ppl": 502.51757923008057,
+    "time": 22.88046622276306,
+    "sample": "Once upon a time,\ufffd\ufffdhBBeanyed]]togethervillong\ufffd\u000f\ufffd\ufffdeaesbraveloomeanyLus,ingme\ufffd?\"XTheyry\ufffdancar enrouwonderfulanc\u000f'(strongthroughma\ufffdJJlowcurivillagequ\u0014\u0014\ufffd\ufffd?\"over\ufffdhad\ufffdromti\\\u0012warm\ufffdstream\ufffd\ufffdsparklitZ\u001f\ufffdvilla\b^z"
+  },
+  "scale_small": {
+    "params_M": 0.885376,
+    "val_loss": 6.101327991485595,
+    "bpc": 4.24506703604289,
+    "ppl": 446.450258727837,
+    "time": 40.28957462310791,
+    "sample": "Once upon a time,asbo\u001f\tEvery(ear@lo@every\u001froblill))ter\ufffd\ufffdoveran\ufffdtheirillbvillaked\ufffdth.yof\n\n\ufffd\u0010\"I\"Ifu\ufffds.\ufffd\ufffdQlo\tached\ufffdand\u0002\ufffdQra\ufffdthethe\ufffd,\ufffd_hed  er\ufffdQ\ufffd,\"magicaF\ufffd-ry\ufffdbut\ufffdhedilywikedveryunnewWheun\ufffdur2villaunanced"
+  },
+  "scale_medium": {
+    "params_M": 2.80416,
+    "val_loss": 5.650508022308349,
+    "bpc": 3.9314040116955913,
+    "ppl": 284.43592892276416,
+    "time": 117.09477233886719,
+    "sample": "Once upon a time,\ufffdmyst\n\n+\u0018 \ufffdedibutLu%j bl,. diteI\ufffd,\ufffdg\ufffd\u0011tinyan \u0011 D \ufffdLu%tancancanyhomefe D zdz\u0011\u0011\ufffdloodowit\n\nI\u0011of,earOterfterf\ufffd\"Ilytiny,tinyI om: ssquietLu\ufffd\n\nous\ufffd\n\nchedpathiZaceDearklhome\ufffdS\ufffd\ufffd, And [\ufffd\ufffd of\ufffd"
+  },
+  "scale_large": {
+    "params_M": 6.48832,
+    "val_loss": 5.286557292938232,
+    "bpc": 3.678181230335715,
+    "ppl": 197.66176115650774,
+    "time": 222.2451515197754,
+    "sample": "Once upon a time,\ufffdfrouind   peaceful\ufffdit\ufffdmagicariri magicaZoe\ufffd  sae\ufffdneenfbrightoutorigentle    \ufffde\ufffdancin 'soughteriden  idghtsa\ufffd\ufffdnmystmagicawhethe e  \ufffd \u07b9 \nmystjght ght\n\n  =the'magica4sain\ufffd \ufffd\ufffd\n  '\ufffd\ufffd =  g"
+  },
+  "scale_xlarge": {
+    "params_M": 12.53728,
+    "val_loss": 4.949161148071289,
+    "bpc": 3.4434340974719606,
+    "ppl": 141.05658868729378,
+    "time": 334.1859221458435,
+    "sample": "Once upon a time, \ufffd \u0007aintopeacefulintoquion\fgo  \ufffd al youThefulcw    wonderful      \ufffd\ufffd    st  onealLily saful      now   fri  \ufffd wonderful\ufffd  the   one  \ufffd           on\ufffd Every           qui  Lily al   the"
+  },
+  "vocab_512": {
+    "val_loss": 5.728699398040772,
+    "bpc": 3.9858065339149764,
+    "ppl": 307.568983305777,
+    "compression": 2.0735492658694388,
+    "time": 96.60142135620117,
+    "n_tokens": 249615
+  },
+  "vocab_1024": {
+    "val_loss": 6.268338298797607,
+    "bpc": 3.2827214820097694,
+    "ppl": 527.5999356087705,
+    "compression": 2.7548181068206614,
+    "time": 97.8675525188446,
+    "n_tokens": 187885
+  },
+  "vocab_2048": {
+    "val_loss": 6.687658214569092,
+    "bpc": 2.9339807610251993,
+    "ppl": 802.44090572674,
+    "compression": 3.2884507865511194,
+    "time": 100.34726214408875,
+    "n_tokens": 157396
+  }
+}
