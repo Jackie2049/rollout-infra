@@ -1,0 +1,968 @@
+[
+  {
+    "name": "7B-MHA",
+    "batch_size": 1,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0348,
+        "tflops": 0.97,
+        "bw_gb_s": 965.91
+      },
+      "k_proj": {
+        "ms": 0.0347,
+        "tflops": 0.97,
+        "bw_gb_s": 966.74
+      },
+      "v_proj": {
+        "ms": 0.0347,
+        "tflops": 0.97,
+        "bw_gb_s": 966.74
+      },
+      "attn_out": {
+        "ms": 0.0347,
+        "tflops": 0.97,
+        "bw_gb_s": 967.05
+      },
+      "mlp_gate": {
+        "ms": 0.1013,
+        "tflops": 0.89,
+        "bw_gb_s": 890.76
+      },
+      "mlp_up": {
+        "ms": 0.1013,
+        "tflops": 0.89,
+        "bw_gb_s": 890.76
+      },
+      "mlp_down": {
+        "ms": 0.1002,
+        "tflops": 0.9,
+        "bw_gb_s": 900.45
+      }
+    },
+    "attn_total_ms": 0.139,
+    "mlp_total_ms": 0.303,
+    "layer_total_ms": 0.442
+  },
+  {
+    "name": "7B-MHA",
+    "batch_size": 4,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0201,
+        "tflops": 6.67,
+        "bw_gb_s": 1671.81
+      },
+      "k_proj": {
+        "ms": 0.0201,
+        "tflops": 6.67,
+        "bw_gb_s": 1671.88
+      },
+      "v_proj": {
+        "ms": 0.0201,
+        "tflops": 6.67,
+        "bw_gb_s": 1671.88
+      },
+      "attn_out": {
+        "ms": 0.0201,
+        "tflops": 6.67,
+        "bw_gb_s": 1670.81
+      },
+      "mlp_gate": {
+        "ms": 0.1003,
+        "tflops": 3.6,
+        "bw_gb_s": 900.51
+      },
+      "mlp_up": {
+        "ms": 0.1003,
+        "tflops": 3.6,
+        "bw_gb_s": 900.51
+      },
+      "mlp_down": {
+        "ms": 0.1022,
+        "tflops": 3.53,
+        "bw_gb_s": 883.8
+      }
+    },
+    "attn_total_ms": 0.08,
+    "mlp_total_ms": 0.303,
+    "layer_total_ms": 0.383
+  },
+  {
+    "name": "7B-MHA",
+    "batch_size": 8,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0221,
+        "tflops": 12.14,
+        "bw_gb_s": 1522.91
+      },
+      "k_proj": {
+        "ms": 0.0221,
+        "tflops": 12.14,
+        "bw_gb_s": 1523.11
+      },
+      "v_proj": {
+        "ms": 0.0221,
+        "tflops": 12.14,
+        "bw_gb_s": 1523.11
+      },
+      "attn_out": {
+        "ms": 0.0221,
+        "tflops": 12.14,
+        "bw_gb_s": 1522.81
+      },
+      "mlp_gate": {
+        "ms": 0.1005,
+        "tflops": 7.18,
+        "bw_gb_s": 899.4
+      },
+      "mlp_up": {
+        "ms": 0.1005,
+        "tflops": 7.18,
+        "bw_gb_s": 899.4
+      },
+      "mlp_down": {
+        "ms": 0.1027,
+        "tflops": 7.02,
+        "bw_gb_s": 880.42
+      }
+    },
+    "attn_total_ms": 0.088,
+    "mlp_total_ms": 0.304,
+    "layer_total_ms": 0.392
+  },
+  {
+    "name": "7B-MHA",
+    "batch_size": 32,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0221,
+        "tflops": 48.56,
+        "bw_gb_s": 1541.06
+      },
+      "k_proj": {
+        "ms": 0.0221,
+        "tflops": 48.63,
+        "bw_gb_s": 1543.46
+      },
+      "v_proj": {
+        "ms": 0.0221,
+        "tflops": 48.63,
+        "bw_gb_s": 1543.46
+      },
+      "attn_out": {
+        "ms": 0.0221,
+        "tflops": 48.68,
+        "bw_gb_s": 1545.0
+      },
+      "mlp_gate": {
+        "ms": 0.1044,
+        "tflops": 27.65,
+        "bw_gb_s": 873.3
+      },
+      "mlp_up": {
+        "ms": 0.1044,
+        "tflops": 27.65,
+        "bw_gb_s": 873.3
+      },
+      "mlp_down": {
+        "ms": 0.1039,
+        "tflops": 27.79,
+        "bw_gb_s": 877.61
+      }
+    },
+    "attn_total_ms": 0.088,
+    "mlp_total_ms": 0.313,
+    "layer_total_ms": 0.401
+  },
+  {
+    "name": "7B-MHA",
+    "batch_size": 128,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0353,
+        "tflops": 121.5,
+        "bw_gb_s": 1008.56
+      },
+      "k_proj": {
+        "ms": 0.0341,
+        "tflops": 125.82,
+        "bw_gb_s": 1044.42
+      },
+      "v_proj": {
+        "ms": 0.0341,
+        "tflops": 125.82,
+        "bw_gb_s": 1044.42
+      },
+      "attn_out": {
+        "ms": 0.0314,
+        "tflops": 136.61,
+        "bw_gb_s": 1133.94
+      },
+      "mlp_gate": {
+        "ms": 0.1089,
+        "tflops": 106.03,
+        "bw_gb_s": 863.92
+      },
+      "mlp_up": {
+        "ms": 0.1089,
+        "tflops": 106.03,
+        "bw_gb_s": 863.92
+      },
+      "mlp_down": {
+        "ms": 0.1116,
+        "tflops": 103.46,
+        "bw_gb_s": 842.96
+      }
+    },
+    "attn_total_ms": 0.135,
+    "mlp_total_ms": 0.329,
+    "layer_total_ms": 0.464
+  },
+  {
+    "name": "7B-MHA",
+    "batch_size": 256,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0515,
+        "tflops": 166.76,
+        "bw_gb_s": 732.85
+      },
+      "k_proj": {
+        "ms": 0.0516,
+        "tflops": 166.48,
+        "bw_gb_s": 731.59
+      },
+      "v_proj": {
+        "ms": 0.0516,
+        "tflops": 166.48,
+        "bw_gb_s": 731.59
+      },
+      "attn_out": {
+        "ms": 0.0519,
+        "tflops": 165.56,
+        "bw_gb_s": 727.56
+      },
+      "mlp_gate": {
+        "ms": 0.1751,
+        "tflops": 131.83,
+        "bw_gb_s": 559.14
+      },
+      "mlp_up": {
+        "ms": 0.1751,
+        "tflops": 131.83,
+        "bw_gb_s": 559.14
+      },
+      "mlp_down": {
+        "ms": 0.1586,
+        "tflops": 145.59,
+        "bw_gb_s": 617.48
+      }
+    },
+    "attn_total_ms": 0.207,
+    "mlp_total_ms": 0.509,
+    "layer_total_ms": 0.715
+  },
+  {
+    "name": "7B-MHA",
+    "batch_size": 512,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.116,
+        "tflops": 148.06,
+        "bw_gb_s": 361.48
+      },
+      "k_proj": {
+        "ms": 0.1136,
+        "tflops": 151.28,
+        "bw_gb_s": 369.35
+      },
+      "v_proj": {
+        "ms": 0.1136,
+        "tflops": 151.28,
+        "bw_gb_s": 369.35
+      },
+      "attn_out": {
+        "ms": 0.1117,
+        "tflops": 153.87,
+        "bw_gb_s": 375.65
+      },
+      "mlp_gate": {
+        "ms": 0.3221,
+        "tflops": 143.33,
+        "bw_gb_s": 327.97
+      },
+      "mlp_up": {
+        "ms": 0.3221,
+        "tflops": 143.33,
+        "bw_gb_s": 327.97
+      },
+      "mlp_down": {
+        "ms": 0.3003,
+        "tflops": 153.75,
+        "bw_gb_s": 351.8
+      }
+    },
+    "attn_total_ms": 0.455,
+    "mlp_total_ms": 0.945,
+    "layer_total_ms": 1.399
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 1,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0346,
+        "tflops": 0.97,
+        "bw_gb_s": 969.39
+      },
+      "k_proj": {
+        "ms": 0.0116,
+        "tflops": 0.72,
+        "bw_gb_s": 725.39
+      },
+      "v_proj": {
+        "ms": 0.0116,
+        "tflops": 0.72,
+        "bw_gb_s": 725.39
+      },
+      "attn_out": {
+        "ms": 0.0342,
+        "tflops": 0.98,
+        "bw_gb_s": 981.13
+      },
+      "mlp_gate": {
+        "ms": 0.1006,
+        "tflops": 0.9,
+        "bw_gb_s": 896.69
+      },
+      "mlp_up": {
+        "ms": 0.1006,
+        "tflops": 0.9,
+        "bw_gb_s": 896.69
+      },
+      "mlp_down": {
+        "ms": 0.1,
+        "tflops": 0.9,
+        "bw_gb_s": 902.26
+      }
+    },
+    "attn_total_ms": 0.092,
+    "mlp_total_ms": 0.301,
+    "layer_total_ms": 0.393
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 4,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0186,
+        "tflops": 7.2,
+        "bw_gb_s": 1803.41
+      },
+      "k_proj": {
+        "ms": 0.0155,
+        "tflops": 2.17,
+        "bw_gb_s": 544.12
+      },
+      "v_proj": {
+        "ms": 0.0155,
+        "tflops": 2.17,
+        "bw_gb_s": 544.12
+      },
+      "attn_out": {
+        "ms": 0.0186,
+        "tflops": 7.2,
+        "bw_gb_s": 1802.97
+      },
+      "mlp_gate": {
+        "ms": 0.0996,
+        "tflops": 3.62,
+        "bw_gb_s": 906.78
+      },
+      "mlp_up": {
+        "ms": 0.0996,
+        "tflops": 3.62,
+        "bw_gb_s": 906.78
+      },
+      "mlp_down": {
+        "ms": 0.1014,
+        "tflops": 3.56,
+        "bw_gb_s": 890.65
+      }
+    },
+    "attn_total_ms": 0.068,
+    "mlp_total_ms": 0.301,
+    "layer_total_ms": 0.369
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 8,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0201,
+        "tflops": 13.33,
+        "bw_gb_s": 1673.29
+      },
+      "k_proj": {
+        "ms": 0.0153,
+        "tflops": 4.39,
+        "bw_gb_s": 554.28
+      },
+      "v_proj": {
+        "ms": 0.0153,
+        "tflops": 4.39,
+        "bw_gb_s": 554.28
+      },
+      "attn_out": {
+        "ms": 0.0201,
+        "tflops": 13.33,
+        "bw_gb_s": 1673.04
+      },
+      "mlp_gate": {
+        "ms": 0.0998,
+        "tflops": 7.23,
+        "bw_gb_s": 905.59
+      },
+      "mlp_up": {
+        "ms": 0.0998,
+        "tflops": 7.23,
+        "bw_gb_s": 905.59
+      },
+      "mlp_down": {
+        "ms": 0.1023,
+        "tflops": 7.05,
+        "bw_gb_s": 883.59
+      }
+    },
+    "attn_total_ms": 0.071,
+    "mlp_total_ms": 0.302,
+    "layer_total_ms": 0.373
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 32,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0205,
+        "tflops": 52.4,
+        "bw_gb_s": 1663.17
+      },
+      "k_proj": {
+        "ms": 0.0153,
+        "tflops": 17.54,
+        "bw_gb_s": 569.52
+      },
+      "v_proj": {
+        "ms": 0.0153,
+        "tflops": 17.54,
+        "bw_gb_s": 569.52
+      },
+      "attn_out": {
+        "ms": 0.0205,
+        "tflops": 52.43,
+        "bw_gb_s": 1664.02
+      },
+      "mlp_gate": {
+        "ms": 0.1034,
+        "tflops": 27.91,
+        "bw_gb_s": 881.58
+      },
+      "mlp_up": {
+        "ms": 0.1034,
+        "tflops": 27.91,
+        "bw_gb_s": 881.58
+      },
+      "mlp_down": {
+        "ms": 0.103,
+        "tflops": 28.0,
+        "bw_gb_s": 884.52
+      }
+    },
+    "attn_total_ms": 0.072,
+    "mlp_total_ms": 0.31,
+    "layer_total_ms": 0.381
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 128,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.0316,
+        "tflops": 136.04,
+        "bw_gb_s": 1129.24
+      },
+      "k_proj": {
+        "ms": 0.0156,
+        "tflops": 69.03,
+        "bw_gb_s": 623.53
+      },
+      "v_proj": {
+        "ms": 0.0156,
+        "tflops": 69.03,
+        "bw_gb_s": 623.53
+      },
+      "attn_out": {
+        "ms": 0.0316,
+        "tflops": 136.09,
+        "bw_gb_s": 1129.66
+      },
+      "mlp_gate": {
+        "ms": 0.109,
+        "tflops": 105.94,
+        "bw_gb_s": 863.16
+      },
+      "mlp_up": {
+        "ms": 0.109,
+        "tflops": 105.94,
+        "bw_gb_s": 863.16
+      },
+      "mlp_down": {
+        "ms": 0.1124,
+        "tflops": 102.72,
+        "bw_gb_s": 836.91
+      }
+    },
+    "attn_total_ms": 0.094,
+    "mlp_total_ms": 0.33,
+    "layer_total_ms": 0.425
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 256,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.053,
+        "tflops": 161.98,
+        "bw_gb_s": 711.84
+      },
+      "k_proj": {
+        "ms": 0.0183,
+        "tflops": 117.19,
+        "bw_gb_s": 600.83
+      },
+      "v_proj": {
+        "ms": 0.0183,
+        "tflops": 117.19,
+        "bw_gb_s": 600.83
+      },
+      "attn_out": {
+        "ms": 0.0528,
+        "tflops": 162.58,
+        "bw_gb_s": 714.46
+      },
+      "mlp_gate": {
+        "ms": 0.1742,
+        "tflops": 132.53,
+        "bw_gb_s": 562.07
+      },
+      "mlp_up": {
+        "ms": 0.1742,
+        "tflops": 132.53,
+        "bw_gb_s": 562.07
+      },
+      "mlp_down": {
+        "ms": 0.1573,
+        "tflops": 146.73,
+        "bw_gb_s": 622.31
+      }
+    },
+    "attn_total_ms": 0.142,
+    "mlp_total_ms": 0.506,
+    "layer_total_ms": 0.648
+  },
+  {
+    "name": "7B-GQA8",
+    "batch_size": 512,
+    "hidden": 4096,
+    "inner": 11008,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.1161,
+        "tflops": 147.95,
+        "bw_gb_s": 361.21
+      },
+      "k_proj": {
+        "ms": 0.0323,
+        "tflops": 133.01,
+        "bw_gb_s": 422.15
+      },
+      "v_proj": {
+        "ms": 0.0323,
+        "tflops": 133.01,
+        "bw_gb_s": 422.15
+      },
+      "attn_out": {
+        "ms": 0.1126,
+        "tflops": 152.56,
+        "bw_gb_s": 372.46
+      },
+      "mlp_gate": {
+        "ms": 0.3274,
+        "tflops": 141.02,
+        "bw_gb_s": 322.68
+      },
+      "mlp_up": {
+        "ms": 0.3274,
+        "tflops": 141.02,
+        "bw_gb_s": 322.68
+      },
+      "mlp_down": {
+        "ms": 0.299,
+        "tflops": 154.41,
+        "bw_gb_s": 353.3
+      }
+    },
+    "attn_total_ms": 0.293,
+    "mlp_total_ms": 0.954,
+    "layer_total_ms": 1.247
+  },
+  {
+    "name": "70B",
+    "batch_size": 1,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.1465,
+        "tflops": 0.92,
+        "bw_gb_s": 916.47
+      },
+      "k_proj": {
+        "ms": 0.0222,
+        "tflops": 1.51,
+        "bw_gb_s": 1511.73
+      },
+      "v_proj": {
+        "ms": 0.0222,
+        "tflops": 1.51,
+        "bw_gb_s": 1511.73
+      },
+      "attn_out": {
+        "ms": 0.1461,
+        "tflops": 0.92,
+        "bw_gb_s": 919.21
+      },
+      "mlp_gate": {
+        "ms": 0.5219,
+        "tflops": 0.9,
+        "bw_gb_s": 900.21
+      },
+      "mlp_up": {
+        "ms": 0.5219,
+        "tflops": 0.9,
+        "bw_gb_s": 900.21
+      },
+      "mlp_down": {
+        "ms": 0.4973,
+        "tflops": 0.94,
+        "bw_gb_s": 944.85
+      }
+    },
+    "attn_total_ms": 0.337,
+    "mlp_total_ms": 1.541,
+    "layer_total_ms": 1.878
+  },
+  {
+    "name": "70B",
+    "batch_size": 4,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.1455,
+        "tflops": 3.69,
+        "bw_gb_s": 923.22
+      },
+      "k_proj": {
+        "ms": 0.0178,
+        "tflops": 7.54,
+        "bw_gb_s": 1888.72
+      },
+      "v_proj": {
+        "ms": 0.0178,
+        "tflops": 7.54,
+        "bw_gb_s": 1888.72
+      },
+      "attn_out": {
+        "ms": 0.1454,
+        "tflops": 3.69,
+        "bw_gb_s": 923.99
+      },
+      "mlp_gate": {
+        "ms": 0.4996,
+        "tflops": 3.76,
+        "bw_gb_s": 940.95
+      },
+      "mlp_up": {
+        "ms": 0.4996,
+        "tflops": 3.76,
+        "bw_gb_s": 940.95
+      },
+      "mlp_down": {
+        "ms": 0.5021,
+        "tflops": 3.74,
+        "bw_gb_s": 936.15
+      }
+    },
+    "attn_total_ms": 0.327,
+    "mlp_total_ms": 1.501,
+    "layer_total_ms": 1.828
+  },
+  {
+    "name": "70B",
+    "batch_size": 8,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.1458,
+        "tflops": 7.37,
+        "bw_gb_s": 922.59
+      },
+      "k_proj": {
+        "ms": 0.0185,
+        "tflops": 14.48,
+        "bw_gb_s": 1819.18
+      },
+      "v_proj": {
+        "ms": 0.0185,
+        "tflops": 14.48,
+        "bw_gb_s": 1819.18
+      },
+      "attn_out": {
+        "ms": 0.146,
+        "tflops": 7.36,
+        "bw_gb_s": 921.2
+      },
+      "mlp_gate": {
+        "ms": 0.499,
+        "tflops": 7.53,
+        "bw_gb_s": 942.5
+      },
+      "mlp_up": {
+        "ms": 0.499,
+        "tflops": 7.53,
+        "bw_gb_s": 942.5
+      },
+      "mlp_down": {
+        "ms": 0.5024,
+        "tflops": 7.48,
+        "bw_gb_s": 936.14
+      }
+    },
+    "attn_total_ms": 0.329,
+    "mlp_total_ms": 1.5,
+    "layer_total_ms": 1.829
+  },
+  {
+    "name": "70B",
+    "batch_size": 32,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.1514,
+        "tflops": 28.37,
+        "bw_gb_s": 893.47
+      },
+      "k_proj": {
+        "ms": 0.0192,
+        "tflops": 56.0,
+        "bw_gb_s": 1784.15
+      },
+      "v_proj": {
+        "ms": 0.0192,
+        "tflops": 56.0,
+        "bw_gb_s": 1784.15
+      },
+      "attn_out": {
+        "ms": 0.1514,
+        "tflops": 28.36,
+        "bw_gb_s": 893.29
+      },
+      "mlp_gate": {
+        "ms": 0.5007,
+        "tflops": 30.02,
+        "bw_gb_s": 942.91
+      },
+      "mlp_up": {
+        "ms": 0.5007,
+        "tflops": 30.02,
+        "bw_gb_s": 942.91
+      },
+      "mlp_down": {
+        "ms": 0.5036,
+        "tflops": 29.85,
+        "bw_gb_s": 937.58
+      }
+    },
+    "attn_total_ms": 0.341,
+    "mlp_total_ms": 1.505,
+    "layer_total_ms": 1.846
+  },
+  {
+    "name": "70B",
+    "batch_size": 128,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.1514,
+        "tflops": 113.48,
+        "bw_gb_s": 914.25
+      },
+      "k_proj": {
+        "ms": 0.03,
+        "tflops": 143.22,
+        "bw_gb_s": 1206.31
+      },
+      "v_proj": {
+        "ms": 0.03,
+        "tflops": 143.22,
+        "bw_gb_s": 1206.31
+      },
+      "attn_out": {
+        "ms": 0.1514,
+        "tflops": 113.45,
+        "bw_gb_s": 914.06
+      },
+      "mlp_gate": {
+        "ms": 0.5707,
+        "tflops": 105.35,
+        "bw_gb_s": 839.6
+      },
+      "mlp_up": {
+        "ms": 0.5707,
+        "tflops": 105.35,
+        "bw_gb_s": 839.6
+      },
+      "mlp_down": {
+        "ms": 0.558,
+        "tflops": 107.76,
+        "bw_gb_s": 858.82
+      }
+    },
+    "attn_total_ms": 0.363,
+    "mlp_total_ms": 1.699,
+    "layer_total_ms": 2.062
+  },
+  {
+    "name": "70B",
+    "batch_size": 256,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.23,
+        "tflops": 149.37,
+        "bw_gb_s": 619.93
+      },
+      "k_proj": {
+        "ms": 0.0628,
+        "tflops": 136.86,
+        "bw_gb_s": 618.16
+      },
+      "v_proj": {
+        "ms": 0.0628,
+        "tflops": 136.86,
+        "bw_gb_s": 618.16
+      },
+      "attn_out": {
+        "ms": 0.2303,
+        "tflops": 149.2,
+        "bw_gb_s": 619.24
+      },
+      "mlp_gate": {
+        "ms": 0.8648,
+        "tflops": 139.05,
+        "bw_gb_s": 565.01
+      },
+      "mlp_up": {
+        "ms": 0.8648,
+        "tflops": 139.05,
+        "bw_gb_s": 565.01
+      },
+      "mlp_down": {
+        "ms": 0.8002,
+        "tflops": 150.28,
+        "bw_gb_s": 610.61
+      }
+    },
+    "attn_total_ms": 0.586,
+    "mlp_total_ms": 2.53,
+    "layer_total_ms": 3.116
+  },
+  {
+    "name": "70B",
+    "batch_size": 512,
+    "hidden": 8192,
+    "inner": 28672,
+    "layer_times": {
+      "q_proj": {
+        "ms": 0.4424,
+        "tflops": 155.32,
+        "bw_gb_s": 341.27
+      },
+      "k_proj": {
+        "ms": 0.1092,
+        "tflops": 157.35,
+        "bw_gb_s": 403.37
+      },
+      "v_proj": {
+        "ms": 0.1092,
+        "tflops": 157.35,
+        "bw_gb_s": 403.37
+      },
+      "attn_out": {
+        "ms": 0.4275,
+        "tflops": 160.73,
+        "bw_gb_s": 353.18
+      },
+      "mlp_gate": {
+        "ms": 1.4871,
+        "tflops": 161.73,
+        "bw_gb_s": 341.27
+      },
+      "mlp_up": {
+        "ms": 1.4871,
+        "tflops": 161.73,
+        "bw_gb_s": 341.27
+      },
+      "mlp_down": {
+        "ms": 1.5305,
+        "tflops": 157.15,
+        "bw_gb_s": 331.6
+      }
+    },
+    "attn_total_ms": 1.088,
+    "mlp_total_ms": 4.505,
+    "layer_total_ms": 5.593
+  }
+]
