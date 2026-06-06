@@ -1,0 +1,49 @@
+[
+  {
+    "test": "normal_operation",
+    "recv_match": true,
+    "freed_match": true,
+    "no_warnings": true,
+    "pass": true
+  },
+  {
+    "test": "race_condition_recv",
+    "old_crashed": true,
+    "new_a_processed": true,
+    "new_aborted_skipped": true,
+    "warning_logged": true,
+    "pass": true
+  },
+  {
+    "test": "race_condition_send",
+    "old_crashed": true,
+    "new_no_freed": true,
+    "warning_logged": true,
+    "pass": true
+  },
+  {
+    "test": "unexpected_status",
+    "old_crashed": true,
+    "new_not_in_recv": true,
+    "new_not_freed": true,
+    "warning_logged": true,
+    "pass": true
+  },
+  {
+    "test": "mixed_scenario",
+    "normal_recv_ok": true,
+    "finished_recv_freed": true,
+    "normal_send_freed": true,
+    "abort_recv_skipped": true,
+    "abort_send_skipped": true,
+    "warnings_count": 3,
+    "pass": true
+  },
+  {
+    "test": "empty_finished",
+    "no_recv": true,
+    "no_freed": true,
+    "no_warnings": true,
+    "pass": true
+  }
+]
