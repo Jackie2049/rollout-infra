@@ -1,0 +1,207 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "pytorch": "2.9.0+cu128",
+  "launch_overhead": [
+    {
+      "size": 1,
+      "per_launch_us": 7.9,
+      "compute_us": 19.7,
+      "overhead_us": 0
+    },
+    {
+      "size": 16,
+      "per_launch_us": 7.7,
+      "compute_us": 20.4,
+      "overhead_us": 0
+    },
+    {
+      "size": 256,
+      "per_launch_us": 8.2,
+      "compute_us": 21.8,
+      "overhead_us": 0
+    },
+    {
+      "size": 1024,
+      "per_launch_us": 8.2,
+      "compute_us": 21.2,
+      "overhead_us": 0
+    },
+    {
+      "size": 4096,
+      "per_launch_us": 8.1,
+      "compute_us": 20.7,
+      "overhead_us": 0
+    }
+  ],
+  "single_op_graph": [
+    {
+      "desc": "decode B=1 4K\u21924K",
+      "B": 1,
+      "M": 4096,
+      "N": 4096,
+      "no_graph_ms": 0.0198,
+      "with_graph_ms": 0.0194,
+      "speedup": 1.02
+    },
+    {
+      "desc": "decode B=8",
+      "B": 8,
+      "M": 4096,
+      "N": 4096,
+      "no_graph_ms": 0.0359,
+      "with_graph_ms": 0.0349,
+      "speedup": 1.03
+    },
+    {
+      "desc": "decode B=32",
+      "B": 32,
+      "M": 4096,
+      "N": 4096,
+      "no_graph_ms": 0.0313,
+      "with_graph_ms": 0.0299,
+      "speedup": 1.05
+    },
+    {
+      "desc": "decode B=128",
+      "B": 128,
+      "M": 4096,
+      "N": 4096,
+      "no_graph_ms": 0.1101,
+      "with_graph_ms": 0.112,
+      "speedup": 0.98
+    },
+    {
+      "desc": "decode\u2192vocab 4K\u219232K",
+      "B": 1,
+      "M": 4096,
+      "N": 32000,
+      "no_graph_ms": 0.5559,
+      "with_graph_ms": 0.5552,
+      "speedup": 1.0
+    },
+    {
+      "desc": "decode\u2192vocab B=8",
+      "B": 8,
+      "M": 4096,
+      "N": 32000,
+      "no_graph_ms": 0.5589,
+      "with_graph_ms": 0.5611,
+      "speedup": 1.0
+    }
+  ],
+  "multi_op_graph": {
+    "single_layer": {
+      "no_graph_ms": 0.176,
+      "with_graph_ms": 0.1679,
+      "speedup": 1.05
+    },
+    "multi_layer": [
+      {
+        "n_layers": 1,
+        "total_ops": 5,
+        "no_graph_ms": 0.176,
+        "with_graph_ms": 0.169,
+        "speedup": 1.04,
+        "per_layer_overhead_us": 7.2
+      },
+      {
+        "n_layers": 4,
+        "total_ops": 20,
+        "no_graph_ms": 0.701,
+        "with_graph_ms": 0.671,
+        "speedup": 1.04,
+        "per_layer_overhead_us": 7.4
+      },
+      {
+        "n_layers": 8,
+        "total_ops": 40,
+        "no_graph_ms": 1.402,
+        "with_graph_ms": 1.342,
+        "speedup": 1.05,
+        "per_layer_overhead_us": 7.5
+      },
+      {
+        "n_layers": 16,
+        "total_ops": 80,
+        "no_graph_ms": 2.805,
+        "with_graph_ms": 2.683,
+        "speedup": 1.05,
+        "per_layer_overhead_us": 7.6
+      },
+      {
+        "n_layers": 32,
+        "total_ops": 160,
+        "no_graph_ms": 5.612,
+        "with_graph_ms": 5.365,
+        "speedup": 1.05,
+        "per_layer_overhead_us": 7.7
+      }
+    ]
+  },
+  "decode_simulation": [
+    {
+      "model": "OPT-125M",
+      "n_layers": 12,
+      "H": 768,
+      "V": 50257,
+      "B": 32,
+      "no_graph_ms": 0.871,
+      "with_graph_ms": 0.358,
+      "speedup": 2.43,
+      "total_ops": 49
+    },
+    {
+      "model": "OPT-1.3B",
+      "n_layers": 24,
+      "H": 2048,
+      "V": 50257,
+      "B": 8,
+      "no_graph_ms": 1.748,
+      "with_graph_ms": 1.148,
+      "speedup": 1.52,
+      "total_ops": 97
+    },
+    {
+      "model": "LLaMA-7B",
+      "n_layers": 32,
+      "H": 4096,
+      "V": 32000,
+      "B": 4,
+      "no_graph_ms": 3.445,
+      "with_graph_ms": 3.274,
+      "speedup": 1.05,
+      "total_ops": 129
+    }
+  ],
+  "memory_pool": {
+    "weights_mb": 2672.0,
+    "graph_pool_mb": 1.0,
+    "pool_by_batch": [
+      {
+        "B": 1,
+        "pool_mb": 0.0,
+        "per_tok_mb": 0.1
+      },
+      {
+        "B": 4,
+        "pool_mb": 0.0,
+        "per_tok_mb": 0.1
+      },
+      {
+        "B": 8,
+        "pool_mb": 1.0,
+        "per_tok_mb": 0.1
+      },
+      {
+        "B": 16,
+        "pool_mb": 1.0,
+        "per_tok_mb": 0.1
+      },
+      {
+        "B": 32,
+        "pool_mb": 2.0,
+        "per_tok_mb": 0.1
+      }
+    ]
+  }
+}

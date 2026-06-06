@@ -1,0 +1,137 @@
+{
+  "hbm_bw": 876.8,
+  "single_layer": [
+    {
+      "B": 1,
+      "time_ms": 0.0201,
+      "tok_per_s": 49871.0,
+      "ai": 0.2,
+      "predicted_ms": 0.1492,
+      "error_pct": 643.9,
+      "bound": "MEM"
+    },
+    {
+      "B": 2,
+      "time_ms": 0.0347,
+      "tok_per_s": 57682.0,
+      "ai": 0.5,
+      "predicted_ms": 0.1492,
+      "error_pct": 330.3,
+      "bound": "MEM"
+    },
+    {
+      "B": 4,
+      "time_ms": 0.0351,
+      "tok_per_s": 113951.0,
+      "ai": 1.0,
+      "predicted_ms": 0.1493,
+      "error_pct": 325.3,
+      "bound": "MEM"
+    },
+    {
+      "B": 8,
+      "time_ms": 0.0358,
+      "tok_per_s": 223470.0,
+      "ai": 2.0,
+      "predicted_ms": 0.1494,
+      "error_pct": 317.4,
+      "bound": "MEM"
+    },
+    {
+      "B": 16,
+      "time_ms": 0.0356,
+      "tok_per_s": 449770.0,
+      "ai": 4.0,
+      "predicted_ms": 0.1497,
+      "error_pct": 320.9,
+      "bound": "MEM"
+    },
+    {
+      "B": 32,
+      "time_ms": 0.0315,
+      "tok_per_s": 1014610.0,
+      "ai": 7.9,
+      "predicted_ms": 0.1503,
+      "error_pct": 376.5,
+      "bound": "MEM"
+    },
+    {
+      "B": 64,
+      "time_ms": 0.0971,
+      "tok_per_s": 658866.0,
+      "ai": 15.8,
+      "predicted_ms": 0.1515,
+      "error_pct": 55.9,
+      "bound": "MEM"
+    },
+    {
+      "B": 128,
+      "time_ms": 0.1091,
+      "tok_per_s": 1173709.0,
+      "ai": 31.0,
+      "predicted_ms": 0.1538,
+      "error_pct": 41.0,
+      "bound": "MEM"
+    },
+    {
+      "B": 256,
+      "time_ms": 0.1826,
+      "tok_per_s": 1402288.0,
+      "ai": 60.2,
+      "predicted_ms": 0.1585,
+      "error_pct": 13.2,
+      "bound": "MEM"
+    },
+    {
+      "B": 512,
+      "time_ms": 0.3167,
+      "tok_per_s": 1616867.0,
+      "ai": 113.8,
+      "predicted_ms": 0.1678,
+      "error_pct": 47.0,
+      "bound": "MEM"
+    }
+  ],
+  "full_model": [
+    {
+      "B": 1,
+      "time_ms": 3.25,
+      "tok_per_s": 308.0
+    },
+    {
+      "B": 4,
+      "time_ms": 3.437,
+      "tok_per_s": 1164.0
+    },
+    {
+      "B": 8,
+      "time_ms": 3.487,
+      "tok_per_s": 2294.0
+    },
+    {
+      "B": 16,
+      "time_ms": 3.75,
+      "tok_per_s": 4267.0
+    },
+    {
+      "B": 32,
+      "time_ms": 3.591,
+      "tok_per_s": 8910.0
+    },
+    {
+      "B": 64,
+      "time_ms": 4.884,
+      "tok_per_s": 13104.0
+    },
+    {
+      "B": 128,
+      "time_ms": 5.276,
+      "tok_per_s": 24260.0
+    },
+    {
+      "B": 256,
+      "time_ms": 8.005,
+      "tok_per_s": 31979.0
+    }
+  ]
+}
