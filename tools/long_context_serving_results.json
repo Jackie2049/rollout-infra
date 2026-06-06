@@ -1,0 +1,171 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_mem_gb": 25.3,
+  "exp1_kv_cache_scaling": [
+    {
+      "seq_len": 512,
+      "kv_per_layer_mb": 1.05,
+      "kv_total_mb": 25.2,
+      "kv_total_gb": 0.02,
+      "fwd_ms": 258.176,
+      "peak_mem_mb": 9387.5,
+      "attn_ms": 15.556,
+      "mlp_ms_est": 242.619,
+      "tok_s": 1983.1,
+      "kv_ratio_of_peak": 0.3
+    },
+    {
+      "seq_len": 1024,
+      "kv_per_layer_mb": 2.1,
+      "kv_total_mb": 50.3,
+      "kv_total_gb": 0.05,
+      "fwd_ms": 138.117,
+      "peak_mem_mb": 9550.7,
+      "attn_ms": 33.693,
+      "mlp_ms_est": 104.424,
+      "tok_s": 7414.0,
+      "kv_ratio_of_peak": 0.5
+    },
+    {
+      "seq_len": 2048,
+      "kv_per_layer_mb": 4.19,
+      "kv_total_mb": 100.7,
+      "kv_total_gb": 0.1,
+      "fwd_ms": 264.216,
+      "peak_mem_mb": 9818.7,
+      "attn_ms": 73.511,
+      "mlp_ms_est": 190.705,
+      "tok_s": 7751.2,
+      "kv_ratio_of_peak": 1.0
+    },
+    {
+      "seq_len": 4096,
+      "kv_per_layer_mb": 8.39,
+      "kv_total_mb": 201.3,
+      "kv_total_gb": 0.2,
+      "fwd_ms": 573.776,
+      "peak_mem_mb": 10354.8,
+      "attn_ms": 188.788,
+      "mlp_ms_est": 384.988,
+      "tok_s": 7138.7,
+      "kv_ratio_of_peak": 1.9
+    },
+    {
+      "seq_len": 6144,
+      "kv_per_layer_mb": 12.58,
+      "kv_total_mb": 302.0,
+      "kv_total_gb": 0.29,
+      "fwd_ms": 911.714,
+      "peak_mem_mb": 11007.6,
+      "attn_ms": 331.185,
+      "mlp_ms_est": 580.529,
+      "tok_s": 6739.0,
+      "kv_ratio_of_peak": 2.7
+    },
+    {
+      "seq_len": 8192,
+      "kv_per_layer_mb": 16.78,
+      "kv_total_mb": 402.7,
+      "kv_total_gb": 0.39,
+      "fwd_ms": 1297.876,
+      "peak_mem_mb": 11660.4,
+      "attn_ms": 518.406,
+      "mlp_ms_est": 779.47,
+      "tok_s": 6311.9,
+      "kv_ratio_of_peak": 3.5
+    }
+  ],
+  "exp2_long_context_ps": [
+    {
+      "prefix_len": 1024,
+      "suffix_len": 256,
+      "total_len": 1280,
+      "n_samples": 4,
+      "prefix_ratio": 0.8,
+      "no_ps_ms": 681.826,
+      "ps_ms": 286.665,
+      "compute_savings_pct": 60.0,
+      "time_savings_pct": 58.0,
+      "speedup": 2.38
+    },
+    {
+      "prefix_len": 2048,
+      "suffix_len": 256,
+      "total_len": 2304,
+      "n_samples": 4,
+      "prefix_ratio": 0.89,
+      "no_ps_ms": 1187.337,
+      "ps_ms": 410.344,
+      "compute_savings_pct": 66.7,
+      "time_savings_pct": 65.4,
+      "speedup": 2.89
+    },
+    {
+      "prefix_len": 4096,
+      "suffix_len": 256,
+      "total_len": 4352,
+      "n_samples": 4,
+      "prefix_ratio": 0.94,
+      "no_ps_ms": 2435.169,
+      "ps_ms": 726.178,
+      "compute_savings_pct": 70.6,
+      "time_savings_pct": 70.2,
+      "speedup": 3.35
+    },
+    {
+      "prefix_len": 6144,
+      "suffix_len": 256,
+      "total_len": 6400,
+      "n_samples": 4,
+      "prefix_ratio": 0.96,
+      "no_ps_ms": 3889.893,
+      "ps_ms": 1094.647,
+      "compute_savings_pct": 72.0,
+      "time_savings_pct": 71.9,
+      "speedup": 3.55
+    }
+  ],
+  "exp3_chunked_prefill": [
+    {
+      "seq_len": 2048,
+      "chunk_size": 512,
+      "full_prefill_ms": 261.107,
+      "chunked_prefill_ms": 672.082,
+      "overhead_pct": 157.4,
+      "full_mem_mb": 9876.2,
+      "chunked_mem_mb": 9876.2,
+      "mem_savings_pct": 0.0
+    },
+    {
+      "seq_len": 4096,
+      "chunk_size": 1024,
+      "full_prefill_ms": 577.226,
+      "chunked_prefill_ms": 1387.736,
+      "overhead_pct": 140.4,
+      "full_mem_mb": 10494.8,
+      "chunked_mem_mb": 10473.9,
+      "mem_savings_pct": 0.2
+    },
+    {
+      "seq_len": 6144,
+      "chunk_size": 1536,
+      "full_prefill_ms": 924.401,
+      "chunked_prefill_ms": 2191.297,
+      "overhead_pct": 137.1,
+      "full_mem_mb": 11113.5,
+      "chunked_mem_mb": 11071.6,
+      "mem_savings_pct": 0.4
+    },
+    {
+      "seq_len": 8192,
+      "chunk_size": 2048,
+      "full_prefill_ms": 1319.432,
+      "chunked_prefill_ms": 3094.224,
+      "overhead_pct": 134.5,
+      "full_mem_mb": 11732.2,
+      "chunked_mem_mb": 11669.3,
+      "mem_savings_pct": 0.5
+    }
+  ],
+  "exp4_kv_cache_compression": []
+}
