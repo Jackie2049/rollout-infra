@@ -31,6 +31,46 @@ vLLM V1 有 **两套** Triton attention kernel:
 
 ---
 
+## Prefill Attention Kernel (SGLang origin)
+
+### 文件: `triton_prefill_attention.py`
+
+**Grid**: `(batch, head, cdiv(max_input_len, BLOCK))`
+
+**BLOCK size**: FP32=32, SM≥80=128, 其他=64
+
+**核心**: 经典FlashAttention但用 `exp2` 替代 `exp`:
+```python
+sm_scale *= RCP_LN2  # 1/ln(2) → 转为log2域, Triton硬件优化
+qk = tl.dot(q, k)
+qk = tl.where(mask, qk * sm_scale, -1e8)
+p = tl.math.exp2(qk)  # 用exp2代替exp
+```
+
+**特点**: 仅Prefill (非paged), Causal+双向Sliding Window, 无FP8/mm_prefix/sinks/softcap
+
+---
+
+## Merge Attention States (Cascade合并)
+
+### 文件: `merge_attn_states.py` (CUDA优先) + `triton_merge_attn_states.py` (Triton fallback)
+
+**算法**: Section 2.2 of arxiv 2501.01005 (Cascade Attention)
+
+**用途**: 合并 Prefix(KV cache) + Suffix(new tokens) 的partial attention:
+```python
+max_lse = max(prefix_lse, suffix_lse)
+p_scale = exp(prefix_lse - max_lse) / (exp(prefix_lse - max_lse) + exp(suffix_lse - max_lse))
+s_scale = exp(suffix_lse - max_lse) / (exp(prefix_lse - max_lse) + exp(suffix_lse - max_lse))
+output = prefix_output * p_scale + suffix_output * s_scale
+```
+
+**关键**: 两个分开的online softmax如何合并 → 全局max rescale → 加权求和 → 数学等价一次softmax
+
+---
+
+## 关键发现总结
+
 ## Split-KV Decode Attention (Stage1 + Stage2)
 
 ### Stage1: Split-KV 并行计算
@@ -339,3 +379,5 @@ FlashInfer仍是默认首选; Triton backend作为 **全SM兼容** 的fallback, 
 6. **FP8 dequant融合**: Per-token-head模式把scale融合到dot product → 减少87.5%计算
 7. **Sliding window tile pruning**: 只遍历window范围内的tile → 跳过无关计算
 8. **Per-token-head quant比per-tensor更优**: scale融合到softmax_score而不是K/V tile
+9. **Prefill kernel用exp2**: Triton硬件优化, sm_scale乘1/ln(2)转入log2域
+10. **Merge attn states (cascade)**: LSE rescale方法合并prefix+suffix partial → 全局max → 加权 → 数学等价一次softmax, 是cascade attention的核心
