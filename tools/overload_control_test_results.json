@@ -1,0 +1,38 @@
+[
+  {
+    "test": "backward_compat_disabled",
+    "max_waiting_time": 0,
+    "requests_in_queue": 10,
+    "evicted": 0,
+    "pass": true
+  },
+  {
+    "test": "eviction_timing",
+    "max_waiting_time": 3.0,
+    "evicted": [
+      "req_early"
+    ],
+    "kept": [
+      "req_on_time",
+      "req_recent",
+      "req_just"
+    ],
+    "pass": true
+  },
+  {
+    "test": "no_eviction_disabled",
+    "max_waiting_time": 0,
+    "evicted": [],
+    "pass": true
+  },
+  {
+    "test": "status_propagation",
+    "overdue_status": "FINISHED_OVERLOAD",
+    "ok_status": "RUNNING",
+    "pass": true
+  },
+  {
+    "test": "e2e_commands_prepared",
+    "pass": true
+  }
+]
