@@ -1,0 +1,736 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_mem_gb": 25.3,
+  "sm_version": "8.9",
+  "cuda_cores": 16384,
+  "mps": 128,
+  "exp1_dtype_comparison": [
+    {
+      "M": 1,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 0.02,
+      "tflops": 1.68,
+      "arithmetic_intensity": 0.5
+    },
+    {
+      "M": 1,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.035,
+      "tflops": 0.96,
+      "arithmetic_intensity": 1.0
+    },
+    {
+      "M": 1,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0349,
+      "tflops": 0.96,
+      "arithmetic_intensity": 1.0
+    },
+    {
+      "M": 4,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 0.0347,
+      "tflops": 3.87,
+      "arithmetic_intensity": 2.0
+    },
+    {
+      "M": 4,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0201,
+      "tflops": 6.68,
+      "arithmetic_intensity": 4.0
+    },
+    {
+      "M": 4,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0215,
+      "tflops": 6.24,
+      "arithmetic_intensity": 4.0
+    },
+    {
+      "M": 16,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 0.0354,
+      "tflops": 15.16,
+      "arithmetic_intensity": 7.9
+    },
+    {
+      "M": 16,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0556,
+      "tflops": 9.66,
+      "arithmetic_intensity": 15.9
+    },
+    {
+      "M": 16,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0556,
+      "tflops": 9.66,
+      "arithmetic_intensity": 15.9
+    },
+    {
+      "M": 64,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 0.097,
+      "tflops": 22.14,
+      "arithmetic_intensity": 31.0
+    },
+    {
+      "M": 64,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0216,
+      "tflops": 99.2,
+      "arithmetic_intensity": 62.1
+    },
+    {
+      "M": 64,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0196,
+      "tflops": 109.74,
+      "arithmetic_intensity": 62.1
+    },
+    {
+      "M": 256,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 0.1786,
+      "tflops": 48.11,
+      "arithmetic_intensity": 113.8
+    },
+    {
+      "M": 256,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0566,
+      "tflops": 151.78,
+      "arithmetic_intensity": 227.6
+    },
+    {
+      "M": 256,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.0565,
+      "tflops": 152.05,
+      "arithmetic_intensity": 227.6
+    },
+    {
+      "M": 1024,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 0.6124,
+      "tflops": 56.1,
+      "arithmetic_intensity": 341.3
+    },
+    {
+      "M": 1024,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.2518,
+      "tflops": 136.44,
+      "arithmetic_intensity": 682.7
+    },
+    {
+      "M": 1024,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.241,
+      "tflops": 142.59,
+      "arithmetic_intensity": 682.7
+    },
+    {
+      "M": 4096,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float32",
+      "dtype_bytes": 4,
+      "time_ms": 2.5771,
+      "tflops": 53.33,
+      "arithmetic_intensity": 682.7
+    },
+    {
+      "M": 4096,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "float16",
+      "dtype_bytes": 2,
+      "time_ms": 0.8604,
+      "tflops": 159.73,
+      "arithmetic_intensity": 1365.3
+    },
+    {
+      "M": 4096,
+      "N": 4096,
+      "K": 4096,
+      "dtype": "bfloat16",
+      "dtype_bytes": 2,
+      "time_ms": 0.8879,
+      "tflops": 154.79,
+      "arithmetic_intensity": 1365.3
+    }
+  ],
+  "exp2_decode_gemm_profile": [
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 1,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1497,
+      "tflops": 0.9,
+      "arithmetic_intensity": 1.0
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 4,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1458,
+      "tflops": 3.68,
+      "arithmetic_intensity": 4.0
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 8,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1462,
+      "tflops": 7.34,
+      "arithmetic_intensity": 8.0
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 16,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1471,
+      "tflops": 14.59,
+      "arithmetic_intensity": 15.9
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 32,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1503,
+      "tflops": 28.57,
+      "arithmetic_intensity": 31.7
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 64,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1493,
+      "tflops": 57.55,
+      "arithmetic_intensity": 62.8
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 128,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.1587,
+      "tflops": 108.28,
+      "arithmetic_intensity": 123.2
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 256,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.2155,
+      "tflops": 159.43,
+      "arithmetic_intensity": 237.4
+    },
+    {
+      "gemm_name": "MLP_gate_up",
+      "batch": 512,
+      "K": 4096,
+      "N": 16384,
+      "time_ms": 0.4769,
+      "tflops": 144.09,
+      "arithmetic_intensity": 442.8
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 1,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.1472,
+      "tflops": 0.91,
+      "arithmetic_intensity": 1.0
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 4,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.1478,
+      "tflops": 3.63,
+      "arithmetic_intensity": 4.0
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 8,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.1484,
+      "tflops": 7.23,
+      "arithmetic_intensity": 8.0
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 16,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.1512,
+      "tflops": 14.2,
+      "arithmetic_intensity": 15.9
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 32,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.15,
+      "tflops": 28.64,
+      "arithmetic_intensity": 31.7
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 64,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.1539,
+      "tflops": 55.83,
+      "arithmetic_intensity": 62.8
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 128,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.1671,
+      "tflops": 102.81,
+      "arithmetic_intensity": 123.2
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 256,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.2348,
+      "tflops": 146.33,
+      "arithmetic_intensity": 237.4
+    },
+    {
+      "gemm_name": "MLP_down",
+      "batch": 512,
+      "K": 16384,
+      "N": 4096,
+      "time_ms": 0.4352,
+      "tflops": 157.92,
+      "arithmetic_intensity": 442.8
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 1,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1137,
+      "tflops": 0.89,
+      "arithmetic_intensity": 1.0
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 4,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1114,
+      "tflops": 3.62,
+      "arithmetic_intensity": 4.0
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 8,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1115,
+      "tflops": 7.22,
+      "arithmetic_intensity": 8.0
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 16,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1114,
+      "tflops": 14.46,
+      "arithmetic_intensity": 15.9
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 32,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1198,
+      "tflops": 26.9,
+      "arithmetic_intensity": 31.7
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 64,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1132,
+      "tflops": 56.91,
+      "arithmetic_intensity": 62.7
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 128,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.1191,
+      "tflops": 108.16,
+      "arithmetic_intensity": 122.9
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 256,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.175,
+      "tflops": 147.23,
+      "arithmetic_intensity": 236.3
+    },
+    {
+      "gemm_name": "Attn_QKV",
+      "batch": 512,
+      "K": 4096,
+      "N": 12288,
+      "time_ms": 0.3329,
+      "tflops": 154.84,
+      "arithmetic_intensity": 438.9
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 1,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0346,
+      "tflops": 0.97,
+      "arithmetic_intensity": 1.0
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 4,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0202,
+      "tflops": 6.64,
+      "arithmetic_intensity": 4.0
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 8,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0221,
+      "tflops": 12.15,
+      "arithmetic_intensity": 8.0
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 16,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0553,
+      "tflops": 9.7,
+      "arithmetic_intensity": 15.9
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 32,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0221,
+      "tflops": 48.55,
+      "arithmetic_intensity": 31.5
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 64,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0214,
+      "tflops": 100.58,
+      "arithmetic_intensity": 62.1
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 128,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0324,
+      "tflops": 132.6,
+      "arithmetic_intensity": 120.5
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 256,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.0521,
+      "tflops": 164.74,
+      "arithmetic_intensity": 227.6
+    },
+    {
+      "gemm_name": "Attn_out",
+      "batch": 512,
+      "K": 4096,
+      "N": 4096,
+      "time_ms": 0.1097,
+      "tflops": 156.56,
+      "arithmetic_intensity": 409.6
+    }
+  ],
+  "exp3_fp8_gemm": [
+    {
+      "M": 1,
+      "fp16_ms": 0.0318,
+      "fp8_cast_ms": 0.0697,
+      "fp8_cast_overhead_pct": 119.1,
+      "fp8_direct_ms": "FAILED"
+    },
+    {
+      "M": 32,
+      "fp16_ms": 0.0207,
+      "fp8_cast_ms": 0.059,
+      "fp8_cast_overhead_pct": 185.3,
+      "fp8_direct_ms": "FAILED"
+    },
+    {
+      "M": 128,
+      "fp16_ms": 0.0316,
+      "fp8_cast_ms": 0.0707,
+      "fp8_cast_overhead_pct": 123.7,
+      "fp8_direct_ms": "FAILED"
+    },
+    {
+      "M": 512,
+      "fp16_ms": 0.1088,
+      "fp8_cast_ms": 0.15,
+      "fp8_cast_overhead_pct": 37.9,
+      "fp8_direct_ms": "FAILED"
+    },
+    {
+      "M": 2048,
+      "fp16_ms": 0.4406,
+      "fp8_cast_ms": 0.5475,
+      "fp8_cast_overhead_pct": 24.2,
+      "fp8_direct_ms": "FAILED"
+    }
+  ],
+  "exp4_memory_bandwidth": [
+    {
+      "size_mb": 1,
+      "time_ms": 0.0069,
+      "bandwidth_gb_s": 305.67
+    },
+    {
+      "size_mb": 4,
+      "time_ms": 0.0069,
+      "bandwidth_gb_s": 1219.05
+    },
+    {
+      "size_mb": 16,
+      "time_ms": 0.0093,
+      "bandwidth_gb_s": 3608.81
+    },
+    {
+      "size_mb": 64,
+      "time_ms": 0.146,
+      "bandwidth_gb_s": 919.16
+    },
+    {
+      "size_mb": 256,
+      "time_ms": 0.583,
+      "bandwidth_gb_s": 920.81
+    },
+    {
+      "size_mb": 1024,
+      "time_ms": 2.3345,
+      "bandwidth_gb_s": 919.9
+    }
+  ],
+  "exp5_ridge_point": [
+    {
+      "M": 1,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 1.0,
+      "tflops": 1.04,
+      "time_ms": 0.0324
+    },
+    {
+      "M": 2,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 2.0,
+      "tflops": 3.61,
+      "time_ms": 0.0186
+    },
+    {
+      "M": 4,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 4.0,
+      "tflops": 6.99,
+      "time_ms": 0.0192
+    },
+    {
+      "M": 8,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 8.0,
+      "tflops": 12.82,
+      "time_ms": 0.0209
+    },
+    {
+      "M": 16,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 15.9,
+      "tflops": 10.45,
+      "time_ms": 0.0514
+    },
+    {
+      "M": 32,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 31.5,
+      "tflops": 50.66,
+      "time_ms": 0.0212
+    },
+    {
+      "M": 64,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 62.1,
+      "tflops": 106.18,
+      "time_ms": 0.0202
+    },
+    {
+      "M": 128,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 120.5,
+      "tflops": 130.46,
+      "time_ms": 0.0329
+    },
+    {
+      "M": 256,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 227.6,
+      "tflops": 163.85,
+      "time_ms": 0.0524
+    },
+    {
+      "M": 512,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 409.6,
+      "tflops": 156.07,
+      "time_ms": 0.1101
+    },
+    {
+      "M": 1024,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 682.7,
+      "tflops": 163.04,
+      "time_ms": 0.2107
+    },
+    {
+      "M": 2048,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 1024.0,
+      "tflops": 157.27,
+      "time_ms": 0.4369
+    },
+    {
+      "M": 4096,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 1365.3,
+      "tflops": 171.32,
+      "time_ms": 0.8023
+    },
+    {
+      "M": 8192,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 1638.4,
+      "tflops": 169.11,
+      "time_ms": 1.6254
+    },
+    {
+      "M": 16384,
+      "N": 4096,
+      "K": 4096,
+      "arithmetic_intensity": 1820.4,
+      "tflops": 173.41,
+      "time_ms": 3.1702
+    }
+  ]
+}
