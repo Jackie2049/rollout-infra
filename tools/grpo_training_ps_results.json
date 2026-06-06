@@ -1,0 +1,181 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_mem_gb": 25.3,
+  "exp1_training_step_time": [
+    {
+      "n_samples": 4,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "no_ps_step_ms": 380.809,
+      "ps_step_ms": 237.89,
+      "compute_savings_pct": 56.2,
+      "time_savings_pct": 37.5,
+      "speedup": 1.6,
+      "no_ps_mem_mb": 20282.5,
+      "ps_mem_mb": 20179.1,
+      "mem_savings_pct": 0.5,
+      "no_ps_tok_s": 5378.0,
+      "ps_effective_tok_s": 8609.0,
+      "loss_no_ps": 9.1429,
+      "loss_ps": 18.2943
+    },
+    {
+      "n_samples": 4,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "no_ps_step_ms": 382.362,
+      "ps_step_ms": 240.847,
+      "compute_savings_pct": 56.2,
+      "time_savings_pct": 37.0,
+      "speedup": 1.59,
+      "no_ps_mem_mb": 20282.5,
+      "ps_mem_mb": 20179.1,
+      "mem_savings_pct": 0.5,
+      "no_ps_tok_s": 5356.2,
+      "ps_effective_tok_s": 8503.3,
+      "loss_no_ps": 9.1891,
+      "loss_ps": 18.3368
+    },
+    {
+      "n_samples": 4,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "no_ps_step_ms": 383.059,
+      "ps_step_ms": 241.33,
+      "compute_savings_pct": 56.2,
+      "time_savings_pct": 37.0,
+      "speedup": 1.59,
+      "no_ps_mem_mb": 20282.5,
+      "ps_mem_mb": 20179.1,
+      "mem_savings_pct": 0.5,
+      "no_ps_tok_s": 5346.4,
+      "ps_effective_tok_s": 8486.3,
+      "loss_no_ps": 9.1617,
+      "loss_ps": 18.4037
+    }
+  ],
+  "exp2_memory_usage": [
+    {
+      "n_samples": 2,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "model_size_mb": 4040.6,
+      "no_ps_peak_mem_mb": 20210.2,
+      "ps_peak_mem_mb": 20156.7,
+      "mem_savings_pct": 0.3,
+      "fwd_only_mem_mb": 16279.3,
+      "backward_mem_ratio": 24.1,
+      "ps_mem_reduction_mb": 53.5
+    },
+    {
+      "n_samples": 4,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "model_size_mb": 4040.6,
+      "no_ps_peak_mem_mb": 20324.4,
+      "ps_peak_mem_mb": 20222.1,
+      "mem_savings_pct": 0.5,
+      "fwd_only_mem_mb": 16489.1,
+      "backward_mem_ratio": 23.3,
+      "ps_mem_reduction_mb": 102.3
+    }
+  ],
+  "exp3_n_samples_throughput": [
+    {
+      "n_samples": 2,
+      "avg_no_ps_step_ms": 240.166,
+      "avg_ps_step_ms": 210.534,
+      "compute_savings_pct": 37.5,
+      "time_savings_pct": 12.3,
+      "speedup": 1.14,
+      "no_ps_tok_s": 4263.7,
+      "ps_effective_tok_s": 4863.8,
+      "no_ps_tokens_per_step": 1024,
+      "ps_compute_tokens_per_step": 640
+    },
+    {
+      "n_samples": 4,
+      "avg_no_ps_step_ms": 381.992,
+      "avg_ps_step_ms": 240.935,
+      "compute_savings_pct": 56.2,
+      "time_savings_pct": 36.9,
+      "speedup": 1.59,
+      "no_ps_tok_s": 5361.4,
+      "ps_effective_tok_s": 8500.2,
+      "no_ps_tokens_per_step": 2048,
+      "ps_compute_tokens_per_step": 896
+    }
+  ],
+  "exp4_prefix_ratio_sweep": [
+    {
+      "prefix_ratio": 0.25,
+      "prefix_len": 128,
+      "suffix_len": 384,
+      "n_samples": 4,
+      "compute_savings_pct": 18.8,
+      "time_savings_pct": 7.1,
+      "speedup": 1.08,
+      "mem_savings_pct": -0.1,
+      "no_ps_mem_mb": 20283.0,
+      "ps_mem_mb": 20302.9,
+      "ps_effective_tok_s": 5793.6
+    },
+    {
+      "prefix_ratio": 0.5,
+      "prefix_len": 256,
+      "suffix_len": 256,
+      "n_samples": 4,
+      "compute_savings_pct": 37.5,
+      "time_savings_pct": 21.8,
+      "speedup": 1.28,
+      "mem_savings_pct": 0.4,
+      "no_ps_mem_mb": 20283.0,
+      "ps_mem_mb": 20208.0,
+      "ps_effective_tok_s": 6882.6
+    },
+    {
+      "prefix_ratio": 0.67,
+      "prefix_len": 343,
+      "suffix_len": 169,
+      "n_samples": 4,
+      "compute_savings_pct": 50.3,
+      "time_savings_pct": 31.4,
+      "speedup": 1.46,
+      "mem_savings_pct": 0.5,
+      "no_ps_mem_mb": 20283.0,
+      "ps_mem_mb": 20189.0,
+      "ps_effective_tok_s": 7824.2
+    },
+    {
+      "prefix_ratio": 0.75,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "n_samples": 4,
+      "compute_savings_pct": 56.2,
+      "time_savings_pct": 35.6,
+      "speedup": 1.55,
+      "mem_savings_pct": 0.5,
+      "no_ps_mem_mb": 20283.0,
+      "ps_mem_mb": 20179.6,
+      "ps_effective_tok_s": 8344.4
+    },
+    {
+      "prefix_ratio": 0.9,
+      "prefix_len": 460,
+      "suffix_len": 52,
+      "n_samples": 4,
+      "compute_savings_pct": 67.5,
+      "time_savings_pct": 42.9,
+      "speedup": 1.75,
+      "mem_savings_pct": 0.6,
+      "no_ps_mem_mb": 20283.0,
+      "ps_mem_mb": 20163.2,
+      "ps_effective_tok_s": 9385.5
+    }
+  ]
+}
