@@ -1,0 +1,7 @@
+# CUDA kernel build artifacts
+*.so
+*.egg-info
+build/
+fused_rms_norm/_C.*.so
+fused_rms_norm_cuda_results.json
+fused_rms_norm_v4_results.json
