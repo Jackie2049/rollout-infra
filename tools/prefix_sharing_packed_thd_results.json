@@ -1,0 +1,257 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_mem_gb": 25.3,
+  "exp1_kv_injection": [
+    {
+      "prefix_len": 64,
+      "suffix_len": 128,
+      "total_len": 192,
+      "B": 8,
+      "full_forward_ms": 22.682,
+      "ps_forward_ms": 6.467,
+      "compute_savings_pct": 29.2,
+      "time_savings_pct": 71.5,
+      "speedup": 3.51
+    },
+    {
+      "prefix_len": 128,
+      "suffix_len": 128,
+      "total_len": 256,
+      "B": 8,
+      "full_forward_ms": 0.54,
+      "ps_forward_ms": 0.21,
+      "compute_savings_pct": 43.8,
+      "time_savings_pct": 61.1,
+      "speedup": 2.57
+    },
+    {
+      "prefix_len": 256,
+      "suffix_len": 128,
+      "total_len": 384,
+      "B": 8,
+      "full_forward_ms": 0.405,
+      "ps_forward_ms": 0.207,
+      "compute_savings_pct": 58.3,
+      "time_savings_pct": 49.0,
+      "speedup": 1.96
+    },
+    {
+      "prefix_len": 512,
+      "suffix_len": 128,
+      "total_len": 640,
+      "B": 8,
+      "full_forward_ms": 0.462,
+      "ps_forward_ms": 0.394,
+      "compute_savings_pct": 70.0,
+      "time_savings_pct": 14.6,
+      "speedup": 1.17
+    },
+    {
+      "prefix_len": 1024,
+      "suffix_len": 128,
+      "total_len": 1152,
+      "B": 8,
+      "full_forward_ms": 0.662,
+      "ps_forward_ms": 0.443,
+      "compute_savings_pct": 77.8,
+      "time_savings_pct": 33.1,
+      "speedup": 1.5
+    }
+  ],
+  "exp2_grpo_savings": [
+    {
+      "n_samples": 2,
+      "prefix_len": 512,
+      "suffix_len": 256,
+      "compute_savings_pct": 33.3,
+      "time_savings_pct": -3435.0,
+      "speedup": 0.03,
+      "full_ms": 0.17,
+      "ps_ms": 6.003
+    },
+    {
+      "n_samples": 4,
+      "prefix_len": 512,
+      "suffix_len": 256,
+      "compute_savings_pct": 50.0,
+      "time_savings_pct": 3.7,
+      "speedup": 1.04,
+      "full_ms": 0.248,
+      "ps_ms": 0.238
+    },
+    {
+      "n_samples": 8,
+      "prefix_len": 512,
+      "suffix_len": 256,
+      "compute_savings_pct": 58.3,
+      "time_savings_pct": -0.9,
+      "speedup": 0.99,
+      "full_ms": 0.391,
+      "ps_ms": 0.395
+    },
+    {
+      "n_samples": 16,
+      "prefix_len": 512,
+      "suffix_len": 256,
+      "compute_savings_pct": 62.5,
+      "time_savings_pct": 12.7,
+      "speedup": 1.15,
+      "full_ms": 0.886,
+      "ps_ms": 0.774
+    }
+  ],
+  "exp3_qwen36_gqa": [
+    {
+      "seq_len": 256,
+      "prefix_len": 192,
+      "suffix_len": 64,
+      "B": 8,
+      "full_ms": 5.802,
+      "ps_ms": 0.256,
+      "inject_overhead_ms": 0.031,
+      "speedup_per_full_attn_layer": 22.7,
+      "full_attn_layer_ratio": 0.25,
+      "estimated_total_speedup": 6.42
+    },
+    {
+      "seq_len": 512,
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "B": 8,
+      "full_ms": 5.33,
+      "ps_ms": 0.351,
+      "inject_overhead_ms": 0.039,
+      "speedup_per_full_attn_layer": 15.18,
+      "full_attn_layer_ratio": 0.25,
+      "estimated_total_speedup": 4.55
+    },
+    {
+      "seq_len": 1024,
+      "prefix_len": 768,
+      "suffix_len": 256,
+      "B": 8,
+      "full_ms": 0.746,
+      "ps_ms": 0.746,
+      "inject_overhead_ms": 0.05,
+      "speedup_per_full_attn_layer": 1.0,
+      "full_attn_layer_ratio": 0.25,
+      "estimated_total_speedup": 1.0
+    },
+    {
+      "seq_len": 2048,
+      "prefix_len": 1536,
+      "suffix_len": 512,
+      "B": 8,
+      "full_ms": 2.21,
+      "ps_ms": 1.989,
+      "inject_overhead_ms": 0.085,
+      "speedup_per_full_attn_layer": 1.11,
+      "full_attn_layer_ratio": 0.25,
+      "estimated_total_speedup": 1.03
+    }
+  ],
+  "exp4_packed_vs_unpacked": [
+    {
+      "B": 2,
+      "seq_len": 512,
+      "full_bsh_ms": 0.131,
+      "ps_packed_ms": 0.186,
+      "speedup": 0.71,
+      "full_tokens": 1024,
+      "ps_tokens": 640,
+      "token_reduction_pct": 37.5
+    },
+    {
+      "B": 4,
+      "seq_len": 512,
+      "full_bsh_ms": 0.199,
+      "ps_packed_ms": 0.199,
+      "speedup": 1.0,
+      "full_tokens": 2048,
+      "ps_tokens": 896,
+      "token_reduction_pct": 56.2
+    },
+    {
+      "B": 8,
+      "seq_len": 512,
+      "full_bsh_ms": 0.312,
+      "ps_packed_ms": 0.3,
+      "speedup": 1.04,
+      "full_tokens": 4096,
+      "ps_tokens": 1408,
+      "token_reduction_pct": 65.6
+    },
+    {
+      "B": 16,
+      "seq_len": 512,
+      "full_bsh_ms": 0.655,
+      "ps_packed_ms": 0.667,
+      "speedup": 0.98,
+      "full_tokens": 8192,
+      "ps_tokens": 2432,
+      "token_reduction_pct": 70.3
+    }
+  ],
+  "exp5_prefix_last_restore": [
+    {
+      "B": 2,
+      "n_reusers": 1,
+      "vocab_size": 32000,
+      "seq_len": 512,
+      "base_logprob_ms": 33.621,
+      "prefix_last_restore_ms": 0.181,
+      "restore_overhead_pct": 0.5,
+      "restore_per_reuser_ms": 0.181
+    },
+    {
+      "B": 4,
+      "n_reusers": 3,
+      "vocab_size": 32000,
+      "seq_len": 512,
+      "base_logprob_ms": 0.732,
+      "prefix_last_restore_ms": 0.202,
+      "restore_overhead_pct": 27.7,
+      "restore_per_reuser_ms": 0.067
+    },
+    {
+      "B": 8,
+      "n_reusers": 7,
+      "vocab_size": 32000,
+      "seq_len": 512,
+      "base_logprob_ms": 1.311,
+      "prefix_last_restore_ms": 0.38,
+      "restore_overhead_pct": 29.0,
+      "restore_per_reuser_ms": 0.054
+    },
+    {
+      "B": 16,
+      "n_reusers": 15,
+      "vocab_size": 32000,
+      "seq_len": 512,
+      "base_logprob_ms": 2.473,
+      "prefix_last_restore_ms": 0.723,
+      "restore_overhead_pct": 29.2,
+      "restore_per_reuser_ms": 0.048
+    },
+    {
+      "B": 32,
+      "n_reusers": 31,
+      "vocab_size": 32000,
+      "seq_len": 512,
+      "base_logprob_ms": 4.799,
+      "prefix_last_restore_ms": 1.387,
+      "restore_overhead_pct": 28.9,
+      "restore_per_reuser_ms": 0.045
+    },
+    {
+      "B": 8,
+      "n_reusers": 7,
+      "vocab_size": 248320,
+      "seq_len": 512,
+      "base_logprob_ms": 17.872,
+      "prefix_last_restore_ms": 0.415,
+      "restore_overhead_pct": 2.3,
+      "note": "Qwen3.6 full vocab size (248320)"
+    }
+  ]
+}
