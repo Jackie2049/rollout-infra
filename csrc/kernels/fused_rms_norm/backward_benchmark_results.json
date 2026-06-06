@@ -1,0 +1,38 @@
+{
+  "correctness_pass": false,
+  "cuda_available": true,
+  "perf_results": [
+    {
+      "B": 32,
+      "H": 2048,
+      "pytorch_ms": 0.346,
+      "fused_ms": 0.153,
+      "speedup": 2.26,
+      "backend": "CUDA"
+    },
+    {
+      "B": 128,
+      "H": 2048,
+      "pytorch_ms": 0.346,
+      "fused_ms": 0.156,
+      "speedup": 2.22,
+      "backend": "CUDA"
+    },
+    {
+      "B": 32,
+      "H": 8192,
+      "pytorch_ms": 0.339,
+      "fused_ms": 0.162,
+      "speedup": 2.1,
+      "backend": "CUDA"
+    },
+    {
+      "B": 128,
+      "H": 8192,
+      "pytorch_ms": 0.34,
+      "fused_ms": 0.161,
+      "speedup": 2.12,
+      "backend": "CUDA"
+    }
+  ]
+}

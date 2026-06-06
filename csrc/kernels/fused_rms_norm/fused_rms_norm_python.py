@@ -2,6 +2,7 @@
 Fused RMSNorm CUDA C++ Extension — Python Interface
 
 Provides torch.autograd.Function wrapper for seamless integration.
+
 """
 
 import torch
@@ -51,20 +52,18 @@ class FusedRMSNormAddFunction(torch.autograd.Function):
             inv_rms = torch.rsqrt(variance + epsilon)
             x_norm = input * inv_rms
 
-            # grad_residual = grad_output (direct pass-through)
+            # d_residual = dy (direct pass-through)
             grad_residual = grad_output
 
-            # grad_weight = sum over batch of (grad_output * x_norm)
+            # d_weight = sum over batch of (dy * x_norm)
             grad_weight = (grad_output * x_norm).sum(dim=0)
 
-            # grad_input = grad_output * weight * inv_rms
-            #             - x_norm * (grad_output * weight * x_norm).sum(-1) / hidden_size * inv_rms
-            #             + grad_output  (from residual)
+            # d_input = inv_rms * (dy * weight - x_norm * mean(dy * weight * x_norm))
+            # x only appears in x_norm = x * inv_rms, NOT in residual branch
             hidden_size = input.size(-1)
-            dot = (grad_output * weight * x_norm).sum(dim=-1, keepdim=True)
-            coeff = dot / hidden_size * inv_rms
-
-            grad_input = grad_output * weight * inv_rms + grad_output - x_norm * coeff
+            dx_norm = grad_output * weight
+            dot = (dx_norm * x_norm).sum(dim=-1, keepdim=True)
+            grad_input = inv_rms * (dx_norm - x_norm * dot / hidden_size)
 
             return grad_input, grad_residual, grad_weight, None
 
@@ -79,7 +78,8 @@ class FusedRMSNormFunction(torch.autograd.Function):
         else:
             variance = input.pow(2).mean(dim=-1, keepdim=True)
             inv_rms = torch.rsqrt(variance + epsilon)
-            output = input * inv_rms * weight
+            x_norm = input * inv_rms
+            output = x_norm * weight
 
         ctx.save_for_backward(input, weight)
         ctx.epsilon = epsilon
@@ -101,10 +101,9 @@ class FusedRMSNormFunction(torch.autograd.Function):
             grad_weight = (grad_output * x_norm).sum(dim=0)
 
             hidden_size = input.size(-1)
-            dot = (grad_output * weight * x_norm).sum(dim=-1, keepdim=True)
-            coeff = dot / hidden_size * inv_rms
-
-            grad_input = grad_output * weight * inv_rms - x_norm * coeff
+            dx_norm = grad_output * weight
+            dot = (dx_norm * x_norm).sum(dim=-1, keepdim=True)
+            grad_input = inv_rms * (dx_norm - x_norm * dot / hidden_size)
 
             return grad_input, grad_weight, None
 
