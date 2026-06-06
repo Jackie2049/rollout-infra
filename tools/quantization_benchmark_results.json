@@ -1,0 +1,342 @@
+{
+  "fp16": [
+    {
+      "B": 1,
+      "H": 4096,
+      "dtype": "FP16",
+      "time_ms": 0.0352,
+      "weight_mb": 34.0
+    },
+    {
+      "B": 4,
+      "H": 4096,
+      "dtype": "FP16",
+      "time_ms": 0.0198,
+      "weight_mb": 34.0
+    },
+    {
+      "B": 16,
+      "H": 4096,
+      "dtype": "FP16",
+      "time_ms": 0.0558,
+      "weight_mb": 34.0
+    },
+    {
+      "B": 32,
+      "H": 4096,
+      "dtype": "FP16",
+      "time_ms": 0.025,
+      "weight_mb": 34.0
+    },
+    {
+      "B": 128,
+      "H": 4096,
+      "dtype": "FP16",
+      "time_ms": 0.0347,
+      "weight_mb": 34.0
+    },
+    {
+      "B": 1,
+      "H": 2048,
+      "dtype": "FP16",
+      "time_ms": 0.0141,
+      "weight_mb": 8.0
+    },
+    {
+      "B": 32,
+      "H": 2048,
+      "dtype": "FP16",
+      "time_ms": 0.0171,
+      "weight_mb": 8.0
+    },
+    {
+      "B": 128,
+      "H": 2048,
+      "dtype": "FP16",
+      "time_ms": 0.0166,
+      "weight_mb": 8.0
+    }
+  ],
+  "int8_weight_only": [
+    {
+      "B": 1,
+      "H": 4096,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.1177,
+      "dequant_ms": 0.1007,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.953125,
+      "max_diff": 0.0234,
+      "rel_diff": 0.0043
+    },
+    {
+      "B": 4,
+      "H": 4096,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.1198,
+      "dequant_ms": 0.1018,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.953125,
+      "max_diff": 0.0225,
+      "rel_diff": 0.0041
+    },
+    {
+      "B": 16,
+      "H": 4096,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.1567,
+      "dequant_ms": 0.1015,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.953613,
+      "max_diff": 0.0234,
+      "rel_diff": 0.0041
+    },
+    {
+      "B": 32,
+      "H": 4096,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.1225,
+      "dequant_ms": 0.1019,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.954102,
+      "max_diff": 0.0234,
+      "rel_diff": 0.0042
+    },
+    {
+      "B": 128,
+      "H": 4096,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.1367,
+      "dequant_ms": 0.1017,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.954102,
+      "max_diff": 0.0234,
+      "rel_diff": 0.0042
+    },
+    {
+      "B": 1,
+      "H": 2048,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.0409,
+      "dequant_ms": 0.0239,
+      "weight_mb": 4.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.994629,
+      "max_diff": 0.0215,
+      "rel_diff": 0.0039
+    },
+    {
+      "B": 32,
+      "H": 2048,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.0461,
+      "dequant_ms": 0.0229,
+      "weight_mb": 4.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.993652,
+      "max_diff": 0.0195,
+      "rel_diff": 0.004
+    },
+    {
+      "B": 128,
+      "H": 2048,
+      "dtype": "INT8_weight_only",
+      "total_ms": 0.0452,
+      "dequant_ms": 0.024,
+      "weight_mb": 4.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.994141,
+      "max_diff": 0.0215,
+      "rel_diff": 0.0043
+    }
+  ],
+  "fp8_e4m3": [
+    {
+      "B": 1,
+      "H": 4096,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.0737,
+      "dequant_ms": 0.0389,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.958496,
+      "max_diff": 0.25,
+      "rel_diff": 0.048
+    },
+    {
+      "B": 4,
+      "H": 4096,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.0642,
+      "dequant_ms": 0.0389,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.958984,
+      "max_diff": 0.25,
+      "rel_diff": 0.0456
+    },
+    {
+      "B": 16,
+      "H": 4096,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.101,
+      "dequant_ms": 0.039,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.958496,
+      "max_diff": 0.25,
+      "rel_diff": 0.0463
+    },
+    {
+      "B": 32,
+      "H": 4096,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.0671,
+      "dequant_ms": 0.039,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.958984,
+      "max_diff": 0.25,
+      "rel_diff": 0.0464
+    },
+    {
+      "B": 128,
+      "H": 4096,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.0784,
+      "dequant_ms": 0.039,
+      "weight_mb": 17.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.958496,
+      "max_diff": 0.25,
+      "rel_diff": 0.0437
+    },
+    {
+      "B": 1,
+      "H": 2048,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.0285,
+      "dequant_ms": 0.0119,
+      "weight_mb": 4.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.994141,
+      "max_diff": 0.25,
+      "rel_diff": 0.0486
+    },
+    {
+      "B": 32,
+      "H": 2048,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.033,
+      "dequant_ms": 0.0117,
+      "weight_mb": 4.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.993652,
+      "max_diff": 0.25,
+      "rel_diff": 0.0465
+    },
+    {
+      "B": 128,
+      "H": 2048,
+      "dtype": "FP8_E4M3",
+      "total_ms": 0.0296,
+      "dequant_ms": 0.0116,
+      "weight_mb": 4.0,
+      "mem_saved_pct": 50.0,
+      "cos_sim": 0.994141,
+      "max_diff": 0.25,
+      "rel_diff": 0.048
+    }
+  ],
+  "int4_awq_sim": [
+    {
+      "B": 1,
+      "H": 4096,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.0936,
+      "weight_mb": 9.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.963867,
+      "max_diff": 0.4111,
+      "rel_diff": 0.0712,
+      "GROUP_SIZE": 128
+    },
+    {
+      "B": 4,
+      "H": 4096,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.082,
+      "weight_mb": 9.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.963867,
+      "max_diff": 0.4094,
+      "rel_diff": 0.0713,
+      "GROUP_SIZE": 128
+    },
+    {
+      "B": 32,
+      "H": 4096,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.0839,
+      "weight_mb": 9.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.964355,
+      "max_diff": 0.3955,
+      "rel_diff": 0.0703,
+      "GROUP_SIZE": 128
+    },
+    {
+      "B": 128,
+      "H": 4096,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.0966,
+      "weight_mb": 9.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.964355,
+      "max_diff": 0.3796,
+      "rel_diff": 0.0713,
+      "GROUP_SIZE": 128
+    },
+    {
+      "B": 1,
+      "H": 2048,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.0291,
+      "weight_mb": 2.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.995605,
+      "max_diff": 0.3604,
+      "rel_diff": 0.0706,
+      "GROUP_SIZE": 128
+    },
+    {
+      "B": 32,
+      "H": 2048,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.0354,
+      "weight_mb": 2.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.996094,
+      "max_diff": 0.3923,
+      "rel_diff": 0.0707,
+      "GROUP_SIZE": 128
+    },
+    {
+      "B": 128,
+      "H": 2048,
+      "dtype": "INT4_AWQ_sim",
+      "total_ms": 0.0348,
+      "weight_mb": 2.0,
+      "mem_saved_pct": 74.2,
+      "cos_sim": 0.996094,
+      "max_diff": 0.3735,
+      "rel_diff": 0.0707,
+      "GROUP_SIZE": 128
+    }
+  ]
+}
