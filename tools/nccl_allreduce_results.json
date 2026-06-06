@@ -1,0 +1,242 @@
+[
+  {
+    "world_size": 2,
+    "size_name": "1KB",
+    "size_mb": 0.001,
+    "per_iter_ms": 0.037,
+    "eff_bw_gb_s": 0.03,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "4KB",
+    "size_mb": 0.004,
+    "per_iter_ms": 0.036,
+    "eff_bw_gb_s": 0.12,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "16KB",
+    "size_mb": 0.016,
+    "per_iter_ms": 0.036,
+    "eff_bw_gb_s": 0.45,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "64KB",
+    "size_mb": 0.066,
+    "per_iter_ms": 0.036,
+    "eff_bw_gb_s": 1.81,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "256KB",
+    "size_mb": 0.262,
+    "per_iter_ms": 0.057,
+    "eff_bw_gb_s": 4.56,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "1MB",
+    "size_mb": 1.049,
+    "per_iter_ms": 0.157,
+    "eff_bw_gb_s": 6.69,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "4MB",
+    "size_mb": 4.194,
+    "per_iter_ms": 0.581,
+    "eff_bw_gb_s": 7.22,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "16MB",
+    "size_mb": 16.777,
+    "per_iter_ms": 2.263,
+    "eff_bw_gb_s": 7.42,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "64MB",
+    "size_mb": 67.109,
+    "per_iter_ms": 8.898,
+    "eff_bw_gb_s": 7.54,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 2,
+    "size_name": "256MB",
+    "size_mb": 268.435,
+    "per_iter_ms": 35.381,
+    "eff_bw_gb_s": 7.59,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "1KB",
+    "size_mb": 0.001,
+    "per_iter_ms": 0.037,
+    "eff_bw_gb_s": 0.03,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "4KB",
+    "size_mb": 0.004,
+    "per_iter_ms": 0.036,
+    "eff_bw_gb_s": 0.11,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "16KB",
+    "size_mb": 0.016,
+    "per_iter_ms": 0.036,
+    "eff_bw_gb_s": 0.45,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "64KB",
+    "size_mb": 0.066,
+    "per_iter_ms": 0.044,
+    "eff_bw_gb_s": 1.47,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "256KB",
+    "size_mb": 0.262,
+    "per_iter_ms": 0.13,
+    "eff_bw_gb_s": 2.02,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "1MB",
+    "size_mb": 1.049,
+    "per_iter_ms": 0.356,
+    "eff_bw_gb_s": 2.95,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "4MB",
+    "size_mb": 4.194,
+    "per_iter_ms": 1.318,
+    "eff_bw_gb_s": 3.18,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "16MB",
+    "size_mb": 16.777,
+    "per_iter_ms": 5.106,
+    "eff_bw_gb_s": 3.29,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "64MB",
+    "size_mb": 67.109,
+    "per_iter_ms": 20.159,
+    "eff_bw_gb_s": 3.33,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 4,
+    "size_name": "256MB",
+    "size_mb": 268.435,
+    "per_iter_ms": 81.048,
+    "eff_bw_gb_s": 3.31,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "1KB",
+    "size_mb": 0.001,
+    "per_iter_ms": 0.072,
+    "eff_bw_gb_s": 0.01,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "4KB",
+    "size_mb": 0.004,
+    "per_iter_ms": 0.072,
+    "eff_bw_gb_s": 0.06,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "16KB",
+    "size_mb": 0.016,
+    "per_iter_ms": 0.07,
+    "eff_bw_gb_s": 0.23,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "64KB",
+    "size_mb": 0.066,
+    "per_iter_ms": 0.072,
+    "eff_bw_gb_s": 0.91,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "256KB",
+    "size_mb": 0.262,
+    "per_iter_ms": 0.158,
+    "eff_bw_gb_s": 1.66,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "1MB",
+    "size_mb": 1.049,
+    "per_iter_ms": 0.404,
+    "eff_bw_gb_s": 2.6,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "4MB",
+    "size_mb": 4.194,
+    "per_iter_ms": 1.44,
+    "eff_bw_gb_s": 2.91,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "16MB",
+    "size_mb": 16.777,
+    "per_iter_ms": 5.665,
+    "eff_bw_gb_s": 2.96,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "64MB",
+    "size_mb": 67.109,
+    "per_iter_ms": 22.453,
+    "eff_bw_gb_s": 2.99,
+    "alg_bw_gb_s": 0.0
+  },
+  {
+    "world_size": 8,
+    "size_name": "256MB",
+    "size_mb": 268.435,
+    "per_iter_ms": 89.176,
+    "eff_bw_gb_s": 3.01,
+    "alg_bw_gb_s": 0.0
+  }
+]
