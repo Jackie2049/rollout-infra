@@ -1,0 +1,83 @@
+[
+  {
+    "name": "50M params",
+    "world_size": 2,
+    "n_params_m": 8.4,
+    "model_mb": 33.6,
+    "per_step_ms": 5.11,
+    "throughput": 25043.0,
+    "batch_size": 64
+  },
+  {
+    "name": "200M params",
+    "world_size": 2,
+    "n_params_m": 33.6,
+    "model_mb": 134.3,
+    "per_step_ms": 21.3,
+    "throughput": 6008.0,
+    "batch_size": 64
+  },
+  {
+    "name": "838M params",
+    "world_size": 2,
+    "n_params_m": 67.1,
+    "model_mb": 268.5,
+    "per_step_ms": 42.32,
+    "throughput": 3025.0,
+    "batch_size": 64
+  },
+  {
+    "name": "50M params",
+    "world_size": 4,
+    "n_params_m": 8.4,
+    "model_mb": 33.6,
+    "per_step_ms": 10.95,
+    "throughput": 23385.0,
+    "batch_size": 64
+  },
+  {
+    "name": "200M params",
+    "world_size": 4,
+    "n_params_m": 33.6,
+    "model_mb": 134.3,
+    "per_step_ms": 44.89,
+    "throughput": 5703.0,
+    "batch_size": 64
+  },
+  {
+    "name": "838M params",
+    "world_size": 4,
+    "n_params_m": 67.1,
+    "model_mb": 268.5,
+    "per_step_ms": 88.86,
+    "throughput": 2881.0,
+    "batch_size": 64
+  },
+  {
+    "name": "50M params",
+    "world_size": 8,
+    "n_params_m": 8.4,
+    "model_mb": 33.6,
+    "per_step_ms": 12.03,
+    "throughput": 42557.0,
+    "batch_size": 64
+  },
+  {
+    "name": "200M params",
+    "world_size": 8,
+    "n_params_m": 33.6,
+    "model_mb": 134.3,
+    "per_step_ms": 49.08,
+    "throughput": 10432.0,
+    "batch_size": 64
+  },
+  {
+    "name": "838M params",
+    "world_size": 8,
+    "n_params_m": 67.1,
+    "model_mb": 268.5,
+    "per_step_ms": 97.73,
+    "throughput": 5239.0,
+    "batch_size": 64
+  }
+]

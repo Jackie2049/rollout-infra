@@ -1,0 +1,181 @@
+{
+  "p2p_matrix": [
+    [
+      "SELF",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "SELF",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "PROXY",
+      "SELF",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "SELF",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "SELF",
+      "PROXY",
+      "PROXY",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "SELF",
+      "PROXY",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "SELF",
+      "PROXY"
+    ],
+    [
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "PROXY",
+      "SELF"
+    ]
+  ],
+  "memcpy_bandwidth": [
+    {
+      "src": 0,
+      "dst": 1,
+      "copy_ms": 15.165,
+      "unidir_bw": 16.88,
+      "bidir_bw": 33.76
+    },
+    {
+      "src": 0,
+      "dst": 2,
+      "copy_ms": 15.174,
+      "unidir_bw": 16.87,
+      "bidir_bw": 33.74
+    },
+    {
+      "src": 0,
+      "dst": 3,
+      "copy_ms": 15.161,
+      "unidir_bw": 16.89,
+      "bidir_bw": 33.77
+    },
+    {
+      "src": 0,
+      "dst": 4,
+      "copy_ms": 12.487,
+      "unidir_bw": 20.5,
+      "bidir_bw": 41.0
+    },
+    {
+      "src": 0,
+      "dst": 7,
+      "copy_ms": 12.504,
+      "unidir_bw": 20.47,
+      "bidir_bw": 40.95
+    },
+    {
+      "src": 1,
+      "dst": 2,
+      "copy_ms": 15.148,
+      "unidir_bw": 16.9,
+      "bidir_bw": 33.8
+    },
+    {
+      "src": 2,
+      "dst": 3,
+      "copy_ms": 15.162,
+      "unidir_bw": 16.88,
+      "bidir_bw": 33.77
+    },
+    {
+      "src": 3,
+      "dst": 4,
+      "copy_ms": 12.47,
+      "unidir_bw": 20.53,
+      "bidir_bw": 41.06
+    }
+  ],
+  "hbm_bandwidth": [
+    {
+      "gpu_id": 0,
+      "hbm_bw": 877.7
+    },
+    {
+      "gpu_id": 1,
+      "hbm_bw": 877.8
+    },
+    {
+      "gpu_id": 2,
+      "hbm_bw": 877.8
+    },
+    {
+      "gpu_id": 3,
+      "hbm_bw": 877.9
+    }
+  ],
+  "pcie_topology": "\t\u001b[4mGPU0\tGPU1\tGPU2\tGPU3\tGPU4\tGPU5\tGPU6\tGPU7\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tPXB\tPXB\tPXB\tSYS\tSYS\tSYS\tSYS\t0-27,56-83\t0\t\tN/A\nGPU1\tPXB\t X \tPXB\tPXB\tSYS\tSYS\tSYS\tSYS\t0-27,56-83\t0\t\tN/A\nGPU2\tPXB\tPXB\t X \tPIX\tSYS\tSYS\tSYS\tSYS\t0-27,56-83\t0\t\tN/A\nGPU3\tPXB\tPXB\tPIX\t X \tSYS\tSYS\tSYS\tSYS\t0-27,56-83\t0\t\tN/A\nGPU4\tSYS\tSYS\tSYS\tSYS\t X \tPXB\tPXB\tPXB\t28-55,84-111\t1\t\tN/A\nGPU5\tSYS\tSYS\tSYS\tSYS\tPXB\t X \tPXB\tPXB\t28-55,84-111\t1\t\tN/A\nGPU6\tSYS\tSYS\tSYS\tSYS\tPXB\tPXB\t X \tPIX\t28-55,84-111\t1\t\tN/A\nGPU7\tSYS\tSYS\tSYS\tSYS\tPXB\tPXB\tPIX\t X \t28-55,84-111\t1\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n",
+  "ipc_bandwidth": [
+    {
+      "src": 0,
+      "dst": 1,
+      "time_ms": 15.131,
+      "bw_gb_s": 16.92
+    },
+    {
+      "src": 0,
+      "dst": 4,
+      "time_ms": 12.488,
+      "bw_gb_s": 20.5
+    },
+    {
+      "src": 0,
+      "dst": 7,
+      "time_ms": 12.494,
+      "bw_gb_s": 20.49
+    }
+  ]
+}
