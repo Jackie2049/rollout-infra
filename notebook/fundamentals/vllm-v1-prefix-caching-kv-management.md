@@ -254,3 +254,47 @@ KVCacheConfig:
 3. **Append-only block_table**: 不de-duplicate → block ID不变 → block_table简单
 4. **Slots=True**: KVCacheBlock 用 `@dataclass(slots=True)` → 减少内存开销
 5. **Hash chain**: 递推hash → 一旦miss就停 → 高效prefix查找
+
+## vLLM V1 Attention Backend Registry (20+ backends)
+
+vLLM V1 支持 **20+ attention backend** (通过 AttentionBackendEnum 注册):
+
+| Backend | 类路径 | 适用GPU | 功能 |
+|---------|--------|---------|------|
+| **FLASHINFER** (默认) | `flashinfer.FlashInferBackend` | SM 80+ | Decode+Prefill paged KV, GQA, FP8 dequant |
+| **TRITON_ATTN** | `triton_attn.TritonAttentionBackend` | 所有 GPU | Triton fallback (Split-KV decode) |
+| FLASH_ATTN | `flash_attn.FlashAttentionBackend` | SM 80+ | FlashAttention-2 标准 |
+| FLASHINFER_MLA | `mla.flashinfer_mla.FlashInferMLABackend` | SM 80+ | MLA attention (FlashInfer) |
+| FLASHMLA | `mla.flashmla.FlashMLABackend` | SM 90 (H100) | 专用 MLA kernel |
+| CUTLASS_MLA | `mla.cutlass_mla.CutlassMLABackend` | SM 100 | CUTLASS MLA (最新) |
+| TRITON_MLA | `mla.triton_mla.TritonMLABackend` | 所有 | Triton MLA fallback |
+| ROCM_AITER_* | 多个 | AMD GPU | ROCm专用 |
+| CPU_ATTN | `cpu_attn.CPUAttentionBackend` | CPU | CPU fallback |
+| FLEX_ATTENTION | `flex_attention.FlexAttentionBackend` | ViT | torch.nn.flex_attention |
+| TURBOQUANT | `turboquant_attn.TurboQuantAttentionBackend` | SM 80+ | Quantized attention |
+
+**注册机制**: `register_backend()` → 可以动态覆盖任意backend!
+```python
+@register_backend(AttentionBackendEnum.FLASHINFER)
+class MyCustomFlashInferBackend:  # 自定义实现替换默认
+    ...
+```
+
+### FlashInfer Backend 核心 (默认)
+
+**3种 wrapper**:
+- `BatchDecodeWithPagedKVCacheWrapper`: Decode + paged KV (Split-KV + reduce)
+- `BatchPrefillWithPagedKVCacheWrapper`: Prefill + paged KV (Block-sparse)
+- `BatchPrefillWithRaggedKVCacheWrapper`: Prefill + ragged KV (non-paged)
+
+**关键**: 所有 wrapper 都在 CUDA-level 处理 block_table indirection → **不需要 Python gather!**
+
+这就是为什么 RTX 4090 实测 Python-level paged attention overhead 138% → FlashInfer kernel 直接在 CUDA 中做 block_table lookup → **零额外内存分配**
+
+### Backend 选择逻辑
+
+scheduler 根据以下条件选择 backend:
+1. GPU SM 版本 (SM 80+ → FlashInfer, 否则 → Triton)
+2. Attention 类型 (MHA/GQA → FlashInfer, MLA → FlashMLA/CutlassMLA)
+3. CUDA Graph 模式 (FULL → 需要 CUDA Graph 兼容backend)
+4. KV cache dtype (FP8 → 需要FP8 dequant支持)
