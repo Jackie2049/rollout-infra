@@ -69,6 +69,53 @@ output = prefix_output * p_scale + suffix_output * s_scale
 
 ---
 
+## TurboQuant Triton Decode Kernel
+
+### 文件: `triton_turboquant_decode.py`
+
+**创新**: Fused量化KV cache attention — 在Triton kernel内直接从压缩KV做attention, 无需先dequant!
+
+**KV压缩方案**:
+- **Key**: MSE (Mean-Squared Error)量化 3-bit或4-bit → 每个维度存储centroid索引 + FP16 vector norm
+  - `mse_idx` (3-bit: 8 centroids / 4-bit: 16 centroids) → `K = norm × centroids[mse_idx]`
+  - **可选**: FP8 key (直接FP8存储, 无MSE)
+- **Value**: 3-bit或4-bit uniform量化 → 每个维度存储量化索引 + FP16 scale/zero_point
+  - `v_idx` (3-bit或4-bit) → `V = v_idx × scale + zero_point`
+
+**KV cache layout**: `[num_blocks, block_size, Hk, packed_slot]` uint8
+- packed_slot = MSE_BYTES(K key) + norm(2 bytes) + VAL_DATA_BYTES(V value) + scale(2B) + zero(2B)
+
+**Stage1 (split-KV)**: 与普通decode attention结构相同, 但K/V加载后**在kernel内即时dequant**:
+```python
+# Key dequant (MSE path):
+mse_idx = unpack_3bit_or_4bit(KV_cache[mse_bytes])  # bit-level unpack
+K = vec_norm × centroids[mse_idx]  # gather from centroid table
+
+# Key dequant (FP8 path):
+K = FP8_to_float(KV_cache[key_bytes])  # inline cast
+
+# Value dequant:
+v_idx = unpack_3bit_or_4bit(KV_cache[val_bytes])  # bit-level unpack
+V = v_idx × v_scale + v_zero  # affine dequant
+
+# Score + Softmax + Accumulate: same as standard decode
+acc = acc × re_scale + sum(p × V)
+```
+
+**Stage2**: 复用 `_fwd_kernel_stage2` (与Split-KV decode相同)
+
+**关键优化**:
+- **BLOCK_KV=4**: 小block (因为bit unpacking开销大, 4 tokens per tile)
+- **num_warps=1, num_stages=1**: 单warp (避免shared memory溢出, MSE unpack需要大量寄存器)
+- **q_rot = q @ Pi.T**: MSE key需要query旋转 (外部cuBLAS GEMM)
+- **FP8 key无需旋转**: 直接用原始query, kernel内inline cast
+- **NORM_CORRECTION**: 可选centroid向量归一化 (防精度损失)
+- **FP8_E4B15**: Ampere/Ada (SM<8.9) 用e4b15格式, Hopper+用e4nv
+
+**内存节省**: 3-bit MSE + 3-bit V → ~0.75 bytes/tok/dim (vs FP16=2 bytes) → **62.5% KV cache节省**
+
+---
+
 ## 关键发现总结
 
 ## Split-KV Decode Attention (Stage1 + Stage2)
@@ -381,3 +428,4 @@ FlashInfer仍是默认首选; Triton backend作为 **全SM兼容** 的fallback, 
 8. **Per-token-head quant比per-tensor更优**: scale融合到softmax_score而不是K/V tile
 9. **Prefill kernel用exp2**: Triton硬件优化, sm_scale乘1/ln(2)转入log2域
 10. **Merge attn states (cascade)**: LSE rescale方法合并prefix+suffix partial → 全局max → 加权 → 数学等价一次softmax, 是cascade attention的核心
+11. **TurboQuant fused dequant**: MSE 3/4-bit key + 3/4-bit uniform V → 在kernel内即时bit unpack+dequant → 无需外部dequant → 62.5% KV cache节省; FP8 key更简单(inline cast)
