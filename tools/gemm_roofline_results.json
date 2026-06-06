@@ -1,0 +1,200 @@
+{
+  "fp16_square": [
+    {
+      "N": 32,
+      "time_ms": 0.0136,
+      "achieved_tflops": 0.0,
+      "utilization_pct": 0.0,
+      "ai": 10.7,
+      "bound": "MEM",
+      "predicted_mem_ms": 0.0,
+      "predicted_comp_ms": 0.0
+    },
+    {
+      "N": 64,
+      "time_ms": 0.0134,
+      "achieved_tflops": 0.0,
+      "utilization_pct": 0.0,
+      "ai": 21.3,
+      "bound": "MEM",
+      "predicted_mem_ms": 0.0,
+      "predicted_comp_ms": 0.0
+    },
+    {
+      "N": 128,
+      "time_ms": 0.014,
+      "achieved_tflops": 0.3,
+      "utilization_pct": 0.4,
+      "ai": 42.7,
+      "bound": "MEM",
+      "predicted_mem_ms": 0.0001,
+      "predicted_comp_ms": 0.0001
+    },
+    {
+      "N": 256,
+      "time_ms": 0.0133,
+      "achieved_tflops": 2.5,
+      "utilization_pct": 3.1,
+      "ai": 85.3,
+      "bound": "MEM",
+      "predicted_mem_ms": 0.0004,
+      "predicted_comp_ms": 0.0004
+    },
+    {
+      "N": 512,
+      "time_ms": 0.0138,
+      "achieved_tflops": 19.5,
+      "utilization_pct": 23.6,
+      "ai": 170.7,
+      "bound": "COMP",
+      "predicted_mem_ms": 0.0017,
+      "predicted_comp_ms": 0.0033
+    },
+    {
+      "N": 1024,
+      "time_ms": 0.021,
+      "achieved_tflops": 102.1,
+      "utilization_pct": 123.6,
+      "ai": 341.3,
+      "bound": "COMP",
+      "predicted_mem_ms": 0.007,
+      "predicted_comp_ms": 0.026
+    },
+    {
+      "N": 2048,
+      "time_ms": 0.1129,
+      "achieved_tflops": 152.1,
+      "utilization_pct": 184.2,
+      "ai": 682.7,
+      "bound": "COMP",
+      "predicted_mem_ms": 0.028,
+      "predicted_comp_ms": 0.208
+    },
+    {
+      "N": 4096,
+      "time_ms": 0.8554,
+      "achieved_tflops": 160.7,
+      "utilization_pct": 194.6,
+      "ai": 1365.3,
+      "bound": "COMP",
+      "predicted_mem_ms": 0.1118,
+      "predicted_comp_ms": 1.6643
+    },
+    {
+      "N": 8192,
+      "time_ms": 6.669,
+      "achieved_tflops": 164.9,
+      "utilization_pct": 199.6,
+      "ai": 2730.7,
+      "bound": "COMP",
+      "predicted_mem_ms": 0.4474,
+      "predicted_comp_ms": 13.3145
+    }
+  ],
+  "fp32_square": [
+    {
+      "N": 32,
+      "time_ms": 0.0168,
+      "achieved_tflops": 0.0,
+      "utilization_pct": 0.0,
+      "ai": 5.3,
+      "bound": "MEM"
+    },
+    {
+      "N": 64,
+      "time_ms": 0.0162,
+      "achieved_tflops": 0.0,
+      "utilization_pct": 0.1,
+      "ai": 10.7,
+      "bound": "MEM"
+    },
+    {
+      "N": 128,
+      "time_ms": 0.0135,
+      "achieved_tflops": 0.3,
+      "utilization_pct": 0.8,
+      "ai": 21.3,
+      "bound": "MEM"
+    },
+    {
+      "N": 256,
+      "time_ms": 0.0161,
+      "achieved_tflops": 2.1,
+      "utilization_pct": 5.0,
+      "ai": 42.7,
+      "bound": "MEM"
+    },
+    {
+      "N": 512,
+      "time_ms": 0.0141,
+      "achieved_tflops": 19.1,
+      "utilization_pct": 46.2,
+      "ai": 85.3,
+      "bound": "COMP"
+    },
+    {
+      "N": 1024,
+      "time_ms": 0.046,
+      "achieved_tflops": 46.7,
+      "utilization_pct": 113.1,
+      "ai": 170.7,
+      "bound": "COMP"
+    },
+    {
+      "N": 2048,
+      "time_ms": 0.3183,
+      "achieved_tflops": 54.0,
+      "utilization_pct": 130.7,
+      "ai": 341.3,
+      "bound": "COMP"
+    },
+    {
+      "N": 4096,
+      "time_ms": 2.5873,
+      "achieved_tflops": 53.1,
+      "utilization_pct": 128.7,
+      "ai": 682.7,
+      "bound": "COMP"
+    },
+    {
+      "N": 8192,
+      "time_ms": 20.1231,
+      "achieved_tflops": 54.6,
+      "utilization_pct": 132.3,
+      "ai": 1365.3,
+      "bound": "COMP"
+    }
+  ],
+  "decode_batched": [
+    {
+      "B": 1,
+      "time_ms": 0.0361,
+      "tok_per_s": 27680.0,
+      "ai": 0.5
+    },
+    {
+      "B": 4,
+      "time_ms": 0.0208,
+      "tok_per_s": 191871.0,
+      "ai": 2.0
+    },
+    {
+      "B": 16,
+      "time_ms": 0.0571,
+      "tok_per_s": 280319.0,
+      "ai": 7.97
+    },
+    {
+      "B": 64,
+      "time_ms": 0.0223,
+      "tok_per_s": 2874885.0,
+      "ai": 31.51
+    },
+    {
+      "B": 256,
+      "time_ms": 0.058,
+      "tok_per_s": 4410678.0,
+      "ai": 120.47
+    }
+  ]
+}
