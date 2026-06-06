@@ -1,0 +1,45 @@
+{
+  "correctness_pass": true,
+  "perf_results": [
+    {
+      "B": 32,
+      "H": 2048,
+      "pytorch_ms": 0.345,
+      "triton_ms": 0.25,
+      "cuda_ms": 0.325,
+      "triton_speedup": 1.38,
+      "cuda_speedup": 1.06,
+      "triton_vs_cuda": 1.3
+    },
+    {
+      "B": 128,
+      "H": 2048,
+      "pytorch_ms": 0.337,
+      "triton_ms": 0.263,
+      "cuda_ms": 0.319,
+      "triton_speedup": 1.28,
+      "cuda_speedup": 1.05,
+      "triton_vs_cuda": 1.22
+    },
+    {
+      "B": 32,
+      "H": 8192,
+      "pytorch_ms": 0.345,
+      "triton_ms": 0.243,
+      "cuda_ms": 0.314,
+      "triton_speedup": 1.42,
+      "cuda_speedup": 1.1,
+      "triton_vs_cuda": 1.29
+    },
+    {
+      "B": 128,
+      "H": 8192,
+      "pytorch_ms": 0.338,
+      "triton_ms": 0.244,
+      "cuda_ms": 0.31,
+      "triton_speedup": 1.38,
+      "cuda_speedup": 1.09,
+      "triton_vs_cuda": 1.27
+    }
+  ]
+}
