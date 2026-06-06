@@ -56,15 +56,17 @@ def exp1_grouped_gemm():
 
     H = 4096   # hidden_size (7B model)
     E = 8      # number of experts (Mixtral-8x7B style)
-    intermediate = 4 * H
+    gate_up_dim = 4 * H   # gate+up output dimension (before SwiGLU split)
+    down_dim = 2 * H      # SwiGLU output dimension (half of gate_up_dim)
 
     # Test different batch sizes and expert assignments
-    B_sizes = [1, 4, 8, 16, 32, 64, 128, 256, 512]
+    # B must be >= E for grouped GEMM (each expert gets at least 1 token)
+    B_sizes = [8, 16, 32, 64, 128, 256, 512]
     results = []
 
     # Pre-create weight matrices for all experts
-    weights_gate_up = [torch.randn(H, intermediate, device=device, dtype=torch.float16) for _ in range(E)]
-    weights_down = [torch.randn(intermediate, H, device=device, dtype=torch.float16) for _ in range(E)]
+    weights_gate_up = [torch.randn(H, gate_up_dim, device=device, dtype=torch.float16) for _ in range(E)]
+    weights_down = [torch.randn(down_dim, H, device=device, dtype=torch.float16) for _ in range(E)]
 
     for B in B_sizes:
         # Method 1: Sequential per-expert GEMM (Python loop)
@@ -137,8 +139,10 @@ def exp1_grouped_gemm():
             print(f"  B={B}: sequential={t_sequential:.4f}ms, grouped=N/A (B not divisible by E)")
 
         # Compute TFLOPS for sequential approach
-        # Each token: 2×H×4H (gate_up) + 2×4H×H (down) = 2×8×H² = 2×8×4096² = 268M FLOPS per token
-        flops_per_token = 2 * H * intermediate + 2 * intermediate * H  # gate_up + down
+        # Each token: 2×H×gate_up_dim (gate_up) + 2×down_dim×H (down) + 2×H×gate_up_dim (up_proj)
+        # Actually: gate_up is one matmul producing gate_up_dim, then SwiGLU, then down
+        # FLOPs = 2*B/E*(H*gate_up_dim + down_dim*H) per expert × E experts
+        flops_per_token = 2 * H * gate_up_dim + 2 * down_dim * H  # gate_up + down
         total_flops = B * flops_per_token
         tflops_sequential = total_flops / (t_sequential * 1e-3) / 1e12
 
@@ -251,14 +255,15 @@ def exp3_moe_layer():
     H = 4096      # hidden_size
     E = 8         # num_experts
     K = 2         # top_k (Mixtral uses top-2)
-    intermediate = 4 * H  # 16384
+    gate_up_dim = 4 * H  # gate+up output dim (16384)
+    down_dim = 2 * H     # SwiGLU output dim (8192)
 
     # Router weights
     router_weight = torch.randn(H, E, device=device, dtype=torch.float16)
 
     # Expert weights (gate_up + down for each)
-    expert_gate_up = torch.randn(E, H, intermediate, device=device, dtype=torch.float16)
-    expert_down = torch.randn(E, intermediate, H, device=device, dtype=torch.float16)
+    expert_gate_up = torch.randn(E, H, gate_up_dim, device=device, dtype=torch.float16)
+    expert_down = torch.randn(E, down_dim, H, device=device, dtype=torch.float16)
 
     B_sizes = [1, 4, 8, 16, 32, 64, 128, 256, 512]
     results = []
@@ -317,10 +322,10 @@ def exp3_moe_layer():
         t_dense = benchmark_cuda(dense_mlp_fn, warmup=5, repeat=20 if B <= 64 else 10)
 
         # Compute TFLOPS
-        # MoE: each token goes through K experts → K×(2×H×4H + 2×4H×H) = K×16×H²
-        # Dense: 1×(2×H×4H + 2×4H×H) = 16×H²
-        flops_per_token_moe = K * (2 * H * intermediate + 2 * intermediate * H)
-        flops_per_token_dense = 2 * H * intermediate + 2 * intermediate * H
+        # MoE: each token goes through K experts → K×(2×H×gate_up_dim + 2×down_dim×H)
+        # Dense: 1×(2×H×gate_up_dim + 2×down_dim×H)
+        flops_per_token_moe = K * (2 * H * gate_up_dim + 2 * down_dim * H)
+        flops_per_token_dense = 2 * H * gate_up_dim + 2 * down_dim * H
         tflops_moe = B * flops_per_token_moe / (t_moe * 1e-3) / 1e12
         tflops_dense = B * flops_per_token_dense / (t_dense * 1e-3) / 1e12
 
@@ -353,7 +358,8 @@ def exp4_load_imbalance():
 
     H = 4096
     E = 8
-    intermediate = 4 * H
+    gate_up_dim = 4 * H
+    down_dim = 2 * H
 
     B = 128  # Fixed batch size
 
@@ -371,8 +377,8 @@ def exp4_load_imbalance():
     }
 
     # Pre-create all expert weights
-    weights_gate_up = [torch.randn(H, intermediate, device=device, dtype=torch.float16) for _ in range(E)]
-    weights_down = [torch.randn(intermediate, H, device=device, dtype=torch.float16) for _ in range(E)]
+    weights_gate_up = [torch.randn(H, gate_up_dim, device=device, dtype=torch.float16) for _ in range(E)]
+    weights_down = [torch.randn(down_dim, H, device=device, dtype=torch.float16) for _ in range(E)]
 
     results = []
 
@@ -455,19 +461,20 @@ def exp5_shared_expert():
     # Routed experts: only Top-K=6 tokens
 
     H = 4096
-    intermediate = 4 * H  # intermediate_size
+    gate_up_dim = 4 * H  # gate+up output dim
+    down_dim = 2 * H     # SwiGLU output dim
 
     B_sizes = [1, 4, 8, 16, 32, 64, 128, 256, 512]
 
     # Shared expert weight (single, all tokens use)
-    w_shared_gate_up = torch.randn(H, intermediate, device=device, dtype=torch.float16)
-    w_shared_down = torch.randn(intermediate, H, device=device, dtype=torch.float16)
+    w_shared_gate_up = torch.randn(H, gate_up_dim, device=device, dtype=torch.float16)
+    w_shared_down = torch.randn(down_dim, H, device=device, dtype=torch.float16)
 
     # Routed expert weight (8 experts, Top-2 for simplicity)
     E = 8
     K = 2
-    w_routed_gate_up = [torch.randn(H, intermediate, device=device, dtype=torch.float16) for _ in range(E)]
-    w_routed_down = [torch.randn(intermediate, H, device=device, dtype=torch.float16) for _ in range(E)]
+    w_routed_gate_up = [torch.randn(H, gate_up_dim, device=device, dtype=torch.float16) for _ in range(E)]
+    w_routed_down = [torch.randn(down_dim, H, device=device, dtype=torch.float16) for _ in range(E)]
     w_router = torch.randn(H, E, device=device, dtype=torch.float16)
 
     results = []
@@ -500,12 +507,14 @@ def exp5_shared_expert():
                 gate, up = gate_up.chunk(2, dim=-1)
                 hidden = torch.nn.functional.silu(gate) * up
                 expert_output = hidden @ w_routed_down[e]
-                # Weighted combine
-                expert_mask = top_k_indices == e
-                for idx in expert_mask.nonzero():
-                    token_idx = idx[0].item()
-                    k_idx = idx[1].item()
-                    output[token_idx] += top_k_weights[token_idx, k_idx] * expert_output[expert_mask[:, 0] == token_idx][0]
+                # Simplified combine: scatter output back to original positions
+                # Each routed token gets weighted contribution from this expert
+                token_indices = mask.nonzero(as_tuple=True)[0]
+                for i, token_idx in enumerate(token_indices):
+                    # Find which k slot this expert occupies for this token
+                    k_slots = (top_k_indices[token_idx] == e).nonzero(as_tuple=True)[0]
+                    for k_idx in k_slots:
+                        output[token_idx] += top_k_weights[token_idx, k_idx] * expert_output[i]
             return output
 
         t_routed = benchmark_cuda(routed_experts_fn, warmup=3, repeat=10 if B <= 64 else 5)
@@ -519,11 +528,10 @@ def exp5_shared_expert():
         t_full = benchmark_cuda(full_moe_fn, warmup=3, repeat=10 if B <= 64 else 5)
 
         # Compute TFLOPS
-        # Shared: B × (2×H×4H + 2×4H×H) = B × 16×H²
-        # Routed: B × K × (2×H×4H + 2×4H×H) = B × K × 16×H²
-        # Total: B × (1+K) × 16 × H²
-        flops_shared = B * 2 * H * intermediate + B * 2 * intermediate * H
-        flops_routed = B * K * (2 * H * intermediate + 2 * intermediate * H)
+        # Shared: B × (2×H×gate_up_dim + 2×down_dim×H)
+        # Routed: B × K × (2×H×gate_up_dim + 2×down_dim×H)
+        flops_shared = B * 2 * H * gate_up_dim + B * 2 * down_dim * H
+        flops_routed = B * K * (2 * H * gate_up_dim + 2 * down_dim * H)
         tflops_shared = flops_shared / (t_shared * 1e-3) / 1e12
         tflops_routed = flops_routed / (t_routed * 1e-3) / 1e12
 
