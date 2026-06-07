@@ -387,6 +387,93 @@ TE的FP8 DPA (Dot Product Attention, beta) 使用FP8 attention:
 - 类似FlashAttention-3的FP8 attention (Hopper TMA+WGMMA)
 - RTX 4090不支持FA-3→也不支持TE的FP8 DPA高级特性
 
+## 8. C++ CUDA Kernel Dispatch (RTX 4090 vs Blackwell)
+
+### 8.1 FP8 Quantize Kernel Dispatch (quantize_fp8.cuh)
+
+```python
+# quantize() 函数的SM架构dispatch:
+if is_supported_by_CC_100():  # SM100+ (Blackwell)
+    if aligned + FP8:
+        quantize_1D()  # TMA加速的1D量化kernel → Blackwell专用
+    elif aligned + FP8 + dAct:
+        quantize_2D()  # TMA加速的2D量化kernel → Blackwell专用
+    else:
+        CastVectorizedUnaryKernelLauncher()  # 向量化回退kernel
+
+else:  # SM < 10.0 (包括SM89 RTX 4090)
+    if IS_DBIAS:
+        ERROR("不支持! IS_DBIAS需SM100+")  # dbias fusion需Blackwell!
+    if no IS_DACT:
+        CastVectorizedUnaryKernelLauncher()  # RTX 4090路径!
+    else:
+        CastVectorizedUnaryGradKernelLauncher()  # RTX 4090+梯度路径!
+```
+
+**关键发现**:
+- **RTX 4090量化路径**: `CastVectorizedUnaryKernelLauncher` — vectorized SIMT kernel
+- **Blackwell量化路径**: `quantize_1D/2D` — TMA (Tensor Memory Access) + barrier同步 → 异步加载
+- **RTX 4090不支持IS_DBIAS**: dbias fusion需要SM100+ → 这解释了之前实测中bias相关限制!
+
+### 8.2 Cast Kernel的2D/1D分块 (Blackwell专用)
+
+```cpp
+// 2D kernel参数:
+constexpr size_t FP8_CHUNK_DIM_Y = 128;  // 128行tile
+constexpr size_t FP8_CHUNK_DIM_X = 128;  // 128列tile
+constexpr size_t FP8_THREADS_PER_CHUNK = 128;  // 128线程/chunk
+constexpr size_t FP8_BUFFER_DIM_Y = 16;   // 16行buffer
+constexpr size_t FP8_ITERATIONS = 128 / 16 = 8;  // 8次迭代
+```
+
+这些参数类似CUTLASS的tiling策略! 但**只在Blackwell上运行** (`__CUDA_ARCH__ >= 1000`)。
+
+### 8.3 Vectorized Kernel (RTX 4090实际使用的)
+
+`CastVectorizedUnaryKernelLauncher` 使用:
+- 向量化内存访问 (float4/float2 等)
+- 每线程处理多个元素 → 提高内存吞吐
+- FP32 accumulation → 精确量化
+- amax计算同步 → update全局amax
+
+### 8.4 cast_transpose (rowwise+columnwise融合)
+
+对于backward需要的columnwise数据:
+```cpp
+// NVTE_DELAYED_TENSOR_SCALING with columnwise:
+if (output_tensor->has_columnwise_data()) {
+    cast_transpose(input, noop, output, stream);  // 融合量化+转置!
+}
+```
+
+`cast_transpose` 在一个kernel中完成:
+1. 量化输入 → FP8 rowwise数据
+2. 量化输入 → FP8 columnwise数据(转置版)
+→ backward时不需要重新量化或单独转置!
+
+### 8.5 multi_tensor_quantize (多tensor并行量化)
+
+```cpp
+void nvte_multi_tensor_quantize(...) {
+    // 使用多个CUDA stream并行量化多个tensor!
+    for (int i = 0; i < num_tensors; i++) {
+        quantize_fwd_helper(inputs[i], outputs[i], config,
+                           get_compute_stream(i % num_streams));
+    }
+    // 同步所有stream → 确保完成
+}
+```
+
+**多stream量化**: 当有多个tensor需量化 → 在不同CUDA stream并行 → overlap!
+
+### 8.6 SM架构dispatch总结
+
+| SM架构 | 量化kernel | TMA | dbias fusion | 特点 |
+|--------|----------|-----|-------------|------|
+| SM89 (RTX 4090) | Vectorized SIMT | ❌ | ❌ | 兼容但性能一般 |
+| SM90 (Hopper) | Vectorized SIMT | ❌(不用于quantize) | ❌ | 同SM89路径 |
+| SM100 (Blackwell) | 1D/2D TMA | ✅ | ✅ | 最高效量化! |
+
 ## 9. Production决策 (RTX 4090)
 
 | 场景 | 最佳配置 | 原因 |
