@@ -23,23 +23,25 @@
 
 ### 训练曲线关键数据
 
-| 指标 | GRPO | DAPO | SFT→GRPO | PPO | DPO |
-|------|------|------|----------|-----|-----|
-| Peak accuracy | 87.5% | 96.7% | **100%** | 87.5% | 99.7% |
-| Final accuracy | 75% | 12.5% | **100%** | 34% | 99.7% |
-| Eval accuracy (greedy) | ~50% | ~52% | **100%** | ~34% | 99.7% |
-| Peak reward | 0.912 | 0.969 | 1.0 | 0.875 | — |
-| Steps acc≥50% | 109/300 | 74/300 | 200/200 | — | — |
-| 模型数量 | 2 | 2 | 2(actor+ref) | 4 | 2 |
-| 训练稳定性 | 中 | 低 | **高** | 中 | **高** |
+| 指标 | GRPO | DAPO | RLOO | SFT→GRPO | PPO | DPO |
+|------|------|------|------|----------|-----|-----|
+| Peak accuracy | 87.5% | 96.7% | 87.5% | **100%** | 87.5% | 99.7% |
+| Final accuracy | 73.4% | 12.5% | 48.4% | **100%** | 34% | 99.7% |
+| Eval accuracy (greedy) | ~50% | ~52% | ~48% | **100%** | ~34% | 99.7% |
+| Peak reward | 0.912 | 0.969 | 0.912 | 1.0 | 0.875 | — |
+| Steps acc≥50% | 109/300 | 74/300 | 54/300 | 200/200 | — | — |
+| 模型数量 | 2 | 2 | 2 | 2(actor+ref) | 4 | 2 |
+| Advantage mean | nonzero | nonzero | **0.000** | nonzero | nonzero | — |
+| 训练稳定性 | 中 | 低 | 中低 | **高** | 中 | **高** |
 
 ### 稳定性排名
 
 1. **SFT→GRPO** — 最稳定(100% eval, 无波动)
 2. **DPO** — 离线方法最稳定(99.7%, 无采样噪声)
 3. **GRPO** — 中等稳定(75% final, 波动但不崩溃)
-4. **PPO** — 中等(87.5% peak→34% eval, 过拟合)
-5. **DAPO** — 最不稳定(96.7%→12.5%, 剧烈崩溃)
+4. **RLOO** — 中低稳定(48.4% final, 优势零均值但方差大)
+5. **PPO** — 中等(87.5% peak→34% eval, 过拟合)
+6. **DAPO** — 最不稳定(96.7%→12.5%, 剧烈崩溃)
 
 ### 训练reward ≠ eval性能
 
@@ -50,6 +52,29 @@
 - **SFT→GRPO**: 100%训练 → **100% eval** ← 只有warm start消除此gap!
 
 **根因**: RL采样中的随机性→训练reward包含采样运气→不代表模型真实掌握
+
+### RLOO关键发现: advantage_mean=0.000!
+
+RLOO的Leave-One-Out baseline使得advantage均值精确为0:
+
+```
+advantage_i = r_i - mean(r_j, j≠i)
+
+E[advantage] = E[r_i] - E[mean(r excluding i)]
+             = μ - μ = 0 (理论上精确!)
+
+实测: advantage_mean = 0.000 (数值验证完美!)
+```
+
+**但RLOO比GRPO更不稳定!** (48.4% vs 73.4% final)
+
+**根因**: RLOO不除σ → advantage方差更大 → 梯度更不稳定
+- GRPO: A=(r-μ)/σ → σ归一化 → 方差≈1 → 稳定
+- RLOO: A=r-mean(excl i) → 无归一化 → 方差∝reward variance → 不稳定
+
+**关键洞察**: self-inclusion bias不重要(0.000 vs nonzero对训练影响小), 但σ归一化对稳定性至关重要!
+
+**验证**: GRPO的self-inclusion bias使advantage均值偏离0 → 但这是小偏差(r_i/n → n≥8时偏差<0.125) → σ归一化带来的稳定性远更重要
 
 ## 三、模型容量与GRPO效果 (核心发现)
 
