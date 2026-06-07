@@ -91,7 +91,11 @@ def _decode_attn_kernel(
 
         # Compute QK scores: dot product of q[d] with each k[i,d] → scores[BLOCK_KV]
         # q is (D_HEAD), k is (BLOCK_KV, D_HEAD) → sum over d axis
+        # Mask: set scores to -inf for positions beyond S (padding)
+        valid_kv = kv_positions < S  # (BLOCK_KV,) boolean mask
         scores = tl.sum(q[None, :] * k, axis=1) * scale  # (BLOCK_KV,)
+        # Set padding scores to -inf so they don't affect softmax
+        scores = tl.where(valid_kv, scores, float("-inf"))
 
         # Online softmax: update running max
         m_new = tl.maximum(m_i, tl.max(scores, axis=0))
@@ -100,8 +104,10 @@ def _decode_attn_kernel(
         l_i = l_i * alpha
         acc = acc * alpha
 
-        # Compute attention weights
+        # Compute attention weights (padding → exp(-inf) = 0)
         p = tl.exp(scores - m_new)  # (BLOCK_KV,)
+        # Mask: zero out attention weights for padding positions
+        p = tl.where(valid_kv, p, 0.0)
 
         # Update running sum
         l_i = l_i + tl.sum(p, axis=0)
@@ -111,7 +117,7 @@ def _decode_attn_kernel(
                  + kv_positions[:, None] * V_stride_s + d_offsets[None, :] * V_stride_d
         v = tl.load(v_ptrs, mask=(kv_positions[:, None] < S) & (d_offsets[None, :] < d_head), other=0.0).to(tl.float32)
 
-        # Accumulate: p[i] * v[i,d] → sum over KV positions
+        # Accumulate: p[i] * v[i,d] → sum over KV positions (p already masked for padding)
         acc = acc + tl.sum(p[:, None] * v, axis=0)  # (D_HEAD,)
 
         m_i = m_new
