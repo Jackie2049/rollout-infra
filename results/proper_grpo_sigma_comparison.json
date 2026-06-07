@@ -1,0 +1,323 @@
+{
+  "sft_then_grpo_normalized": {
+    "strategy": "sft_then_grpo_normalized",
+    "normalize_sigma": true,
+    "grad_noise_sigma": 0.0,
+    "model_size": "2.28m",
+    "sft_steps": 200,
+    "grpo_steps": 300,
+    "n_samples": 8,
+    "sft_final_eval": 0.39,
+    "grpo_final_eval": 0.43,
+    "grpo_peak_eval": 0.54,
+    "avg_reward": 0.5457708333333333,
+    "grpo_eval_trajectory": [
+      {
+        "step": 0,
+        "eval": 0.42,
+        "loss": -0.2710471451282501,
+        "reward": 0.31875000000000003,
+        "num_valid": 16
+      },
+      {
+        "step": 25,
+        "eval": 0.44,
+        "loss": 0.05850767716765404,
+        "reward": 0.6125,
+        "num_valid": 16
+      },
+      {
+        "step": 50,
+        "eval": 0.32,
+        "loss": 0.0,
+        "reward": 1.0,
+        "num_valid": 16
+      },
+      {
+        "step": 75,
+        "eval": 0.4,
+        "loss": 0.0,
+        "reward": 0.3,
+        "num_valid": 16
+      },
+      {
+        "step": 100,
+        "eval": 0.3,
+        "loss": 0.0,
+        "reward": 0.55,
+        "num_valid": 16
+      },
+      {
+        "step": 125,
+        "eval": 0.38,
+        "loss": 0.0,
+        "reward": 0.3,
+        "num_valid": 16
+      },
+      {
+        "step": 150,
+        "eval": 0.5,
+        "loss": 0.004198747221380472,
+        "reward": 0.18125000000000002,
+        "num_valid": 15
+      },
+      {
+        "step": 175,
+        "eval": 0.42,
+        "loss": 0.0,
+        "reward": 0.2,
+        "num_valid": 16
+      },
+      {
+        "step": 200,
+        "eval": 0.38,
+        "loss": 0.0,
+        "reward": 1.0,
+        "num_valid": 16
+      },
+      {
+        "step": 225,
+        "eval": 0.54,
+        "loss": 0.0,
+        "reward": 0.65,
+        "num_valid": 16
+      },
+      {
+        "step": 250,
+        "eval": 0.5,
+        "loss": 0.0,
+        "reward": 0.3,
+        "num_valid": 16
+      },
+      {
+        "step": 275,
+        "eval": 0.38,
+        "loss": 0.0,
+        "reward": 0.2,
+        "num_valid": 16
+      },
+      {
+        "step": 299,
+        "eval": 0.5,
+        "loss": 0.0,
+        "reward": 0.65,
+        "num_valid": 16
+      }
+    ],
+    "peak_gpu_mem_gb": 0.064898048
+  },
+  "sft_then_grpo_unnormalized": {
+    "strategy": "sft_then_grpo_unnormalized",
+    "normalize_sigma": false,
+    "grad_noise_sigma": 0.0,
+    "model_size": "2.28m",
+    "sft_steps": 200,
+    "grpo_steps": 300,
+    "n_samples": 8,
+    "sft_final_eval": 0.39,
+    "grpo_final_eval": 0.65,
+    "grpo_peak_eval": 0.7,
+    "avg_reward": 0.5742499999999999,
+    "grpo_eval_trajectory": [
+      {
+        "step": 0,
+        "eval": 0.42,
+        "loss": -0.12780778110027313,
+        "reward": 0.31875000000000003,
+        "num_valid": 16
+      },
+      {
+        "step": 25,
+        "eval": 0.32,
+        "loss": -0.08885788917541504,
+        "reward": 0.48750000000000004,
+        "num_valid": 16
+      },
+      {
+        "step": 50,
+        "eval": 0.38,
+        "loss": -0.17282994091510773,
+        "reward": 0.725,
+        "num_valid": 16
+      },
+      {
+        "step": 75,
+        "eval": 0.54,
+        "loss": 0.013842139393091202,
+        "reward": 0.43125,
+        "num_valid": 16
+      },
+      {
+        "step": 100,
+        "eval": 0.38,
+        "loss": 0.09010093659162521,
+        "reward": 0.5625,
+        "num_valid": 16
+      },
+      {
+        "step": 125,
+        "eval": 0.4,
+        "loss": 0.0,
+        "reward": 0.3,
+        "num_valid": 16
+      },
+      {
+        "step": 150,
+        "eval": 0.44,
+        "loss": 0.04864630848169327,
+        "reward": 0.2875,
+        "num_valid": 16
+      },
+      {
+        "step": 175,
+        "eval": 0.52,
+        "loss": -0.1910696178674698,
+        "reward": 0.76875,
+        "num_valid": 16
+      },
+      {
+        "step": 200,
+        "eval": 0.44,
+        "loss": -0.13457703590393066,
+        "reward": 0.49375,
+        "num_valid": 16
+      },
+      {
+        "step": 225,
+        "eval": 0.7,
+        "loss": 0.0,
+        "reward": 0.65,
+        "num_valid": 16
+      },
+      {
+        "step": 250,
+        "eval": 0.5,
+        "loss": 0.2699779272079468,
+        "reward": 0.36875,
+        "num_valid": 16
+      },
+      {
+        "step": 275,
+        "eval": 0.58,
+        "loss": 0.0,
+        "reward": 0.55,
+        "num_valid": 16
+      },
+      {
+        "step": 299,
+        "eval": 0.62,
+        "loss": 0.0,
+        "reward": 0.55,
+        "num_valid": 16
+      }
+    ],
+    "peak_gpu_mem_gb": 0.064898048
+  },
+  "sft_then_grpo_normalized_noise": {
+    "strategy": "sft_then_grpo_normalized_noise",
+    "normalize_sigma": true,
+    "grad_noise_sigma": 0.01,
+    "model_size": "2.28m",
+    "sft_steps": 200,
+    "grpo_steps": 300,
+    "n_samples": 8,
+    "sft_final_eval": 0.39,
+    "grpo_final_eval": 0.61,
+    "grpo_peak_eval": 0.74,
+    "avg_reward": 0.5892916666666668,
+    "grpo_eval_trajectory": [
+      {
+        "step": 0,
+        "eval": 0.42,
+        "loss": -0.2710471451282501,
+        "reward": 0.31875000000000003,
+        "num_valid": 16
+      },
+      {
+        "step": 25,
+        "eval": 0.44,
+        "loss": 0.020877882838249207,
+        "reward": 0.41875,
+        "num_valid": 16
+      },
+      {
+        "step": 50,
+        "eval": 0.34,
+        "loss": -1.4304966926574707,
+        "reward": 0.8,
+        "num_valid": 16
+      },
+      {
+        "step": 75,
+        "eval": 0.44,
+        "loss": 0.0,
+        "reward": 0.3,
+        "num_valid": 16
+      },
+      {
+        "step": 100,
+        "eval": 0.26,
+        "loss": -0.035919345915317535,
+        "reward": 0.47500000000000003,
+        "num_valid": 16
+      },
+      {
+        "step": 125,
+        "eval": 0.46,
+        "loss": -0.22942444682121277,
+        "reward": 0.25625,
+        "num_valid": 15
+      },
+      {
+        "step": 150,
+        "eval": 0.74,
+        "loss": 0.0,
+        "reward": 1.0,
+        "num_valid": 16
+      },
+      {
+        "step": 175,
+        "eval": 0.52,
+        "loss": 0.024783598259091377,
+        "reward": 0.875,
+        "num_valid": 14
+      },
+      {
+        "step": 200,
+        "eval": 0.4,
+        "loss": 0.0,
+        "reward": 0.55,
+        "num_valid": 16
+      },
+      {
+        "step": 225,
+        "eval": 0.66,
+        "loss": 0.0,
+        "reward": 0.65,
+        "num_valid": 16
+      },
+      {
+        "step": 250,
+        "eval": 0.56,
+        "loss": 0.0,
+        "reward": 0.3,
+        "num_valid": 16
+      },
+      {
+        "step": 275,
+        "eval": 0.58,
+        "loss": 0.0,
+        "reward": 1.0,
+        "num_valid": 16
+      },
+      {
+        "step": 299,
+        "eval": 0.56,
+        "loss": 0.0,
+        "reward": 0.2,
+        "num_valid": 16
+      }
+    ],
+    "peak_gpu_mem_gb": 0.064898048
+  }
+}
