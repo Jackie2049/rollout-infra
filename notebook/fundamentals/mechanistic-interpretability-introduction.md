@@ -221,16 +221,20 @@ ln2_0_pos3 (=等号): +2.0%    ← Layer 0 MLP较弱
 
 ### 5.1 Anthropic的进展
 
+- **Scaling Monosemanticity (2024-2025)**: 在Claude 3 Sonnet上训练SAE → 发现数千个可解释特征
+- **Gated SAEs (2025)**: 改进架构解决feature absorption和dead feature问题 → 我们的实验验证了ReLU+L1的feature死亡问题(λ≥3→L0=0)
 - **Dictionary Learning**: SAE的改进 → 更好的特征分离
 - **Circuit Discovery**: 自动化找到可解释电路 → 不需手工分析
-- **Scaling SAE**: 从GPT-2到Claude → 更大模型的interpretability
-- **Feature Steering**: 直接操控SAE特征 → 改变模型输出(安全应用!)
+- **Feature Steering**: 直接操控SAE特征 → 改变模型输出(安全应用!) → 我们的实验可以做feature steering: 在等号位置注入不同activation改变答案
+- **Automated Interpretability**: 用LLM自动标注SAE特征 → Neuronpedia平台
 
 ### 5.2 开源进展
 
 - **TransformerLens 2.0**: nnsight升级版，支持更多模型
 - **Gemma Scope**: Google发布Gemma模型的SAE特征集
-- **Open SAE**: 多个开源SAE训练框架
+- **Open SAE**: 多个开源SAE训练框架(EleutherAI/DeepMind)
+- **Neuronpedia**: 社区SAE特征浏览平台
+- **SAE-Bench**: 评估benchmark
 
 ### 5.3 理论进展
 
