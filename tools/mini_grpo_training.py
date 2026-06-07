@@ -447,6 +447,118 @@ def ppo_training_step(actor, critic, prompts, n_samples, max_response_len,
 
 
 # ============================================================
+# DPO Training Step (offline, no RL)
+# ============================================================
+
+def generate_dpo_preference_pairs(n_pairs=100):
+    """Generate preference pairs: (prompt, chosen_response, rejected_response)."""
+    pairs = []
+    for _ in range(n_pairs):
+        a = np.random.randint(0, 5)
+        b = np.random.randint(0, 5)
+        prompt_tokens = [TOKENS[str(a)], TOKENS['+'], TOKENS[str(b)], TOKENS['=']]
+        correct_sum = a + b
+
+        # Chosen: correct answer
+        chosen_tokens = [TOKENS[str(correct_sum)], TOKENS['<eos>']]
+        # Rejected: wrong answer
+        wrong_digit = np.random.randint(0, 10)
+        while str(wrong_digit) == str(correct_sum):
+            wrong_digit = np.random.randint(0, 10)
+        rejected_tokens = [TOKENS[str(wrong_digit)], TOKENS['<eos>']]
+
+        pairs.append((prompt_tokens, chosen_tokens, rejected_tokens, correct_sum))
+    return pairs
+
+
+def dpo_training_step(model, pairs, optimizer, device, beta=0.3):
+    """DPO training: offline preference learning.
+
+    DPO loss: -log σ(β log(π(y_w)/π_ref(y_w)) - β log(π(y_l)/π_ref(y_l)))
+    """
+    model.train()
+    ref_model = MiniGQATransformer(hidden_dim=64, num_layers=2, num_heads=4,
+                                    num_kv_heads=2, vocab_size=VOCAB_SIZE).to(device)
+    ref_model.eval()
+    for p in ref_model.parameters():
+        p.requires_grad = False
+
+    total_loss = torch.tensor(0.0, device=device, requires_grad=True)
+    batch_pairs = np.random.choice(len(pairs), min(16, len(pairs)), replace=False)
+    batch_size = len(batch_pairs)
+
+    for idx in batch_pairs:
+        prompt_tokens, chosen_tokens, rejected_tokens, correct_sum = pairs[idx]
+
+        chosen_full = prompt_tokens + chosen_tokens
+        rejected_full = prompt_tokens + rejected_tokens
+
+        chosen_ids = torch.tensor(chosen_full, dtype=torch.long, device=device).unsqueeze(0)
+        rejected_ids = torch.tensor(rejected_full, dtype=torch.long, device=device).unsqueeze(0)
+        prompt_len = len(prompt_tokens)
+
+        # Policy log probs (with gradient)
+        chosen_logits = model(chosen_ids)
+        rejected_logits = model(rejected_ids)
+
+        chosen_log_probs = F.log_softmax(chosen_logits, dim=-1)
+        rejected_log_probs = F.log_softmax(rejected_logits, dim=-1)
+
+        # Sum log probs of response tokens (keep as tensors)
+        chosen_lp = torch.tensor(0.0, device=device)
+        rejected_lp = torch.tensor(0.0, device=device)
+        ref_chosen_lp = 0.0
+        ref_rejected_lp = 0.0
+
+        for t_idx, t in enumerate(chosen_tokens):
+            pos = prompt_len + t_idx - 1
+            if pos >= 0:
+                chosen_lp = chosen_lp + chosen_log_probs[0, pos, t]
+
+        for t_idx, t in enumerate(rejected_tokens):
+            pos = prompt_len + t_idx - 1
+            if pos >= 0:
+                rejected_lp = rejected_lp + rejected_log_probs[0, pos, t]
+
+        # Reference log probs (frozen, no gradient)
+        with torch.no_grad():
+            ref_chosen_logits = ref_model(chosen_ids)
+            ref_rejected_logits = ref_model(rejected_ids)
+            ref_chosen_log_probs = F.log_softmax(ref_chosen_logits, dim=-1)
+            ref_rejected_log_probs = F.log_softmax(ref_rejected_logits, dim=-1)
+
+            for t_idx, t in enumerate(chosen_tokens):
+                pos = prompt_len + t_idx - 1
+                if pos >= 0:
+                    ref_chosen_lp += ref_chosen_log_probs[0, pos, t].item()
+
+            for t_idx, t in enumerate(rejected_tokens):
+                pos = prompt_len + t_idx - 1
+                if pos >= 0:
+                    ref_rejected_lp += ref_rejected_log_probs[0, pos, t].item()
+
+        # DPO loss: -log σ(β × (log π(y_w) - log π_ref(y_w)) - β × (log π(y_l) - log π_ref(y_l)))
+        chosen_ratio = chosen_lp - ref_chosen_lp  # policy - ref (has grad for policy)
+        rejected_ratio = rejected_lp - ref_rejected_lp  # policy - ref (has grad for policy)
+        margin = beta * (chosen_ratio - rejected_ratio)
+
+        loss = -F.logsigmoid(margin)  # -log σ(margin)
+        total_loss = total_loss + loss
+
+    avg_loss = total_loss / batch_size
+    optimizer.zero_grad()
+    avg_loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    optimizer.step()
+
+    metrics = {
+        'loss': avg_loss.item(),
+        'margin': margin.item() if hasattr(margin, 'item') else margin,
+    }
+    return metrics
+
+
+# ============================================================
 # Main Training Loop
 # ============================================================
 
@@ -458,7 +570,7 @@ def main():
     parser.add_argument('--max_response_len', type=int, default=8, help='Max response tokens')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--num_prompts_per_step', type=int, default=8, help='Prompts per step')
-    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo'], help='Training mode')
+    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo'], help='Training mode')
     parser.add_argument('--sft_steps', type=int, default=100, help='SFT warmup steps (for sft_grpo mode)')
     args = parser.parse_args()
 
@@ -528,12 +640,47 @@ def main():
         critic_params = sum(p.numel() for p in critic.parameters())
         print(f"Critic params: {critic_params:,}")
 
+    # DPO setup
+    dpo_metrics_history = []
+    if args.mode == 'dpo':
+        dpo_pairs = generate_dpo_preference_pairs(500)
+        print(f"DPO preference pairs: {len(dpo_pairs)}")
+
     # Training loop
     grpo_metrics_history = []
     ppo_metrics_history = []
 
     print("\n--- Training ---")
     for step in range(args.num_steps):
+        if args.mode == 'dpo':
+            metrics = dpo_training_step(actor, dpo_pairs, actor_optimizer, device, beta=0.3)
+            dpo_metrics_history.append(metrics)
+
+            if step % 20 == 0 or step == args.num_steps - 1:
+                # Evaluate DPO accuracy
+                eval_prompts = [generate_arithmetic_prompt() for _ in range(50)]
+                correct = 0
+                actor.eval()
+                for prompt_tokens, correct_sum in eval_prompts:
+                    prompt_tensor = torch.tensor(prompt_tokens, dtype=torch.long, device=device).unsqueeze(0)
+                    current_ids = prompt_tensor.clone()
+                    response_tokens = []
+                    for _ in range(args.max_response_len):
+                        logits = actor(current_ids)
+                        next_token = logits[:, -1, :].argmax(dim=-1).item()
+                        if next_token == TOKENS['<eos>']:
+                            break
+                        response_tokens.append(next_token)
+                        current_ids = torch.cat([current_ids,
+                            torch.tensor([[next_token]], dtype=torch.long, device=device)], dim=1)
+                    reward = compute_reward(response_tokens, correct_sum)
+                    if reward == 1.0:
+                        correct += 1
+                actor.train()
+                print(f"  Step {step:3d} | DPO: loss={metrics['loss']:.4f}, "
+                      f"margin={metrics['margin']:.3f}, eval_acc={correct}%")
+            continue
+
         # Generate prompts for this step
         prompts = [generate_arithmetic_prompt() for _ in range(args.num_prompts_per_step)]
 
@@ -577,7 +724,11 @@ def main():
     # Final evaluation: sample 100 prompts and check accuracy
     print("\n--- Final Evaluation ---")
 
-    for mode_name, model in [('GRPO', actor)] if args.mode != 'both' else [('GRPO', actor), ('PPO', ppo_actor)]:
+    for mode_name, model in [('GRPO', actor)] if args.mode == 'grpo' else \
+                                     [('GRPO', actor), ('PPO', ppo_actor)] if args.mode == 'both' else \
+                                     [('PPO', actor)] if args.mode == 'ppo' else \
+                                     [('SFT+GRPO', actor)] if args.mode == 'sft_grpo' else \
+                                     [('DPO', actor)]:
         model.eval()
         eval_prompts = [generate_arithmetic_prompt() for _ in range(100)]
         correct = 0
@@ -639,6 +790,8 @@ def main():
         },
         'grpo_metrics': grpo_metrics_history,
         'ppo_metrics': ppo_metrics_history,
+        'dpo_metrics': dpo_metrics_history,
+        'sft_metrics': sft_metrics_history,
     }
 
     output_file = "mini_grpo_training_results.json"
@@ -661,6 +814,9 @@ def main():
         final = ppo_metrics_history[-1]
         print(f"PPO:  reward {initial['reward_mean']:.3f} → {final['reward_mean']:.3f}, "
               f"accuracy {initial['accuracy']:.1%} → {final['accuracy']:.1%}")
+
+    if dpo_metrics_history:
+        print(f"DPO: {len(dpo_metrics_history)} steps completed")
 
 
 if __name__ == "__main__":
