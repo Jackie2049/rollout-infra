@@ -118,3 +118,31 @@ Noise experiments:
 → 梯度噪声σ=0.01在不同条件下效果从+1%到+58% → 可靠
 → 生产环境应优先使用梯度噪声而非σ-norm!
 ```
+
+## SFT Warm-start Degree Impact — Non-linear Relationship!
+
+```
+SFT steps | SFT eval | σ-norm | unnorm | Δ(σ-unnorm) | zero_adv%
+0         | 23%      | 21%    | 17%    | +4%          | 93%
+50        | 13%      | 28%    | 25%    | +3%          | 86%
+100       | 18%      | 16%    | 32%    | **-16%**     | 71%
+200       | 47%      | 30%    | 34%    | -4%          | 86%
+500       | 47%      | 60%    | **65%** | -5%          | 71%
+
+关键发现:
+1. σ-norm在弱baseline(0/50步)下有益(+3-4%) → reward分散→σ有意义
+2. σ-norm在中等baseline(100步)下**灾难性(-16%)** → 最差! reward分布刚好集中
+3. σ-norm在强baseline(200/500步)下略差(-4-5%) → reward接近1→σ≈0
+4. SFT=500步→65% eval ← **SFT暖启动程度决定GRPO最终效果!**
+
+→ σ-norm效果呈非线性: 弱baseline微好→中等baseline灾难→强baseline微差
+→ 原因: reward分布与模型能力的交互
+  弱模型→大量错误→reward(0/0.1)分散→σ有意义→标准化有效
+  中等模型→部分正确→reward集中在0.3附近→σ仍小→标准化放大噪声
+  强模型→多数正确→reward集中在1.0→σ≈0→标准化增加零advantage→有害
+
+→ 最佳策略: SFT暖启动500步 + A=r-μ → 65% eval!
+→ 纯GRPO(无SFT)用σ-norm微好(+4%)但不推荐(21% eval太低)
+```
+
+工具: `tools/sft_degree_impact.py`
