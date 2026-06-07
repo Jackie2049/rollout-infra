@@ -158,11 +158,15 @@ DAPO: 算术电路peak时强但不稳定 → 96.7→12.5%
 
 ### 4.1 SAE训练结果
 
-- 256 features on 64-dim activations, λ=1.0 → L0=85.5 (33.4% active, still too dense)
-- λ=10 → L0=0 (所有feature死亡! 太强的L1惩罚杀死所有feature)
-- λ=3 → L0=0 (同样死亡)
-- **教训**: ReLU+L1 SAE有feature死亡问题 → 需用TopK SAE或resampling technique
-- 所有活跃feature对所有输入激活(200/200) → 无选择性 → 需更强稀疏性控制
+**ReLU+L1 SAE** (feature死亡问题):
+- λ=1→L0=85.5(33.4% active, 太密), λ=3→L0=0(所有feature死亡!), λ=10→L0=0
+- Feature死亡: L1惩罚太强→encoder权重被推向零→所有feature都不激活
+- 解决方案: 使用TopK SAE
+
+**TopK SAE** (解决了feature死亡):
+- K=10: L0=10(稳定不变!), recon=0.04(好), 3.9% active → **Feature 81选择性激活!**(9/200输入, avg_sum=6.0 → 大数检测特征!)
+- K=5: L0=5, recon=0.04(好), 2% active → 但全局feature对所有输入都激活(200/200) → 需更细粒度分析
+- **关键教训**: TopK解决了feature死亡问题，但64维太小→TopK feature捕捉所有信息→需更细粒度的选择性分析
 
 ### 4.2 Activation Patching结果 (重要发现!)
 

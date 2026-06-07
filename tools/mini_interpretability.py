@@ -43,28 +43,41 @@ def generate_sft_dataset_local(n_examples):
 # ============================================================
 
 class SparseAutoencoder(nn.Module):
-    """Sparse Autoencoder for decomposing neural activations into interpretable features."""
-    def __init__(self, input_dim, feature_dim, sparsity_weight=0.01):
+    """TopK Sparse Autoencoder for decomposing neural activations.
+
+    Uses TopK activation (Anthropic recommended):
+    - Keep exactly K features with highest pre-activation values
+    - Zeroes all others → guarantees L0=K, no feature death!
+    - More stable than ReLU+L1 which suffers from feature death
+    """
+    def __init__(self, input_dim, feature_dim, top_k=10):
         super().__init__()
         self.input_dim = input_dim
         self.feature_dim = feature_dim
-        self.sparsity_weight = sparsity_weight
+        self.top_k = top_k
 
-        self.W_enc = nn.Parameter(torch.randn(feature_dim, input_dim) * 0.01)
+        # Encoder: larger init to avoid feature death
+        self.W_enc = nn.Parameter(torch.randn(feature_dim, input_dim) * (1.0 / input_dim))
         self.b_enc = nn.Parameter(torch.zeros(feature_dim))
-        self.W_dec = nn.Parameter(torch.randn(input_dim, feature_dim) * 0.01)
+        # Decoder: unit-norm columns for better feature separation
+        self.W_dec = nn.Parameter(torch.randn(input_dim, feature_dim) * (1.0 / feature_dim))
         self.b_dec = nn.Parameter(torch.zeros(input_dim))
+        with torch.no_grad():
+            self.W_dec.data = F.normalize(self.W_dec.data, dim=0)
 
     def forward(self, z):
         f_pre = F.linear(z, self.W_enc, self.b_enc)
-        f = F.relu(f_pre)
+        # TopK: keep exactly K features
+        topk_vals, topk_idx = f_pre.topk(self.top_k, dim=-1)
+        f = torch.zeros_like(f_pre)
+        f.scatter_(-1, topk_idx, F.relu(topk_vals))
         z_recon = F.linear(f, self.W_dec, self.b_dec)
         return f, z_recon
 
     def loss(self, z, f, z_recon):
         recon_loss = F.mse_loss(z_recon, z)
-        sparsity_loss = self.sparsity_weight * f.abs().mean()
-        return recon_loss + sparsity_loss, recon_loss.item(), sparsity_loss.item()
+        # No L1 needed — TopK guarantees sparsity
+        return recon_loss, recon_loss.item(), 0.0
 
 
 # ============================================================
@@ -365,7 +378,7 @@ def main():
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--num_layers', type=int, default=2)
     parser.add_argument('--sae_features', type=int, default=128)
-    parser.add_argument('--sae_sparsity', type=float, default=0.01)
+    parser.add_argument('--sae_topk', type=int, default=10, help='TopK for SAE (number of active features)')
     parser.add_argument('--sae_epochs', type=int, default=50)
     parser.add_argument('--output', default='interpretability_results.json')
     args = parser.parse_args()
@@ -376,7 +389,7 @@ def main():
     print("Mini Interpretability Pipeline — SAE + Activation Patching")
     print("=" * 70)
     print(f"Model: hidden={args.hidden_dim}, layers={args.num_layers}")
-    print(f"SAE: features={args.sae_features}, sparsity={args.sae_sparsity}")
+    print(f"SAE: features={args.sae_features}, top_k={args.sae_topk}")
     print(f"Device: {device}")
 
     all_results = {}
@@ -435,12 +448,12 @@ def main():
         sae = SparseAutoencoder(
             input_dim=args.hidden_dim,
             feature_dim=args.sae_features,
-            sparsity_weight=args.sae_sparsity,
+            top_k=args.sae_topk,
         ).to(device)
         sae, sae_metrics = train_sae(model, sae, device, num_epochs=args.sae_epochs)
         feature_acts = analyze_sae_features(model, sae, device)
         all_results['sae'] = {
-            'feature_dim': args.sae_features, 'sparsity': args.sae_sparsity,
+            'feature_dim': args.sae_features, 'top_k': args.sae_topk,
             'metrics': sae_metrics, 'param_count': sum(p.numel() for p in sae.parameters()),
         }
 
