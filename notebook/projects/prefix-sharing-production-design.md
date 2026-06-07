@@ -230,7 +230,7 @@ class TrainingWorker:
 | Forward speedup | ✅ | 2.46x(n=4, 75%prefix) |
 | Training speedup | ✅ | 1.59x(n=4, 75%prefix) |
 | Long context speedup | ✅ | 3.55x(prefix=6144) |
-| Gradient flow | ✅ | 全程不detach, autograd支持 |
+| Gradient flow | ✅ | **cos_sim=1.000000, max_diff=0** — ALL PASS, 4 prefix lengths × 52 parameters |
 | Prefix-Last Restore开销 | ✅ | 2.3% of logprob compute |
 | KV injection overhead | ✅ | ≈0ms (测量误差范围内) |
 | LSE merge crossover | ✅ | prefix≈6K, SDPA→LSE切换点 |
