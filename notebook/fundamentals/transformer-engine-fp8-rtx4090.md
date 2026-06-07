@@ -503,3 +503,66 @@ void nvte_multi_tensor_quantize(...) {
 - `transformer_engine/pytorch/tensor/nvfp4_tensor.py` — NVFP4Quantizer(RTX4090不可用)
 
 **相关笔记**: `quantization-inference-rtx4090.md`, `flashattention2-kernel-internals-vs-triton.md`, `cutlass-gemm-rtx4090.md`
+
+## 10. Build & Installation Lessons (RTX 4090)
+
+### 10.1 构建问题与解决
+
+**问题1: cmake版本过低**
+- 系统cmake 3.22.1 → `-Wl,--version-script=` linker flag被错误传给nvcc → `nvcc fatal: Unknown option`
+- 解决: 安装pip cmake包(4.3.2) → pip wheel包含预编译cmake binary
+
+**问题2: git submodule无法初始化**
+- 校园网认证阻止GitHub访问 → `git submodule update --init` 卡住
+- 解决: 本地先初始化submodules(用gh-proxy.com镜像), 然后打包完整tarball(含cudnn-frontend/cutlass/googletest) → SCP传输
+
+**问题3: nccl.h找不到**
+- TE的logging.h无条件`#include "nccl.h"`, 但cmake不会自动将pip安装的nvidia-nccl-cu12加入include path
+- nvidia-nccl-cu12安装路径: `site-packages/nvidia/nccl/include/nccl.h`
+- 解决: 修改CMakeLists.txt添加 `include_directories(site-packages/nvidia/nccl/include)`
+- 根因: TE假设NCCL在CUDA toolkit目录下(H100服务器自带), 但pip安装的NCCL在site-packages
+
+**问题4: 校园网认证阻断pip**
+- pip/conda/curl全部返回认证重定向 → 无法在线安装
+- 解决: 本地下载wheel → SCP传输 → pip install --no-deps本地wheel
+
+### 10.2 RTX 4090安装TE的完整步骤
+
+```bash
+# 1. 本地准备 (有网络的Mac)
+# 初始化submodules(用gh-proxy.com镜像)
+cd transformer-engine/
+git submodule init
+git config submodule.3rdparty/googletest.url https://gh-proxy.com/https://github.com/google/googletest.git
+git config submodule.3rdparty/cudnn-frontend.url https://gh-proxy.com/https://github.com/NVIDIA/cudnn-frontend.git
+git config submodule.3rdparty/cutlass.url https://gh-proxy.com/https://github.com/NVIDIA/cutlass.git
+git submodule update --depth 1
+
+# 打包完整tarball(含submodules, 51MB)
+tar czf te_complete.tar.gz --exclude='.git' transformer-engine/
+
+# 下载cmake wheel(Linux x86_64)
+pip download cmake --platform manylinux_2_17_x86_64 --python-version 310 --only-binary :all: --no-deps
+
+# 2. SCP传输到GPU服务器
+scp te_complete.tar.gz cmake-*.whl zxw@server:/tmp/
+
+# 3. GPU服务器上安装
+conda activate llm
+pip install /tmp/cmake-*.whl --no-deps  # 安装新版cmake
+cd ~/rollout-infra && tar xzf /tmp/te_complete.tar.gz
+# 修改CMakeLists.txt添加NCCL include path
+CUDACXX=/usr/local/cuda-12.8/bin/nvcc pip install --no-build-isolation --no-deps -e .
+```
+
+### 10.3 关键依赖清单
+
+| 依赖 | 版本 | 来源 | 备注 |
+|------|------|------|------|
+| PyTorch | 2.9.0+cu128 | conda | 已安装 |
+| CUDA Toolkit | 12.8 | 系统 | /usr/local/cuda-12.8 |
+| cmake | 4.3.2 | pip wheel | 需≥3.23, 系统3.22.1太旧 |
+| ninja | 1.13.0 | pip | 已安装 |
+| nvidia-nccl-cu12 | 2.27.5 | pip | 需手动添加include path |
+| nvidia-cudnn-cu12 | 9.x | pip | cmake自动找到 |
+| numpy | 2.2.6 | pip | 已安装 |

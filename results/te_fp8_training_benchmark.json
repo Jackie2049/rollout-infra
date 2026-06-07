@@ -1,0 +1,280 @@
+{
+  "device_info": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "compute_capability": "8.9",
+    "total_memory_GB": 23.5164794921875,
+    "multi_processor_count": 128,
+    "cuda_version": "12.8"
+  },
+  "te_available": true,
+  "te_version": "2.17.0.dev0",
+  "model_params": {
+    "hidden_size": 2560,
+    "num_heads": 20,
+    "num_kv_heads": 5,
+    "seq_len": 512,
+    "total_params": 95027200,
+    "model_size_MB": 181.25
+  },
+  "bf16_forward": {
+    "1": {
+      "latency_ms": 0.7712594419717789,
+      "throughput_tok_s": 663849.2472663104,
+      "num_iters": 50
+    },
+    "4": {
+      "latency_ms": 2.7011553570628166,
+      "throughput_tok_s": 758194.0796722462,
+      "num_iters": 50
+    },
+    "8": {
+      "latency_ms": 5.478240884840488,
+      "throughput_tok_s": 747685.267242363,
+      "num_iters": 50
+    },
+    "16": {
+      "latency_ms": 10.854842066764832,
+      "throughput_tok_s": 754686.2450520698,
+      "num_iters": 50
+    },
+    "32": {
+      "latency_ms": 21.720781922340393,
+      "throughput_tok_s": 754300.6535666484,
+      "num_iters": 50
+    }
+  },
+  "bf16_training": {
+    "1": {
+      "train_latency_ms": 2.875227965414524,
+      "train_throughput_tok_s": 178072.83671372628,
+      "peak_memory_GB": 0.49874258041381836,
+      "num_iters": 50
+    },
+    "4": {
+      "train_latency_ms": 8.951101042330265,
+      "train_throughput_tok_s": 228798.66848948435,
+      "peak_memory_GB": 0.7372832298278809,
+      "num_iters": 50
+    },
+    "8": {
+      "train_latency_ms": 17.636873833835125,
+      "train_throughput_tok_s": 232240.70425350024,
+      "peak_memory_GB": 1.0831694602966309,
+      "num_iters": 50
+    },
+    "16": {
+      "train_latency_ms": 35.25442570447922,
+      "train_throughput_tok_s": 232367.98887803676,
+      "peak_memory_GB": 1.7964262962341309,
+      "num_iters": 50
+    },
+    "32": {
+      "train_latency_ms": 70.2409778535366,
+      "train_throughput_tok_s": 233254.15591683812,
+      "peak_memory_GB": 3.222939968109131,
+      "num_iters": 50
+    }
+  },
+  "fp8_delayed_forward": {
+    "1": {
+      "latency_ms": 1.803673841059208,
+      "throughput_tok_s": 283865.0693627224,
+      "num_iters": 50
+    },
+    "4": {
+      "latency_ms": 2.0187243074178696,
+      "throughput_tok_s": 1014502.0756299193,
+      "num_iters": 50
+    },
+    "8": {
+      "latency_ms": 3.6614127084612846,
+      "throughput_tok_s": 1118693.8829742991,
+      "num_iters": 50
+    },
+    "16": {
+      "latency_ms": 7.154081426560879,
+      "throughput_tok_s": 1145080.6206350478,
+      "num_iters": 50
+    },
+    "32": {
+      "latency_ms": 14.171977303922176,
+      "throughput_tok_s": 1156084.267469553,
+      "num_iters": 50
+    }
+  },
+  "fp8_delayed_training": {
+    "1": {
+      "train_latency_ms": 3.8215917348861694,
+      "train_throughput_tok_s": 133975.5880582703,
+      "peak_memory_GB": 1.0406341552734375,
+      "num_iters": 50
+    },
+    "4": {
+      "train_latency_ms": 6.029037833213806,
+      "train_throughput_tok_s": 339689.3595056948,
+      "peak_memory_GB": 1.276611328125,
+      "num_iters": 50
+    },
+    "8": {
+      "train_latency_ms": 11.124517731368542,
+      "train_throughput_tok_s": 368195.73656215554,
+      "peak_memory_GB": 1.59405517578125,
+      "num_iters": 50
+    },
+    "16": {
+      "train_latency_ms": 22.12485808879137,
+      "train_throughput_tok_s": 370262.26189220767,
+      "peak_memory_GB": 2.3278183937072754,
+      "num_iters": 50
+    },
+    "32": {
+      "train_latency_ms": 44.63469546288252,
+      "train_throughput_tok_s": 367068.70810006233,
+      "peak_memory_GB": 3.7922959327697754,
+      "num_iters": 50
+    }
+  },
+  "fp8_delayed_accuracy": {
+    "1": {
+      "cos_sim": 1.0,
+      "max_diff": 0.0625,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.1328125,
+      "bf16_norm": 1152.0,
+      "fp8_norm": 1152.0
+    },
+    "4": {
+      "cos_sim": 1.0,
+      "max_diff": 0.078125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.078125,
+      "bf16_norm": 2304.0,
+      "fp8_norm": 2304.0
+    },
+    "8": {
+      "cos_sim": 0.99609375,
+      "max_diff": 0.078125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.0859375,
+      "bf16_norm": 3264.0,
+      "fp8_norm": 3264.0
+    },
+    "16": {
+      "cos_sim": 1.0,
+      "max_diff": 0.08203125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.0546875,
+      "bf16_norm": 4608.0,
+      "fp8_norm": 4608.0
+    },
+    "32": {
+      "cos_sim": 0.99609375,
+      "max_diff": 0.0859375,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.1171875,
+      "bf16_norm": 6528.0,
+      "fp8_norm": 6528.0
+    }
+  },
+  "fp8_current_forward": {
+    "1": {
+      "latency_ms": 1.9803326576948166,
+      "throughput_tok_s": 258542.42114856993,
+      "num_iters": 50
+    },
+    "4": {
+      "latency_ms": 2.1445387974381447,
+      "throughput_tok_s": 954983.8885855227,
+      "num_iters": 50
+    },
+    "8": {
+      "latency_ms": 3.836963027715683,
+      "throughput_tok_s": 1067510.9377946062,
+      "num_iters": 50
+    },
+    "16": {
+      "latency_ms": 7.452872730791569,
+      "throughput_tok_s": 1099173.4725530364,
+      "num_iters": 50
+    },
+    "32": {
+      "latency_ms": 14.90272093564272,
+      "throughput_tok_s": 1099396.5511904955,
+      "num_iters": 50
+    }
+  },
+  "fp8_current_training": {
+    "1": {
+      "train_latency_ms": 3.963114582002163,
+      "train_throughput_tok_s": 129191.31895029337,
+      "peak_memory_GB": 1.0367279052734375,
+      "num_iters": 50
+    },
+    "4": {
+      "train_latency_ms": 6.196689195930958,
+      "train_throughput_tok_s": 330499.06736403925,
+      "peak_memory_GB": 1.2802734375,
+      "num_iters": 50
+    },
+    "8": {
+      "train_latency_ms": 11.444951854646206,
+      "train_throughput_tok_s": 357887.04505010066,
+      "peak_memory_GB": 1.59356689453125,
+      "num_iters": 50
+    },
+    "16": {
+      "train_latency_ms": 22.81507145613432,
+      "train_throughput_tok_s": 359060.89602876984,
+      "peak_memory_GB": 2.3278183937072754,
+      "num_iters": 50
+    },
+    "32": {
+      "train_latency_ms": 46.360052824020386,
+      "train_throughput_tok_s": 353407.70775634254,
+      "peak_memory_GB": 3.7927842140197754,
+      "num_iters": 50
+    }
+  },
+  "fp8_current_accuracy": {
+    "1": {
+      "cos_sim": 1.0,
+      "max_diff": 0.080078125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.1171875,
+      "bf16_norm": 1152.0,
+      "fp8_norm": 1152.0
+    },
+    "4": {
+      "cos_sim": 1.0,
+      "max_diff": 0.0703125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.1484375,
+      "bf16_norm": 2304.0,
+      "fp8_norm": 2304.0
+    },
+    "8": {
+      "cos_sim": 0.99609375,
+      "max_diff": 0.078125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.09375,
+      "bf16_norm": 3264.0,
+      "fp8_norm": 3264.0
+    },
+    "16": {
+      "cos_sim": 1.0,
+      "max_diff": 0.08203125,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.109375,
+      "bf16_norm": 4608.0,
+      "fp8_norm": 4608.0
+    },
+    "32": {
+      "cos_sim": 0.99609375,
+      "max_diff": 0.0888671875,
+      "mean_diff": 0.005828857421875,
+      "rel_diff": 1.109375,
+      "bf16_norm": 6528.0,
+      "fp8_norm": 6528.0
+    }
+  }
+}
