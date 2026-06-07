@@ -1,0 +1,1762 @@
+{
+  "results": {
+    "bon_N1": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.172,
+        "avg_cost": 5.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.094,
+        "avg_cost": 7.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.106,
+        "avg_cost": 10.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.094,
+        "avg_cost": 12.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.12,
+        "avg_cost": 15.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.124,
+        "avg_cost": 18.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.114,
+        "avg_cost": 20.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.092,
+        "avg_cost": 23.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.09,
+        "avg_cost": 26.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.076,
+        "avg_cost": 28.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.082,
+        "avg_cost": 31.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.076,
+        "avg_cost": 33.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.084,
+        "avg_cost": 36.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.07,
+        "avg_cost": 39.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.056,
+        "avg_cost": 41.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.064,
+        "avg_cost": 44.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.048,
+        "avg_cost": 47.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.036,
+        "avg_cost": 49.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.03,
+        "avg_cost": 52.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.03,
+        "avg_cost": 55.0
+      }
+    ],
+    "bon_N2": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.26,
+        "avg_cost": 10.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.224,
+        "avg_cost": 14.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.236,
+        "avg_cost": 20.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.212,
+        "avg_cost": 24.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.222,
+        "avg_cost": 30.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.192,
+        "avg_cost": 36.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.154,
+        "avg_cost": 40.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.18,
+        "avg_cost": 46.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.196,
+        "avg_cost": 52.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.15,
+        "avg_cost": 56.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.124,
+        "avg_cost": 62.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.148,
+        "avg_cost": 66.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.154,
+        "avg_cost": 72.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.128,
+        "avg_cost": 78.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.126,
+        "avg_cost": 82.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.102,
+        "avg_cost": 88.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.1,
+        "avg_cost": 94.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.066,
+        "avg_cost": 98.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.076,
+        "avg_cost": 104.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.034,
+        "avg_cost": 110.0
+      }
+    ],
+    "bon_N4": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.426,
+        "avg_cost": 20.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.41,
+        "avg_cost": 28.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.422,
+        "avg_cost": 40.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.364,
+        "avg_cost": 48.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.38,
+        "avg_cost": 60.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.334,
+        "avg_cost": 72.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.37,
+        "avg_cost": 80.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.324,
+        "avg_cost": 92.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.318,
+        "avg_cost": 104.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.284,
+        "avg_cost": 112.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.228,
+        "avg_cost": 124.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.256,
+        "avg_cost": 132.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.228,
+        "avg_cost": 144.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.224,
+        "avg_cost": 156.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.21,
+        "avg_cost": 164.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.186,
+        "avg_cost": 176.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.188,
+        "avg_cost": 188.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.17,
+        "avg_cost": 196.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.112,
+        "avg_cost": 208.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.096,
+        "avg_cost": 220.0
+      }
+    ],
+    "bon_N8": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.668,
+        "avg_cost": 40.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.592,
+        "avg_cost": 56.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.606,
+        "avg_cost": 80.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.572,
+        "avg_cost": 96.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.612,
+        "avg_cost": 120.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.57,
+        "avg_cost": 144.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.532,
+        "avg_cost": 160.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.558,
+        "avg_cost": 184.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.5,
+        "avg_cost": 208.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.464,
+        "avg_cost": 224.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.446,
+        "avg_cost": 248.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.44,
+        "avg_cost": 264.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.4,
+        "avg_cost": 288.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.376,
+        "avg_cost": 312.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.408,
+        "avg_cost": 328.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.324,
+        "avg_cost": 352.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.288,
+        "avg_cost": 376.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.266,
+        "avg_cost": 392.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.25,
+        "avg_cost": 416.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.208,
+        "avg_cost": 440.0
+      }
+    ],
+    "bon_N16": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.804,
+        "avg_cost": 80.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.792,
+        "avg_cost": 112.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.822,
+        "avg_cost": 160.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.824,
+        "avg_cost": 192.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.78,
+        "avg_cost": 240.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.766,
+        "avg_cost": 288.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.774,
+        "avg_cost": 320.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.738,
+        "avg_cost": 368.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.736,
+        "avg_cost": 416.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.762,
+        "avg_cost": 448.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.696,
+        "avg_cost": 496.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.67,
+        "avg_cost": 528.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.622,
+        "avg_cost": 576.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.586,
+        "avg_cost": 624.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.584,
+        "avg_cost": 656.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.504,
+        "avg_cost": 704.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.482,
+        "avg_cost": 752.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.488,
+        "avg_cost": 784.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.404,
+        "avg_cost": 832.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.352,
+        "avg_cost": 880.0
+      }
+    ],
+    "bon_N32": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.898,
+        "avg_cost": 160.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.896,
+        "avg_cost": 224.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.886,
+        "avg_cost": 320.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.88,
+        "avg_cost": 384.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.894,
+        "avg_cost": 480.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.894,
+        "avg_cost": 576.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.87,
+        "avg_cost": 640.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.856,
+        "avg_cost": 736.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.874,
+        "avg_cost": 832.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.84,
+        "avg_cost": 896.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.828,
+        "avg_cost": 992.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.828,
+        "avg_cost": 1056.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.824,
+        "avg_cost": 1152.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.81,
+        "avg_cost": 1248.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.762,
+        "avg_cost": 1312.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.762,
+        "avg_cost": 1408.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.746,
+        "avg_cost": 1504.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.678,
+        "avg_cost": 1568.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.638,
+        "avg_cost": 1664.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.536,
+        "avg_cost": 1760.0
+      }
+    ],
+    "bon_N64": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.914,
+        "avg_cost": 320.0
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.896,
+        "avg_cost": 448.0
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.904,
+        "avg_cost": 640.0
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.922,
+        "avg_cost": 768.0
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.914,
+        "avg_cost": 960.0
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.886,
+        "avg_cost": 1152.0
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.928,
+        "avg_cost": 1280.0
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.868,
+        "avg_cost": 1472.0
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.928,
+        "avg_cost": 1664.0
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.882,
+        "avg_cost": 1792.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.87,
+        "avg_cost": 1984.0
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.886,
+        "avg_cost": 2112.0
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.882,
+        "avg_cost": 2304.0
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.9,
+        "avg_cost": 2496.0
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.852,
+        "avg_cost": 2624.0
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.902,
+        "avg_cost": 2816.0
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.854,
+        "avg_cost": 3008.0
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.826,
+        "avg_cost": 3136.0
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.81,
+        "avg_cost": 3328.0
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.766,
+        "avg_cost": 3520.0
+      }
+    ],
+    "tot_b2_d3_bw2": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.168,
+        "avg_cost": 12.349999999999996
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.14,
+        "avg_cost": 17.210421052631578
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.126,
+        "avg_cost": 24.47263157894736
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.104,
+        "avg_cost": 29.230736842105266
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.072,
+        "avg_cost": 36.3678947368421
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.096,
+        "avg_cost": 43.43684210526316
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.068,
+        "avg_cost": 48.0357894736842
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.068,
+        "avg_cost": 54.97968421052632
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.078,
+        "avg_cost": 61.855368421052624
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.044,
+        "avg_cost": 66.29515789473685
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.022,
+        "avg_cost": 73.0457894736842
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.024,
+        "avg_cost": 77.38326315789472
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.02,
+        "avg_cost": 84.00884210526318
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.022,
+        "avg_cost": 90.5662105263158
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.026,
+        "avg_cost": 94.74452631578947
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.008,
+        "avg_cost": 101.17684210526316
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.008,
+        "avg_cost": 107.54094736842103
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.002,
+        "avg_cost": 111.56010526315792
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.002,
+        "avg_cost": 117.79915789473678
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.0,
+        "avg_cost": 123.97000000000001
+      }
+    ],
+    "tot_b3_d5_bw3": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.148,
+        "avg_cost": 27.7875
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.122,
+        "avg_cost": 38.72344736842105
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.1,
+        "avg_cost": 55.063421052631604
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.072,
+        "avg_cost": 65.76915789473684
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.042,
+        "avg_cost": 81.82776315789475
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.05,
+        "avg_cost": 97.73289473684213
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.028,
+        "avg_cost": 108.08052631578947
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.04,
+        "avg_cost": 123.70428947368421
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.026,
+        "avg_cost": 139.17457894736845
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.02,
+        "avg_cost": 149.1641052631579
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.014,
+        "avg_cost": 164.3530263157895
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.01,
+        "avg_cost": 174.11234210526314
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.006,
+        "avg_cost": 189.01989473684213
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.008,
+        "avg_cost": 203.77397368421046
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.002,
+        "avg_cost": 213.1751842105263
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.002,
+        "avg_cost": 227.6478947368422
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.0,
+        "avg_cost": 241.96713157894735
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.0,
+        "avg_cost": 251.01023684210534
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.0,
+        "avg_cost": 265.04810526315794
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.0,
+        "avg_cost": 278.93249999999995
+      }
+    ],
+    "tot_b4_d7_bw4": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.07,
+        "avg_cost": 49.399999999999984
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.064,
+        "avg_cost": 68.84168421052631
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.036,
+        "avg_cost": 97.89052631578944
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.036,
+        "avg_cost": 116.92294736842106
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.014,
+        "avg_cost": 145.4715789473684
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.018,
+        "avg_cost": 173.74736842105264
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.012,
+        "avg_cost": 192.1431578947368
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.01,
+        "avg_cost": 219.9187368421053
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.002,
+        "avg_cost": 247.4214736842105
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.0,
+        "avg_cost": 265.1806315789474
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.002,
+        "avg_cost": 292.1831578947368
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.0,
+        "avg_cost": 309.53305263157887
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.002,
+        "avg_cost": 336.03536842105257
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.0,
+        "avg_cost": 362.26484210526297
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.0,
+        "avg_cost": 378.9781052631579
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.0,
+        "avg_cost": 404.7073684210526
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.0,
+        "avg_cost": 430.16378947368423
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.0,
+        "avg_cost": 446.2404210526317
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.0,
+        "avg_cost": 471.19663157894746
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.0,
+        "avg_cost": 495.88000000000005
+      }
+    ],
+    "tot_b3_d10_bw3": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.006,
+        "avg_cost": 27.787499999999987
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.002,
+        "avg_cost": 38.723447368421056
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.002,
+        "avg_cost": 55.063421052631604
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.0,
+        "avg_cost": 65.76915789473684
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.0,
+        "avg_cost": 81.82776315789478
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.0,
+        "avg_cost": 97.73289473684213
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.0,
+        "avg_cost": 108.08052631578947
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.0,
+        "avg_cost": 123.70428947368421
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.0,
+        "avg_cost": 139.17457894736845
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.0,
+        "avg_cost": 149.1641052631579
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.0,
+        "avg_cost": 164.35302631578944
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.0,
+        "avg_cost": 174.11234210526317
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.0,
+        "avg_cost": 189.01989473684213
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.0,
+        "avg_cost": 203.77397368421046
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.0,
+        "avg_cost": 213.1751842105263
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.0,
+        "avg_cost": 227.6478947368422
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.0,
+        "avg_cost": 241.96713157894735
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.0,
+        "avg_cost": 251.01023684210534
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.0,
+        "avg_cost": 265.04810526315805
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.0,
+        "avg_cost": 278.93249999999995
+      }
+    ],
+    "refine_r1": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.528,
+        "avg_cost": 7.14
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.512,
+        "avg_cost": 10.031
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.56,
+        "avg_cost": 14.2
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.508,
+        "avg_cost": 17.268
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.52,
+        "avg_cost": 21.54
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.472,
+        "avg_cost": 25.974
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.49,
+        "avg_cost": 29.02
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.522,
+        "avg_cost": 33.189
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.472,
+        "avg_cost": 37.726
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.492,
+        "avg_cost": 40.684
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.464,
+        "avg_cost": 45.105
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.466,
+        "avg_cost": 48.147
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.48,
+        "avg_cost": 52.632
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.474,
+        "avg_cost": 56.979
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.464,
+        "avg_cost": 60.434
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.442,
+        "avg_cost": 65.296
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.426,
+        "avg_cost": 69.607
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.41,
+        "avg_cost": 72.569
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.414,
+        "avg_cost": 77.116
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.478,
+        "avg_cost": 81.455
+      }
+    ],
+    "refine_r2": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.772,
+        "avg_cost": 8.305
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.744,
+        "avg_cost": 11.746
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.746,
+        "avg_cost": 16.55
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.746,
+        "avg_cost": 19.752
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.736,
+        "avg_cost": 25.485
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.752,
+        "avg_cost": 30.006
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.71,
+        "avg_cost": 33.8
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.726,
+        "avg_cost": 38.87
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.728,
+        "avg_cost": 44.434
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.708,
+        "avg_cost": 47.824
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.716,
+        "avg_cost": 53.289
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.712,
+        "avg_cost": 56.364
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.71,
+        "avg_cost": 61.452
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.702,
+        "avg_cost": 67.353
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.696,
+        "avg_cost": 71.094
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.72,
+        "avg_cost": 77.484
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.686,
+        "avg_cost": 82.297
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.686,
+        "avg_cost": 86.289
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.668,
+        "avg_cost": 92.508
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.64,
+        "avg_cost": 96.965
+      }
+    ],
+    "refine_r3": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.876,
+        "avg_cost": 8.82
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.872,
+        "avg_cost": 12.446
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.866,
+        "avg_cost": 18.18
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.864,
+        "avg_cost": 21.336
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.842,
+        "avg_cost": 27.135
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.86,
+        "avg_cost": 32.94
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.87,
+        "avg_cost": 36.92
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.854,
+        "avg_cost": 41.998
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.842,
+        "avg_cost": 47.762
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.854,
+        "avg_cost": 51.688
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.834,
+        "avg_cost": 57.722
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.842,
+        "avg_cost": 61.809
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.84,
+        "avg_cost": 65.412
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.84,
+        "avg_cost": 73.164
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.822,
+        "avg_cost": 78.392
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.808,
+        "avg_cost": 84.568
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.792,
+        "avg_cost": 89.159
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.824,
+        "avg_cost": 93.884
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.796,
+        "avg_cost": 99.788
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.82,
+        "avg_cost": 104.995
+      }
+    ],
+    "refine_r5": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.96,
+        "avg_cost": 9.48
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.956,
+        "avg_cost": 13.069
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.962,
+        "avg_cost": 18.97
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.974,
+        "avg_cost": 22.332
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.958,
+        "avg_cost": 28.635
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.966,
+        "avg_cost": 34.02
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.952,
+        "avg_cost": 38.2
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.972,
+        "avg_cost": 43.907
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.966,
+        "avg_cost": 50.076
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.954,
+        "avg_cost": 55.972
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.952,
+        "avg_cost": 62.062
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.938,
+        "avg_cost": 66.066
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.94,
+        "avg_cost": 72.252
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.934,
+        "avg_cost": 77.922
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.936,
+        "avg_cost": 83.271
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.938,
+        "avg_cost": 89.232
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.946,
+        "avg_cost": 94.517
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.93,
+        "avg_cost": 101.773
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.928,
+        "avg_cost": 107.796
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.952,
+        "avg_cost": 112.31
+      }
+    ],
+    "refine_r8": [
+      {
+        "difficulty": 0.0,
+        "accuracy": 0.988,
+        "avg_cost": 9.44
+      },
+      {
+        "difficulty": 0.05263157894736842,
+        "accuracy": 0.994,
+        "avg_cost": 13.244
+      },
+      {
+        "difficulty": 0.10526315789473684,
+        "accuracy": 0.996,
+        "avg_cost": 18.69
+      },
+      {
+        "difficulty": 0.15789473684210525,
+        "accuracy": 0.996,
+        "avg_cost": 23.208
+      },
+      {
+        "difficulty": 0.21052631578947367,
+        "accuracy": 0.994,
+        "avg_cost": 29.745
+      },
+      {
+        "difficulty": 0.2631578947368421,
+        "accuracy": 0.986,
+        "avg_cost": 35.424
+      },
+      {
+        "difficulty": 0.3157894736842105,
+        "accuracy": 0.994,
+        "avg_cost": 39.06
+      },
+      {
+        "difficulty": 0.3684210526315789,
+        "accuracy": 0.988,
+        "avg_cost": 45.908
+      },
+      {
+        "difficulty": 0.42105263157894735,
+        "accuracy": 0.99,
+        "avg_cost": 50.908
+      },
+      {
+        "difficulty": 0.47368421052631576,
+        "accuracy": 0.992,
+        "avg_cost": 56.0
+      },
+      {
+        "difficulty": 0.5263157894736842,
+        "accuracy": 0.994,
+        "avg_cost": 63.612
+      },
+      {
+        "difficulty": 0.5789473684210527,
+        "accuracy": 0.986,
+        "avg_cost": 69.003
+      },
+      {
+        "difficulty": 0.631578947368421,
+        "accuracy": 0.996,
+        "avg_cost": 74.844
+      },
+      {
+        "difficulty": 0.6842105263157894,
+        "accuracy": 0.986,
+        "avg_cost": 79.833
+      },
+      {
+        "difficulty": 0.7368421052631579,
+        "accuracy": 0.992,
+        "avg_cost": 82.369
+      },
+      {
+        "difficulty": 0.7894736842105263,
+        "accuracy": 0.982,
+        "avg_cost": 92.18
+      },
+      {
+        "difficulty": 0.8421052631578947,
+        "accuracy": 0.992,
+        "avg_cost": 95.504
+      },
+      {
+        "difficulty": 0.894736842105263,
+        "accuracy": 0.984,
+        "avg_cost": 103.439
+      },
+      {
+        "difficulty": 0.9473684210526315,
+        "accuracy": 0.984,
+        "avg_cost": 108.576
+      },
+      {
+        "difficulty": 1.0,
+        "accuracy": 0.992,
+        "avg_cost": 119.68
+      }
+    ]
+  },
+  "optimal_allocation": [
+    {
+      "difficulty": 0.0,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.988,
+      "compute_cost": 9.44
+    },
+    {
+      "difficulty": 0.05263157894736842,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.994,
+      "compute_cost": 13.244
+    },
+    {
+      "difficulty": 0.10526315789473684,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.996,
+      "compute_cost": 18.69
+    },
+    {
+      "difficulty": 0.15789473684210525,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.996,
+      "compute_cost": 23.208
+    },
+    {
+      "difficulty": 0.21052631578947367,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.994,
+      "compute_cost": 29.745
+    },
+    {
+      "difficulty": 0.2631578947368421,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.986,
+      "compute_cost": 35.424
+    },
+    {
+      "difficulty": 0.3157894736842105,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.994,
+      "compute_cost": 39.06
+    },
+    {
+      "difficulty": 0.3684210526315789,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.988,
+      "compute_cost": 45.908
+    },
+    {
+      "difficulty": 0.42105263157894735,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.99,
+      "compute_cost": 50.908
+    },
+    {
+      "difficulty": 0.47368421052631576,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.992,
+      "compute_cost": 56.0
+    },
+    {
+      "difficulty": 0.5263157894736842,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.994,
+      "compute_cost": 63.612
+    },
+    {
+      "difficulty": 0.5789473684210527,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.986,
+      "compute_cost": 69.003
+    },
+    {
+      "difficulty": 0.631578947368421,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.996,
+      "compute_cost": 74.844
+    },
+    {
+      "difficulty": 0.6842105263157894,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.986,
+      "compute_cost": 79.833
+    },
+    {
+      "difficulty": 0.7368421052631579,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.992,
+      "compute_cost": 82.369
+    },
+    {
+      "difficulty": 0.7894736842105263,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.982,
+      "compute_cost": 92.18
+    },
+    {
+      "difficulty": 0.8421052631578947,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.992,
+      "compute_cost": 95.504
+    },
+    {
+      "difficulty": 0.894736842105263,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.984,
+      "compute_cost": 103.439
+    },
+    {
+      "difficulty": 0.9473684210526315,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.984,
+      "compute_cost": 108.576
+    },
+    {
+      "difficulty": 1.0,
+      "best_strategy": "refine_r8",
+      "best_accuracy": 0.992,
+      "compute_cost": 119.68
+    }
+  ],
+  "config": {
+    "num_problems": 500,
+    "model_quality": 0.5
+  }
+}
