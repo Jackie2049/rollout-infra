@@ -1,0 +1,5416 @@
+{
+  "reward_fn": "curriculum",
+  "warmup": "none",
+  "lr": 0.001,
+  "grpo_steps": 600,
+  "baseline_eval": 0.0,
+  "final_eval_accuracy": 0.1,
+  "initial_reward": 0.1234375,
+  "final_reward": 0.25,
+  "peak_reward": 1.0,
+  "peak_accuracy": 1.0,
+  "final_accuracy": 0.25,
+  "final_loss": -0.0,
+  "metrics_history": [
+    {
+      "loss": 0.17934644222259521,
+      "reward_mean": 0.1234375,
+      "reward_std": 0.16080091291329787,
+      "accuracy": 0.0,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2697497606277466,
+      "reward_mean": 0.2234375,
+      "reward_std": 0.2673610547438613,
+      "accuracy": 0.0625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.40767210721969604,
+      "reward_mean": 0.21718749999999998,
+      "reward_std": 0.24593869122964368,
+      "accuracy": 0.046875,
+      "advantage_mean": 3.469446951953614e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.42432138323783875,
+      "reward_mean": 0.2390625,
+      "reward_std": 0.24406530088021527,
+      "accuracy": 0.046875,
+      "advantage_mean": -4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6183873414993286,
+      "reward_mean": 0.278125,
+      "reward_std": 0.18325933639244688,
+      "accuracy": 0.0,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7352717518806458,
+      "reward_mean": 0.38906250000000003,
+      "reward_std": 0.28729187439562226,
+      "accuracy": 0.140625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.41336628794670105,
+      "reward_mean": 0.378125,
+      "reward_std": 0.2976306173346418,
+      "accuracy": 0.15625,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.41629326343536377,
+      "reward_mean": 0.44062500000000004,
+      "reward_std": 0.26851370425920534,
+      "accuracy": 0.140625,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.48472297191619873,
+      "reward_mean": 0.5109375,
+      "reward_std": 0.35973826748589033,
+      "accuracy": 0.328125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3496091067790985,
+      "reward_mean": 0.4140625,
+      "reward_std": 0.24677114112827295,
+      "accuracy": 0.09375,
+      "advantage_mean": -9.71445146547012e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7324286699295044,
+      "reward_mean": 0.321875,
+      "reward_std": 0.23080616190864575,
+      "accuracy": 0.078125,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.858117401599884,
+      "reward_mean": 0.41875000000000007,
+      "reward_std": 0.33813597486809943,
+      "accuracy": 0.21875,
+      "advantage_mean": -1.1796119636642288e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.05939111113548279,
+      "reward_mean": 0.3984375,
+      "reward_std": 0.2825620437952521,
+      "accuracy": 0.140625,
+      "advantage_mean": -1.0408340855860843e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.06459486484527588,
+      "reward_mean": 0.39531249999999996,
+      "reward_std": 0.28307998400407963,
+      "accuracy": 0.15625,
+      "advantage_mean": -2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -1.1692736148834229,
+      "reward_mean": 0.4703125,
+      "reward_std": 0.348962608804654,
+      "accuracy": 0.28125,
+      "advantage_mean": -4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3485451340675354,
+      "reward_mean": 0.34062499999999996,
+      "reward_std": 0.22619042723996965,
+      "accuracy": 0.078125,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.9322282075881958,
+      "reward_mean": 0.3578125,
+      "reward_std": 0.24987789987061682,
+      "accuracy": 0.109375,
+      "advantage_mean": 1.3530843112619095e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.049030572175979614,
+      "reward_mean": 0.41093749999999996,
+      "reward_std": 0.32215931011496474,
+      "accuracy": 0.21875,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7094081044197083,
+      "reward_mean": 0.49375,
+      "reward_std": 0.3390588997504711,
+      "accuracy": 0.296875,
+      "advantage_mean": -1.3183898417423734e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4897993206977844,
+      "reward_mean": 0.33124999999999993,
+      "reward_std": 0.1356408400888169,
+      "accuracy": 0.0,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8132217526435852,
+      "reward_mean": 0.55,
+      "reward_std": 0.3816084380618437,
+      "accuracy": 0.40625,
+      "advantage_mean": -8.673617379884035e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2692810595035553,
+      "reward_mean": 0.5078125,
+      "reward_std": 0.28630440940326085,
+      "accuracy": 0.21875,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.2010183036327362,
+      "reward_mean": 0.615625,
+      "reward_std": 0.3153464117046522,
+      "accuracy": 0.375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7643899917602539,
+      "reward_mean": 0.5171874999999999,
+      "reward_std": 0.3551208806079277,
+      "accuracy": 0.328125,
+      "advantage_mean": 9.020562075079397e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7675227522850037,
+      "reward_mean": 0.7015625000000001,
+      "reward_std": 0.35066552239099585,
+      "accuracy": 0.5625,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.9962250590324402,
+      "reward_mean": 0.6375,
+      "reward_std": 0.3701773223740212,
+      "accuracy": 0.5,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7779384851455688,
+      "reward_mean": 0.4890625,
+      "reward_std": 0.3331277849320738,
+      "accuracy": 0.265625,
+      "advantage_mean": -4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.3069446086883545,
+      "reward_mean": 0.359375,
+      "reward_std": 0.2679311653671517,
+      "accuracy": 0.125,
+      "advantage_mean": 4.85722573273506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4948909282684326,
+      "reward_mean": 0.4078125,
+      "reward_std": 0.23405707603862355,
+      "accuracy": 0.109375,
+      "advantage_mean": 6.245004513516506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.49651437997817993,
+      "reward_mean": 0.38906250000000003,
+      "reward_std": 0.22852597465879013,
+      "accuracy": 0.078125,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6804190874099731,
+      "reward_mean": 0.6359375,
+      "reward_std": 0.3483744337544734,
+      "accuracy": 0.453125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.3004871606826782,
+      "reward_mean": 0.3828125,
+      "reward_std": 0.2649025100744612,
+      "accuracy": 0.140625,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.2687644362449646,
+      "reward_mean": 0.4453125,
+      "reward_std": 0.3259264140013049,
+      "accuracy": 0.25,
+      "advantage_mean": 8.326672684688674e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.24765820801258087,
+      "reward_mean": 0.5515625000000001,
+      "reward_std": 0.358814100327384,
+      "accuracy": 0.359375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.666406512260437,
+      "reward_mean": 0.5015625,
+      "reward_std": 0.3488786445080151,
+      "accuracy": 0.3125,
+      "advantage_mean": -8.326672684688674e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8003516793251038,
+      "reward_mean": 0.46562500000000007,
+      "reward_std": 0.32414249856351757,
+      "accuracy": 0.234375,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7656130194664001,
+      "reward_mean": 0.6062500000000001,
+      "reward_std": 0.29889118003045856,
+      "accuracy": 0.328125,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.353056401014328,
+      "reward_mean": 0.40468750000000003,
+      "reward_std": 0.2723908540016533,
+      "accuracy": 0.140625,
+      "advantage_mean": -2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.10023817420005798,
+      "reward_mean": 0.5421874999999999,
+      "reward_std": 0.34946597093815873,
+      "accuracy": 0.359375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2536813020706177,
+      "reward_mean": 0.47343749999999996,
+      "reward_std": 0.22929388041059887,
+      "accuracy": 0.125,
+      "advantage_mean": 5.898059818321144e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3944547176361084,
+      "reward_mean": 0.4140625,
+      "reward_std": 0.2668492010363719,
+      "accuracy": 0.140625,
+      "advantage_mean": 1.3183898417423734e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8125147819519043,
+      "reward_mean": 0.4,
+      "reward_std": 0.2468552207266438,
+      "accuracy": 0.109375,
+      "advantage_mean": -2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6033423542976379,
+      "reward_mean": 0.521875,
+      "reward_std": 0.2885679891723959,
+      "accuracy": 0.234375,
+      "advantage_mean": 9.367506770274758e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.21737730503082275,
+      "reward_mean": 0.5515625,
+      "reward_std": 0.28776736888283566,
+      "accuracy": 0.265625,
+      "advantage_mean": -2.6020852139652106e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6416667699813843,
+      "reward_mean": 0.534375,
+      "reward_std": 0.2773866604128612,
+      "accuracy": 0.21875,
+      "advantage_mean": 7.632783294297951e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.25419697165489197,
+      "reward_mean": 0.35000000000000003,
+      "reward_std": 0.24748737341529162,
+      "accuracy": 0.109375,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.35697340965270996,
+      "reward_mean": 0.38125,
+      "reward_std": 0.24992186278915257,
+      "accuracy": 0.109375,
+      "advantage_mean": 2.42861286636753e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.3375,
+      "reward_std": 0.13169567191065923,
+      "accuracy": 0.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5875,
+      "reward_std": 0.2570870475150392,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.24405556917190552,
+      "reward_mean": 0.6875,
+      "reward_std": 0.31199959935871713,
+      "accuracy": 0.484375,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.21530386805534363,
+      "reward_mean": 0.4703125,
+      "reward_std": 0.23296974555454614,
+      "accuracy": 0.140625,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.4625,
+      "reward_std": 0.23946555075835022,
+      "accuracy": 0.125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2071356177330017,
+      "reward_mean": 0.4171875,
+      "reward_std": 0.2589369418289904,
+      "accuracy": 0.125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2566227316856384,
+      "reward_mean": 0.6890624999999999,
+      "reward_std": 0.30979690297636936,
+      "accuracy": 0.484375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.1276891678571701,
+      "reward_mean": 0.43437500000000007,
+      "reward_std": 0.2682225929615177,
+      "accuracy": 0.15625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.32694992423057556,
+      "reward_mean": 0.39999999999999997,
+      "reward_std": 0.2567829823021767,
+      "accuracy": 0.125,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.43407776951789856,
+      "reward_mean": 0.42187500000000006,
+      "reward_std": 0.25767515280872544,
+      "accuracy": 0.125,
+      "advantage_mean": -5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.19430914521217346,
+      "reward_mean": 0.47812499999999997,
+      "reward_std": 0.3144781143020926,
+      "accuracy": 0.25,
+      "advantage_mean": 6.591949208711867e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2344665229320526,
+      "reward_mean": 0.5609375,
+      "reward_std": 0.35116644357590604,
+      "accuracy": 0.375,
+      "advantage_mean": 5.898059818321144e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6049019694328308,
+      "reward_mean": 0.453125,
+      "reward_std": 0.30360786283461105,
+      "accuracy": 0.21875,
+      "advantage_mean": 6.245004513516506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.05679488182067871,
+      "reward_mean": 0.6031249999999999,
+      "reward_std": 0.3339951113040429,
+      "accuracy": 0.390625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.23261399567127228,
+      "reward_mean": 0.5109375,
+      "reward_std": 0.31330755032994334,
+      "accuracy": 0.265625,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2994621992111206,
+      "reward_mean": 0.571875,
+      "reward_std": 0.25828082463667335,
+      "accuracy": 0.234375,
+      "advantage_mean": -9.71445146547012e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6424632668495178,
+      "reward_mean": 0.3765625,
+      "reward_std": 0.12085914774542306,
+      "accuracy": 0.0,
+      "advantage_mean": -1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.3468448221683502,
+      "reward_mean": 0.46093749999999994,
+      "reward_std": 0.3267344045149668,
+      "accuracy": 0.265625,
+      "advantage_mean": -6.245004513516506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6,
+      "reward_std": 0.32403703492039304,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3113044500350952,
+      "reward_mean": 0.5843750000000001,
+      "reward_std": 0.2593373466645327,
+      "accuracy": 0.25,
+      "advantage_mean": 3.469446951953614e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.33166247903554,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.3082207001484488,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.21696925163269043,
+      "reward_mean": 0.6343749999999999,
+      "reward_std": 0.29379986278928044,
+      "accuracy": 0.375,
+      "advantage_mean": 3.469446951953614e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.14351525902748108,
+      "reward_mean": 0.7015625000000001,
+      "reward_std": 0.30387712746067286,
+      "accuracy": 0.484375,
+      "advantage_mean": -5.898059818321144e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.2283008098602295,
+      "reward_mean": 0.36718750000000006,
+      "reward_std": 0.14037303816527588,
+      "accuracy": 0.0,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.05510897934436798,
+      "reward_mean": 0.5234375,
+      "reward_std": 0.2044368694579087,
+      "accuracy": 0.125,
+      "advantage_mean": -1.8214596497756474e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.26424163579940796,
+      "reward_mean": 0.44843749999999993,
+      "reward_std": 0.23584435247372368,
+      "accuracy": 0.125,
+      "advantage_mean": 5.898059818321144e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.06521737575531006,
+      "reward_mean": 0.36406249999999996,
+      "reward_std": 0.26242093303269465,
+      "accuracy": 0.125,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3286651074886322,
+      "reward_mean": 0.6125,
+      "reward_std": 0.307967124868873,
+      "accuracy": 0.359375,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.24853670597076416,
+      "reward_mean": 0.6078125000000001,
+      "reward_std": 0.3256266494679912,
+      "accuracy": 0.375,
+      "advantage_mean": -3.122502256758253e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.31250000000000006,
+      "reward_std": 0.11659223816361018,
+      "accuracy": 0.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.675,
+      "reward_std": 0.34186985827943356,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.06015817075967789,
+      "reward_mean": 0.5390625,
+      "reward_std": 0.26961615510527187,
+      "accuracy": 0.234375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.575,
+      "reward_std": 0.3381937314617171,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.20105040073394775,
+      "reward_mean": 0.4203125,
+      "reward_std": 0.25506107571275943,
+      "accuracy": 0.125,
+      "advantage_mean": -3.122502256758253e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.01317422091960907,
+      "reward_mean": 0.425,
+      "reward_std": 0.25980762113533157,
+      "accuracy": 0.140625,
+      "advantage_mean": 5.204170427930421e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.02148028463125229,
+      "reward_mean": 0.421875,
+      "reward_std": 0.2594879272239847,
+      "accuracy": 0.125,
+      "advantage_mean": -4.5102810375396984e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.3625,
+      "reward_std": 0.14086784586980805,
+      "accuracy": 0.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.4283895194530487,
+      "reward_mean": 0.44062500000000004,
+      "reward_std": 0.2596384204523668,
+      "accuracy": 0.140625,
+      "advantage_mean": -2.42861286636753e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0071290023624897,
+      "reward_mean": 0.49687500000000007,
+      "reward_std": 0.31373194669175786,
+      "accuracy": 0.25,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.07336698472499847,
+      "reward_mean": 0.39062500000000006,
+      "reward_std": 0.26023952308402354,
+      "accuracy": 0.125,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.07493078708648682,
+      "reward_mean": 0.5546875,
+      "reward_std": 0.24870268865404332,
+      "accuracy": 0.203125,
+      "advantage_mean": 1.5612511283791264e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.07129652053117752,
+      "reward_mean": 0.5171874999999999,
+      "reward_std": 0.30132762874278557,
+      "accuracy": 0.25,
+      "advantage_mean": 1.734723475976807e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.09819614887237549,
+      "reward_mean": 0.58125,
+      "reward_std": 0.2633171804117612,
+      "accuracy": 0.25,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.11312166601419449,
+      "reward_mean": 0.47500000000000003,
+      "reward_std": 0.2338535866733713,
+      "accuracy": 0.125,
+      "advantage_mean": 1.1449174941446927e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.22883370518684387,
+      "reward_mean": 0.5328125000000001,
+      "reward_std": 0.32502629100389707,
+      "accuracy": 0.296875,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.33194851875305176,
+      "reward_mean": 0.4734375,
+      "reward_std": 0.28297647180242747,
+      "accuracy": 0.1875,
+      "advantage_mean": -1.734723475976807e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.48347076773643494,
+      "reward_mean": 0.509375,
+      "reward_std": 0.20133829584805765,
+      "accuracy": 0.109375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3633987307548523,
+      "reward_mean": 0.49375,
+      "reward_std": 0.29361699116365864,
+      "accuracy": 0.21875,
+      "advantage_mean": -5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.2925087809562683,
+      "reward_mean": 0.584375,
+      "reward_std": 0.2796307554168532,
+      "accuracy": 0.28125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2550949156284332,
+      "reward_mean": 0.5375000000000001,
+      "reward_std": 0.22255617268456068,
+      "accuracy": 0.15625,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.5809919834136963,
+      "reward_mean": 0.4296875,
+      "reward_std": 0.18513482207232113,
+      "accuracy": 0.0625,
+      "advantage_mean": -6.938893903907228e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.42235708236694336,
+      "reward_mean": 0.590625,
+      "reward_std": 0.284340657266948,
+      "accuracy": 0.296875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3615362048149109,
+      "reward_mean": 0.4765624999999999,
+      "reward_std": 0.2876315935250333,
+      "accuracy": 0.203125,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8604312539100647,
+      "reward_mean": 0.6265624999999999,
+      "reward_std": 0.31486216602467504,
+      "accuracy": 0.390625,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5496270656585693,
+      "reward_mean": 0.6609375,
+      "reward_std": 0.3070103761988347,
+      "accuracy": 0.421875,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.197872593998909,
+      "reward_mean": 0.6390625000000001,
+      "reward_std": 0.28701980958419926,
+      "accuracy": 0.359375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0890585258603096,
+      "reward_mean": 0.6390625000000001,
+      "reward_std": 0.28701980958419926,
+      "accuracy": 0.359375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8764051198959351,
+      "reward_mean": 0.65,
+      "reward_std": 0.3216170082567152,
+      "accuracy": 0.4375,
+      "advantage_mean": 1.0408340855860843e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.28194403648376465,
+      "reward_mean": 0.58125,
+      "reward_std": 0.24803918541230538,
+      "accuracy": 0.234375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.19717583060264587,
+      "reward_mean": 0.5890625,
+      "reward_std": 0.25502278544034057,
+      "accuracy": 0.25,
+      "advantage_mean": -5.898059818321144e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.1033511757850647,
+      "reward_mean": 0.7046875,
+      "reward_std": 0.31346335885355087,
+      "accuracy": 0.5,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.07547453045845032,
+      "reward_mean": 0.5078125,
+      "reward_std": 0.20638608200106423,
+      "accuracy": 0.125,
+      "advantage_mean": -3.122502256758253e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5205696821212769,
+      "reward_mean": 0.5203125000000001,
+      "reward_std": 0.2867815411489205,
+      "accuracy": 0.234375,
+      "advantage_mean": -4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.514665424823761,
+      "reward_mean": 0.546875,
+      "reward_std": 0.35221120705480113,
+      "accuracy": 0.359375,
+      "advantage_mean": -2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.47270768880844116,
+      "reward_mean": 0.3671875,
+      "reward_std": 0.13699302844944336,
+      "accuracy": 0.0,
+      "advantage_mean": 9.020562075079397e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6875,
+      "reward_std": 0.3257203555198846,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5414018034934998,
+      "reward_mean": 0.5265625,
+      "reward_std": 0.29593189012634313,
+      "accuracy": 0.25,
+      "advantage_mean": -5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.40932416915893555,
+      "reward_mean": 0.6390625,
+      "reward_std": 0.3629812269164206,
+      "accuracy": 0.484375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.2839089334011078,
+      "reward_mean": 0.6109374999999999,
+      "reward_std": 0.25379444653843397,
+      "accuracy": 0.28125,
+      "advantage_mean": -1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3093382716178894,
+      "reward_mean": 0.584375,
+      "reward_std": 0.33457937679271266,
+      "accuracy": 0.375,
+      "advantage_mean": 1.4224732503009818e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5176229476928711,
+      "reward_mean": 0.5703125,
+      "reward_std": 0.2302713667474747,
+      "accuracy": 0.203125,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5914384722709656,
+      "reward_mean": 0.6453125,
+      "reward_std": 0.28002772602681686,
+      "accuracy": 0.359375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2941927909851074,
+      "reward_mean": 0.5718749999999999,
+      "reward_std": 0.34254048574584584,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.12141111493110657,
+      "reward_mean": 0.6296875,
+      "reward_std": 0.26849097255541016,
+      "accuracy": 0.328125,
+      "advantage_mean": -2.42861286636753e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.293410062789917,
+      "reward_mean": 0.5578125,
+      "reward_std": 0.28107199227911345,
+      "accuracy": 0.265625,
+      "advantage_mean": 1.6653345369377348e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.034540966153144836,
+      "reward_mean": 0.5359375,
+      "reward_std": 0.3188686972622901,
+      "accuracy": 0.28125,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6353569030761719,
+      "reward_mean": 0.625,
+      "reward_std": 0.2766992952647332,
+      "accuracy": 0.328125,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8904356360435486,
+      "reward_mean": 0.4359375,
+      "reward_std": 0.24771908705981863,
+      "accuracy": 0.125,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.422110915184021,
+      "reward_mean": 0.6015625,
+      "reward_std": 0.30948151575457616,
+      "accuracy": 0.34375,
+      "advantage_mean": -4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -1.038719892501831,
+      "reward_mean": 0.5109375,
+      "reward_std": 0.3000610289486957,
+      "accuracy": 0.234375,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.14423216879367828,
+      "reward_mean": 0.7421875,
+      "reward_std": 0.26148893828181335,
+      "accuracy": 0.5,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.22489917278289795,
+      "reward_mean": 0.3859375,
+      "reward_std": 0.15994841697794324,
+      "accuracy": 0.015625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.07549525797367096,
+      "reward_mean": 0.7734375,
+      "reward_std": 0.29434364880824254,
+      "accuracy": 0.609375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.29051923751831055,
+      "reward_mean": 0.4359375,
+      "reward_std": 0.33136421969450774,
+      "accuracy": 0.25,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2922256290912628,
+      "reward_mean": 0.809375,
+      "reward_std": 0.26851370425920534,
+      "accuracy": 0.65625,
+      "advantage_mean": 6.245004513516506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2620850205421448,
+      "reward_mean": 0.6953125,
+      "reward_std": 0.3164400059154184,
+      "accuracy": 0.5,
+      "advantage_mean": 4.5102810375396984e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.18870803713798523,
+      "reward_mean": 0.6765625,
+      "reward_std": 0.3458423536725223,
+      "accuracy": 0.515625,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.16144850850105286,
+      "reward_mean": 0.5093749999999999,
+      "reward_std": 0.2702537869762421,
+      "accuracy": 0.1875,
+      "advantage_mean": -3.122502256758253e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.08450591564178467,
+      "reward_mean": 0.47968749999999993,
+      "reward_std": 0.24570033036963954,
+      "accuracy": 0.140625,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.1558827906847,
+      "reward_mean": 0.8359375,
+      "reward_std": 0.2928135005319085,
+      "accuracy": 0.75,
+      "advantage_mean": -2.42861286636753e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4077017307281494,
+      "reward_mean": 0.6453125,
+      "reward_std": 0.26921743506643475,
+      "accuracy": 0.34375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3056603968143463,
+      "reward_mean": 0.8046875,
+      "reward_std": 0.311463123569629,
+      "accuracy": 0.703125,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.9717322587966919,
+      "reward_mean": 0.7734375,
+      "reward_std": 0.2751375721230199,
+      "accuracy": 0.578125,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5259705781936646,
+      "reward_mean": 0.628125,
+      "reward_std": 0.2706870598587971,
+      "accuracy": 0.328125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.10576273500919342,
+      "reward_mean": 0.7140625,
+      "reward_std": 0.2978397154406209,
+      "accuracy": 0.5,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6682168245315552,
+      "reward_mean": 0.5375,
+      "reward_std": 0.2981715110469141,
+      "accuracy": 0.25,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.20759910345077515,
+      "reward_mean": 0.6203125,
+      "reward_std": 0.22233117717439002,
+      "accuracy": 0.25,
+      "advantage_mean": -3.122502256758253e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6991943120956421,
+      "reward_mean": 0.6906249999999999,
+      "reward_std": 0.32582527430357516,
+      "accuracy": 0.5,
+      "advantage_mean": -3.469446951953614e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.41678985953330994,
+      "reward_mean": 0.6609375,
+      "reward_std": 0.2713491682201182,
+      "accuracy": 0.375,
+      "advantage_mean": -2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.175959974527359,
+      "reward_mean": 0.5999999999999999,
+      "reward_std": 0.2817356917396161,
+      "accuracy": 0.3125,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.5764424800872803,
+      "reward_mean": 0.734375,
+      "reward_std": 0.3128591685966707,
+      "accuracy": 0.5625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6317410469055176,
+      "reward_mean": 0.6281249999999999,
+      "reward_std": 0.306425332462902,
+      "accuracy": 0.375,
+      "advantage_mean": 6.938893903907228e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.13730967044830322,
+      "reward_mean": 0.471875,
+      "reward_std": 0.2570680539759851,
+      "accuracy": 0.15625,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.1776021122932434,
+      "reward_mean": 0.5968749999999999,
+      "reward_std": 0.26924010543565013,
+      "accuracy": 0.28125,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4506804645061493,
+      "reward_mean": 0.5671875,
+      "reward_std": 0.23852062771121074,
+      "accuracy": 0.203125,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5172481536865234,
+      "reward_mean": 0.684375,
+      "reward_std": 0.31135728572654275,
+      "accuracy": 0.46875,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.02565924823284149,
+      "reward_mean": 0.615625,
+      "reward_std": 0.29749934348667056,
+      "accuracy": 0.34375,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4970949590206146,
+      "reward_mean": 0.5703125,
+      "reward_std": 0.2602160685733108,
+      "accuracy": 0.234375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.908607006072998,
+      "reward_mean": 0.5703125,
+      "reward_std": 0.28211239310556707,
+      "accuracy": 0.265625,
+      "advantage_mean": -4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3765828609466553,
+      "reward_mean": 0.66875,
+      "reward_std": 0.2680222705298946,
+      "accuracy": 0.375,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4009941816329956,
+      "reward_mean": 0.6078125000000001,
+      "reward_std": 0.24641472123992514,
+      "accuracy": 0.265625,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.9386729001998901,
+      "reward_mean": 0.6734375,
+      "reward_std": 0.3246354626250034,
+      "accuracy": 0.46875,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.06520701944828033,
+      "reward_mean": 0.7593749999999999,
+      "reward_std": 0.2787913366211368,
+      "accuracy": 0.5625,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.39584216475486755,
+      "reward_mean": 0.69375,
+      "reward_std": 0.3186274274132721,
+      "accuracy": 0.5,
+      "advantage_mean": 5.204170427930421e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.573286771774292,
+      "reward_mean": 0.553125,
+      "reward_std": 0.2855743937663179,
+      "accuracy": 0.25,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5568547248840332,
+      "reward_mean": 0.559375,
+      "reward_std": 0.20518189338974333,
+      "accuracy": 0.15625,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.45896342396736145,
+      "reward_mean": 0.6046874999999999,
+      "reward_std": 0.30589504301925197,
+      "accuracy": 0.34375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.18447211384773254,
+      "reward_mean": 0.7859375,
+      "reward_std": 0.26684920103637183,
+      "accuracy": 0.59375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.3228534162044525,
+      "reward_mean": 0.7484375,
+      "reward_std": 0.28283839660440374,
+      "accuracy": 0.546875,
+      "advantage_mean": -1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.19505614042282104,
+      "reward_mean": 0.559375,
+      "reward_std": 0.2590359229431316,
+      "accuracy": 0.234375,
+      "advantage_mean": -1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.028819099068641663,
+      "reward_mean": 0.7375,
+      "reward_std": 0.25708704751503914,
+      "accuracy": 0.484375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5330614447593689,
+      "reward_mean": 0.7359375,
+      "reward_std": 0.31042671614046047,
+      "accuracy": 0.5625,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6433513164520264,
+      "reward_mean": 0.6328125,
+      "reward_std": 0.2616382805396603,
+      "accuracy": 0.3125,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3764806389808655,
+      "reward_mean": 0.5671875,
+      "reward_std": 0.2646074259043952,
+      "accuracy": 0.25,
+      "advantage_mean": 1.1102230246251565e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4187764525413513,
+      "reward_mean": 0.784375,
+      "reward_std": 0.26996455207119324,
+      "accuracy": 0.59375,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.44013768434524536,
+      "reward_mean": 0.765625,
+      "reward_std": 0.2790714234295586,
+      "accuracy": 0.5625,
+      "advantage_mean": 1.734723475976807e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6243330240249634,
+      "reward_mean": 0.759375,
+      "reward_std": 0.30244769692460877,
+      "accuracy": 0.59375,
+      "advantage_mean": 6.938893903907228e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.11307550966739655,
+      "reward_mean": 0.8046875,
+      "reward_std": 0.24394523431243742,
+      "accuracy": 0.609375,
+      "advantage_mean": -1.734723475976807e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.16239428520202637,
+      "reward_mean": 0.825,
+      "reward_std": 0.24302777619029475,
+      "accuracy": 0.65625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2953232526779175,
+      "reward_mean": 0.7234375,
+      "reward_std": 0.26794483311635253,
+      "accuracy": 0.46875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.212606281042099,
+      "reward_mean": 0.5609375,
+      "reward_std": 0.22818385370956906,
+      "accuracy": 0.1875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.06232353299856186,
+      "reward_mean": 0.7890625,
+      "reward_std": 0.24692938483248605,
+      "accuracy": 0.578125,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.30490732192993164,
+      "reward_mean": 0.5406249999999999,
+      "reward_std": 0.2227096975324604,
+      "accuracy": 0.15625,
+      "advantage_mean": 5.898059818321144e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4702039062976837,
+      "reward_mean": 0.71875,
+      "reward_std": 0.25973243443975186,
+      "accuracy": 0.453125,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -1.1024631261825562,
+      "reward_mean": 0.8921875,
+      "reward_std": 0.24956505132680337,
+      "accuracy": 0.828125,
+      "advantage_mean": 3.469446951953614e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2171730250120163,
+      "reward_mean": 0.796875,
+      "reward_std": 0.24556615071096424,
+      "accuracy": 0.59375,
+      "advantage_mean": 1.734723475976807e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.385336697101593,
+      "reward_mean": 0.6265624999999999,
+      "reward_std": 0.27627103285315674,
+      "accuracy": 0.328125,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.885924220085144,
+      "reward_mean": 0.853125,
+      "reward_std": 0.24935463575999545,
+      "accuracy": 0.734375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.1853659749031067,
+      "reward_mean": 0.7859375,
+      "reward_std": 0.283321365402876,
+      "accuracy": 0.625,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8570059537887573,
+      "reward_mean": 0.684375,
+      "reward_std": 0.3128591685966706,
+      "accuracy": 0.46875,
+      "advantage_mean": 6.245004513516506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.34986329078674316,
+      "reward_mean": 0.8359375,
+      "reward_std": 0.23476530002057375,
+      "accuracy": 0.671875,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.176985502243042,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.2955397604384223,
+      "accuracy": 0.5,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.013885682448744774,
+      "reward_mean": 0.79375,
+      "reward_std": 0.2505462781603431,
+      "accuracy": 0.59375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.712936282157898,
+      "reward_mean": 0.746875,
+      "reward_std": 0.29419846086443074,
+      "accuracy": 0.5625,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.022780604660511017,
+      "reward_mean": 0.7796875,
+      "reward_std": 0.2812803803036216,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8169296383857727,
+      "reward_mean": 0.6484375,
+      "reward_std": 0.304134112841276,
+      "accuracy": 0.390625,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4029344320297241,
+      "reward_mean": 0.803125,
+      "reward_std": 0.29153084635249155,
+      "accuracy": 0.671875,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.49201342463493347,
+      "reward_mean": 0.5578124999999999,
+      "reward_std": 0.29304686458611023,
+      "accuracy": 0.28125,
+      "advantage_mean": -1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2515942454338074,
+      "reward_mean": 0.7281249999999999,
+      "reward_std": 0.314974577347125,
+      "accuracy": 0.5625,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.37852469086647034,
+      "reward_mean": 0.8265625,
+      "reward_std": 0.28627029813403626,
+      "accuracy": 0.71875,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -1.212774634361267,
+      "reward_mean": 0.93125,
+      "reward_std": 0.23971011138456386,
+      "accuracy": 0.921875,
+      "advantage_mean": 2.949029909160572e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2536242604255676,
+      "reward_mean": 0.5359375,
+      "reward_std": 0.36587531495545034,
+      "accuracy": 0.375,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6381592750549316,
+      "reward_mean": 0.6578124999999999,
+      "reward_std": 0.39401962494747644,
+      "accuracy": 0.5625,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7375,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.37114277482032776,
+      "reward_mean": 0.49374999999999997,
+      "reward_std": 0.3617988909601576,
+      "accuracy": 0.328125,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6948143243789673,
+      "reward_mean": 0.8421875,
+      "reward_std": 0.3004188157285592,
+      "accuracy": 0.78125,
+      "advantage_mean": 6.245004513516506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.13693828880786896,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.34843399661915886,
+      "accuracy": 0.59375,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6856565475463867,
+      "reward_mean": 0.5109374999999998,
+      "reward_std": 0.3610389467824074,
+      "accuracy": 0.34375,
+      "advantage_mean": 6.938893903907228e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5420074462890625,
+      "reward_mean": 0.6703125000000001,
+      "reward_std": 0.39238043063301464,
+      "accuracy": 0.578125,
+      "advantage_mean": 8.673617379884035e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5458259582519531,
+      "reward_mean": 0.7109375,
+      "reward_std": 0.3513888460007659,
+      "accuracy": 0.59375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3181079924106598,
+      "reward_mean": 0.7984375,
+      "reward_std": 0.3533288957808999,
+      "accuracy": 0.75,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.42706525325775146,
+      "reward_mean": 0.6453125,
+      "reward_std": 0.3566027584634617,
+      "accuracy": 0.5,
+      "advantage_mean": 6.938893903907228e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.764803409576416,
+      "reward_mean": 0.8546875,
+      "reward_std": 0.32109660126471284,
+      "accuracy": 0.828125,
+      "advantage_mean": 2.42861286636753e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.908165693283081,
+      "reward_mean": 0.6156250000000001,
+      "reward_std": 0.36538453631072026,
+      "accuracy": 0.46875,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2572436034679413,
+      "reward_mean": 0.79375,
+      "reward_std": 0.3617988909601576,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5999999999999999,
+      "reward_std": 0.4062019202317981,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.10485594719648361,
+      "reward_mean": 0.6453125,
+      "reward_std": 0.3566027584634617,
+      "accuracy": 0.5,
+      "advantage_mean": 4.5102810375396984e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5994113683700562,
+      "reward_mean": 0.7046874999999999,
+      "reward_std": 0.36030789242500644,
+      "accuracy": 0.59375,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3162880539894104,
+      "reward_mean": 0.846875,
+      "reward_std": 0.30668018255994306,
+      "accuracy": 0.796875,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5850566029548645,
+      "reward_mean": 0.7703125,
+      "reward_std": 0.37151702833618544,
+      "accuracy": 0.71875,
+      "advantage_mean": 7.979727989493313e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6057109832763672,
+      "reward_mean": 0.6937500000000001,
+      "reward_std": 0.38805403940688465,
+      "accuracy": 0.609375,
+      "advantage_mean": 4.85722573273506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5624999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5596046447753906,
+      "reward_mean": 0.5578124999999999,
+      "reward_std": 0.4091930654883462,
+      "accuracy": 0.453125,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -1.0424432754516602,
+      "reward_mean": 0.8546875,
+      "reward_std": 0.32109660126471284,
+      "accuracy": 0.828125,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.17421910166740417,
+      "reward_mean": 0.6984375,
+      "reward_std": 0.3814004569920571,
+      "accuracy": 0.609375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2681387960910797,
+      "reward_mean": 0.559375,
+      "reward_std": 0.43182705956783207,
+      "accuracy": 0.484375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.3637908052713812,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -1.3240348100662231,
+      "reward_mean": 0.6296875,
+      "reward_std": 0.36257744323626917,
+      "accuracy": 0.484375,
+      "advantage_mean": 1.0061396160665481e-16,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.25900861620903015,
+      "reward_mean": 0.6124999999999999,
+      "reward_std": 0.35465652397777775,
+      "accuracy": 0.453125,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5374999999999999,
+      "reward_std": 0.36379080527138125,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7375,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4200468361377716,
+      "reward_mean": 0.8859375,
+      "reward_std": 0.2674340967299233,
+      "accuracy": 0.84375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.12462861835956573,
+      "reward_mean": 0.6546875000000001,
+      "reward_std": 0.4092407938411688,
+      "accuracy": 0.578125,
+      "advantage_mean": 3.122502256758253e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.69529789686203,
+      "reward_mean": 0.5796874999999999,
+      "reward_std": 0.4146458155386956,
+      "accuracy": 0.484375,
+      "advantage_mean": 4.85722573273506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5386812090873718,
+      "reward_mean": 0.809375,
+      "reward_std": 0.3190409211605934,
+      "accuracy": 0.734375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.9125,
+      "reward_std": 0.23150323971815176,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5125,
+      "reward_std": 0.38547859862773187,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5624999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35000000000000003,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7999999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.9125,
+      "reward_std": 0.23150323971815176,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5369313359260559,
+      "reward_mean": 0.7109375,
+      "reward_std": 0.3783670454647841,
+      "accuracy": 0.625,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5624999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.36379080527138125,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.15272672474384308,
+      "reward_mean": 0.8140624999999999,
+      "reward_std": 0.3091658067991187,
+      "accuracy": 0.734375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.425,
+      "reward_std": 0.34186985827943356,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.14623789489269257,
+      "reward_mean": 0.803125,
+      "reward_std": 0.3147264437173973,
+      "accuracy": 0.71875,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6789896488189697,
+      "reward_mean": 0.54375,
+      "reward_std": 0.344544536308443,
+      "accuracy": 0.359375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3407551050186157,
+      "reward_mean": 0.6234374999999999,
+      "reward_std": 0.35564298614446205,
+      "accuracy": 0.46875,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6249999999999999,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3157825171947479,
+      "reward_mean": 0.6140625,
+      "reward_std": 0.37908903452058595,
+      "accuracy": 0.484375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.23571139574050903,
+      "reward_mean": 0.753125,
+      "reward_std": 0.39606215973632225,
+      "accuracy": 0.71875,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3696786165237427,
+      "reward_mean": 0.78125,
+      "reward_std": 0.32445868381043524,
+      "accuracy": 0.6875,
+      "advantage_mean": 4.163336342344337e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.05389466881752014,
+      "reward_mean": 0.7015625000000001,
+      "reward_std": 0.37728147130988293,
+      "accuracy": 0.609375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7375,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.49407443404197693,
+      "reward_mean": 0.7218749999999999,
+      "reward_std": 0.34931573737093496,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.45,
+      "reward_std": 0.32403703492039304,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.19090674817562103,
+      "reward_mean": 0.8843749999999999,
+      "reward_std": 0.2705427126628991,
+      "accuracy": 0.84375,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.36379080527138125,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.24342575669288635,
+      "reward_mean": 0.609375,
+      "reward_std": 0.3847559088240231,
+      "accuracy": 0.484375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2020776867866516,
+      "reward_mean": 0.7890625,
+      "reward_std": 0.3544878292603993,
+      "accuracy": 0.734375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3413534462451935,
+      "reward_mean": 0.7328124999999999,
+      "reward_std": 0.34688555727177517,
+      "accuracy": 0.625,
+      "advantage_mean": 4.5102810375396984e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.6986892223358154,
+      "reward_mean": 0.684375,
+      "reward_std": 0.3877897102489956,
+      "accuracy": 0.59375,
+      "advantage_mean": -1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5625,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3850034177303314,
+      "reward_mean": 0.7328124999999999,
+      "reward_std": 0.34688555727177517,
+      "accuracy": 0.625,
+      "advantage_mean": 4.5102810375396984e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35000000000000003,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.12143617868423462,
+      "reward_mean": 0.8734375,
+      "reward_std": 0.3128708736743483,
+      "accuracy": 0.859375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.25937169790267944,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.34843399661915886,
+      "accuracy": 0.59375,
+      "advantage_mean": 2.7755575615628914e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.9125,
+      "reward_std": 0.2315032397181517,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7999999999999999,
+      "reward_std": 0.35000000000000003,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.3637908052713812,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6249999999999999,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6249999999999999,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.04747743159532547,
+      "reward_mean": 0.7859375000000001,
+      "reward_std": 0.3596296652026221,
+      "accuracy": 0.734375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.44999999999999996,
+      "reward_std": 0.324037034920393,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4033295214176178,
+      "reward_mean": 0.5984375,
+      "reward_std": 0.40830908463289184,
+      "accuracy": 0.5,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.603636622428894,
+      "reward_mean": 0.6812499999999999,
+      "reward_std": 0.3916611258473324,
+      "accuracy": 0.59375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.1672402322292328,
+      "reward_mean": 0.784375,
+      "reward_std": 0.36280967376160195,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.22889262437820435,
+      "reward_mean": 0.5265625,
+      "reward_std": 0.3602265725814102,
+      "accuracy": 0.359375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.25956401228904724,
+      "reward_mean": 0.6359375,
+      "reward_std": 0.3537156288514122,
+      "accuracy": 0.484375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.3625,
+      "reward_std": 0.2496873044429772,
+      "accuracy": 0.125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.21552546322345734,
+      "reward_mean": 0.9015625,
+      "reward_std": 0.24334401285782645,
+      "accuracy": 0.859375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.22476717829704285,
+      "reward_mean": 0.603125,
+      "reward_std": 0.3778924904982897,
+      "accuracy": 0.46875,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5624999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6,
+      "reward_std": 0.4062019202317981,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.47499999999999987,
+      "reward_std": 0.30310889132455343,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.8875,
+      "reward_std": 0.2976470224947665,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3980124592781067,
+      "reward_mean": 0.7859375,
+      "reward_std": 0.359629665202622,
+      "accuracy": 0.734375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3034186065196991,
+      "reward_mean": 0.8109375,
+      "reward_std": 0.3152960848056157,
+      "accuracy": 0.734375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6499999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7400892376899719,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.36422005710833666,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4107806980609894,
+      "reward_mean": 0.59375,
+      "reward_std": 0.38885850575755704,
+      "accuracy": 0.46875,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.1588769108057022,
+      "reward_mean": 0.578125,
+      "reward_std": 0.4029069177552056,
+      "accuracy": 0.46875,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7999999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.22268877923488617,
+      "reward_mean": 0.5859375,
+      "reward_std": 0.4076867622253021,
+      "accuracy": 0.484375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5125,
+      "reward_std": 0.38547859862773187,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.8081963062286377,
+      "reward_mean": 0.6296875,
+      "reward_std": 0.36257744323626917,
+      "accuracy": 0.484375,
+      "advantage_mean": 4.85722573273506e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 1.0,
+      "reward_std": 0.0,
+      "accuracy": 1.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5198112726211548,
+      "reward_mean": 0.890625,
+      "reward_std": 0.2541645320948617,
+      "accuracy": 0.84375,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.8,
+      "reward_std": 0.35000000000000003,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.27189430594444275,
+      "reward_mean": 0.809375,
+      "reward_std": 0.3190409211605934,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6249999999999999,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.32348552346229553,
+      "reward_mean": 0.7218749999999999,
+      "reward_std": 0.34931573737093496,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.9125,
+      "reward_std": 0.2315032397181517,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.04645922780036926,
+      "reward_mean": 0.6031249999999999,
+      "reward_std": 0.3778924904982897,
+      "accuracy": 0.46875,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.3987644612789154,
+      "reward_mean": 0.7265624999999999,
+      "reward_std": 0.36922308106854584,
+      "accuracy": 0.640625,
+      "advantage_mean": -6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7999999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.28130948543548584,
+      "reward_mean": 0.7328124999999999,
+      "reward_std": 0.34688555727177517,
+      "accuracy": 0.625,
+      "advantage_mean": 4.5102810375396984e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5625,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 1.0,
+      "reward_std": 0.0,
+      "accuracy": 1.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.3799671038392666,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.15269169211387634,
+      "reward_mean": 0.7921875,
+      "reward_std": 0.3198166894390441,
+      "accuracy": 0.703125,
+      "advantage_mean": -2.42861286636753e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6499999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.36379080527138125,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.33749999999999997,
+      "reward_std": 0.26427968139832475,
+      "accuracy": 0.125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5125,
+      "reward_std": 0.38547859862773187,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5625,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5625,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.48750000000000004,
+      "reward_std": 0.4044672421840859,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.3637908052713812,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6499999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.65,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.36379080527138125,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.9125,
+      "reward_std": 0.23150323971815176,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.18596062064170837,
+      "reward_mean": 0.6359374999999999,
+      "reward_std": 0.3537156288514122,
+      "accuracy": 0.484375,
+      "advantage_mean": 1.3877787807814457e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5624999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6499999999999999,
+      "reward_std": 0.35,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5529605150222778,
+      "reward_mean": 0.809375,
+      "reward_std": 0.3190409211605934,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5625,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6,
+      "reward_std": 0.4062019202317981,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.4875,
+      "reward_std": 0.40446724218408586,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.38806477189064026,
+      "reward_mean": 0.44843749999999993,
+      "reward_std": 0.3259563752923848,
+      "accuracy": 0.25,
+      "advantage_mean": -2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.475,
+      "reward_std": 0.30310889132455354,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5375,
+      "reward_std": 0.3637908052713812,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7124999999999999,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.19220088422298431,
+      "reward_mean": 0.7890625,
+      "reward_std": 0.3544878292603993,
+      "accuracy": 0.734375,
+      "advantage_mean": 1.0408340855860843e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.06037876009941101,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 2.0816681711721685e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7186840772628784,
+      "reward_mean": 0.6046874999999998,
+      "reward_std": 0.3902842263578558,
+      "accuracy": 0.484375,
+      "advantage_mean": 5.551115123125783e-17,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.9125,
+      "reward_std": 0.2315032397181517,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7125,
+      "reward_std": 0.375624480032918,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.7374999999999999,
+      "reward_std": 0.338886042793149,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.6,
+      "reward_std": 0.406201920231798,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.825,
+      "reward_std": 0.3031088913245535,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5506916642189026,
+      "reward_mean": 0.59375,
+      "reward_std": 0.4911323014219285,
+      "accuracy": 0.59375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.40521442890167236,
+      "reward_mean": 0.984375,
+      "reward_std": 0.12401959270615269,
+      "accuracy": 0.984375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2329263985157013,
+      "reward_mean": 0.3125,
+      "reward_std": 0.46351240544347894,
+      "accuracy": 0.3125,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.431140273809433,
+      "reward_mean": 0.984375,
+      "reward_std": 0.12401959270615269,
+      "accuracy": 0.984375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2501550614833832,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.33765047788619995,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.14309117197990417,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.32094600796699524,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 1.0,
+      "reward_std": 0.0,
+      "accuracy": 1.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.17800556123256683,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2082025408744812,
+      "reward_mean": 0.484375,
+      "reward_std": 0.49975579974123363,
+      "accuracy": 0.484375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.25951188802719116,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.13209891319274902,
+      "reward_mean": 0.484375,
+      "reward_std": 0.49975579974123363,
+      "accuracy": 0.484375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3087887167930603,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.105145663022995,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.03453267738223076,
+      "reward_mean": 0.484375,
+      "reward_std": 0.49975579974123363,
+      "accuracy": 0.484375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.22556172311306,
+      "reward_mean": 0.609375,
+      "reward_std": 0.48789046862487484,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.2652028799057007,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.31472474336624146,
+      "reward_mean": 0.734375,
+      "reward_std": 0.4416654382844553,
+      "accuracy": 0.734375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5183787941932678,
+      "reward_mean": 0.71875,
+      "reward_std": 0.4496092053105675,
+      "accuracy": 0.71875,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.7688565254211426,
+      "reward_mean": 0.84375,
+      "reward_std": 0.3630921887069453,
+      "accuracy": 0.84375,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.27412405610084534,
+      "reward_mean": 0.640625,
+      "reward_std": 0.47981726664950275,
+      "accuracy": 0.640625,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.23698954284191132,
+      "reward_mean": 0.609375,
+      "reward_std": 0.48789046862487484,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": 0.25070735812187195,
+      "reward_mean": 0.515625,
+      "reward_std": 0.49975579974123363,
+      "accuracy": 0.515625,
+      "advantage_mean": -3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.4067194163799286,
+      "reward_mean": 0.359375,
+      "reward_std": 0.47981726664950275,
+      "accuracy": 0.359375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.23939470946788788,
+      "reward_mean": 0.609375,
+      "reward_std": 0.48789046862487484,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.5047982931137085,
+      "reward_mean": 0.46875,
+      "reward_std": 0.4990224819584785,
+      "accuracy": 0.46875,
+      "advantage_mean": 6.938893903907228e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.31417348980903625,
+      "reward_mean": 0.359375,
+      "reward_std": 0.47981726664950275,
+      "accuracy": 0.359375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.0,
+      "reward_std": 0.0,
+      "accuracy": 0.0,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.3959943652153015,
+      "reward_mean": 0.234375,
+      "reward_std": 0.4236075534914362,
+      "accuracy": 0.234375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.12811696529388428,
+      "reward_mean": 0.609375,
+      "reward_std": 0.48789046862487484,
+      "accuracy": 0.609375,
+      "advantage_mean": 3.469446951953614e-18,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.375,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.375,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.875,
+      "reward_std": 0.33071891388307384,
+      "accuracy": 0.875,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.75,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.75,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.625,
+      "reward_std": 0.4841229182759271,
+      "accuracy": 0.625,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.5,
+      "reward_std": 0.5,
+      "accuracy": 0.5,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    },
+    {
+      "loss": -0.0,
+      "reward_mean": 0.25,
+      "reward_std": 0.4330127018922193,
+      "accuracy": 0.25,
+      "advantage_mean": 0.0,
+      "num_valid": 64,
+      "num_groups": 8
+    }
+  ]
+}

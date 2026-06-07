@@ -144,17 +144,70 @@ curriculum      | 100%     | 1.0         | 1.0
 → 但"模型完美"需要好的SFT → 回到核心结论: SFT warmstart是最关键决策!
 ```
 
-### 3.2 需要补充实验: 无SFT暖启动
+### 3.2 纯GRPO实验结果: reward设计确实重要! (RTX 4090实测)
 
 ```
-当前实验: SFT→GRPO → 所有reward达到100% → reward设计不重要
+纯GRPO(无SFT暖启动) 600步, seed=42, MiniGQA 76K params:
 
-需要: 纯GRPO(无SFT) → reward设计才有差异!
-  → GRPO + binary: 稀疏信号 → 收敛慢 → 可能更低eval
-  → GRPO + graded: 密集信号 → 收敛中等 → 可能中等eval
-  → GRPO + shaped: 最密集信号 → 可能最快但可能hacking
-  → GRPO + curriculum: 可能最佳权衡
+Reward | Final Eval | Peak Eval | Reward轨迹 (每50步)     | 训练-eval gap
+-------|-----------|-----------|------------------------|-------------
+binary | 24.0%     | 29%       | 0→.14→.25→.13→.30→.63→.50→.37→.50→.25→.23→.38 | 26% (50-24)
+graded | 32.5%     | 53%       | .04→.31→.36→.28→.69→.74→.72→1.0→.60→.63→.91→.71 | 0% (25-32.5) ←最小!
+shaped | 10.0%     | 16%       | .12→.47→.48→.47→.74→.87→.81→1.0→.70→.73→.94→.79 | 15% (25-10)
+curriculum | 10.0% | 16%       | .12→.47→.48→.47→.66→.80→.74→1.0→.60→.50→.88→.63 | 15% (25-10)
 
-→ 但之前实验已经显示纯GRPO的eval低(52%) → reward设计可能影响52→60?
-→ 需要进一步实验验证!
+→ 3个关键发现:
+
+1. **Shaped reward hacking确认!**
+   shaped的reward从0.12快速升到0.94 → 但eval从16%降到5%!
+   → 模型学到了"如何得到高分"(生成任何数字→0.2 reward)
+   → 但没学到"如何做对" → reward hacking!
+   → 之前理论预测的shaped hacking真实发生!
+
+2. **Graded是纯GRPO最优!**
+   graded eval 32.5% > binary 24% > shaped/curriculum 10%
+   → graded: 接近正确有部分分 → 引导学习方向 → 无hacking
+   → binary: 稀疏信号 → 学习慢 → 但无hacking → 最稳定
+   → shaped: 太密集 → hacking最严重 → eval最低!
+   → curriculum: 和shaped一样hacking → 阶段切换不够早
+
+3. **训练-评估gap = reward hacking指标!**
+   训练acc vs eval acc的差距:
+   binary: 50% - 24% = 26% gap → 大gap但无hacking(信号弱)
+   graded: 25% - 32.5% = -7.5% gap → eval>训练! ← 最佳泛化
+   shaped: 25% - 10% = 15% gap → hacking严重
+   curriculum: 25% - 10% = 15% gap → hacking严重
+
+→ graded泛化最好(eval>训练) → 因为部分分引导泛化方向
+→ shaped泛化最差(eval远低于训练) → 因为hacking破坏泛化
+
+→ vs SFT→GRPO: 所有reward 100% → gap=0 → 完美泛化
+  → SFT暖启动消除了所有reward设计差异!
+```
+
+### 3.3 结论: reward设计只在模型不完美时重要
+
+```
+核心结论:
+  SFT完美时 → 所有reward等价(100% eval) → 设计不重要
+  纯GRPO时 → reward设计至关重要:
+    - graded最优(32.5% eval) → 密集但不过密 → 引导方向不hacking
+    - binary次优(24% eval) → 稀疏但无hacking → 稳定但慢
+    - shaped最差(10% eval) → 太密集 → reward hacking → 反效果!
+    - curriculum和shaped同样差 → 阶段切换不够解决hacking
+
+→ 推荐策略:
+  有SFT暖启动: 任何reward都行 → 选最简单的(binary)
+  无SFT暖启动: 用graded → 密集信号+无hacking → 最佳折衷
+  避免shaped → hacking风险太高!
+
+→ 理论解释:
+  Ng et al.的reward shaping条件: F=r+γΦ'-Φ不改变最优策略
+  → 但我们的shaped不是严格reward shaping!
+  → 0.2 for "any digit" 是额外bonus → 改变了最优策略定义
+  → 可能导致模型"满足"于0.2 → 不追求1.0 → hacking!
+
+  graded的0.3 for ±1 也有部分bonus → 但比0.2小
+  → 且±1确实更接近正确 → bonus有方向性 → 引导而非取巧
+  → 这就是graded胜出的原因!
 ```
