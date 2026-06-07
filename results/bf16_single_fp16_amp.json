@@ -1,0 +1,10 @@
+{
+  "model_size": "2.28M",
+  "dtype": "fp16_amp",
+  "n_params": 19608320,
+  "median_ms": 9.45826806128025,
+  "mean_loss": 0.00823248066008091,
+  "peak_memory_GB": 0.707600384,
+  "eval_accuracy": 1.0,
+  "throughput_tok_s": 108265.06431891015
+}

@@ -1,0 +1,11 @@
+{
+  "model_size": "2.28M",
+  "dtype": "bf16",
+  "n_params": 19608320,
+  "median_ms": 11.417800560593605,
+  "mean_loss": 0.01651611328125,
+  "peak_memory_GB": 0.407690752,
+  "eval_accuracy": 1.0,
+  "throughput_tok_s": 179369.0465279528,
+  "world_size": 2
+}

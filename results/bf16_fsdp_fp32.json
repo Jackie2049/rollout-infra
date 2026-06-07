@@ -1,0 +1,11 @@
+{
+  "model_size": "2.28M",
+  "dtype": "fp32",
+  "n_params": 19608320,
+  "median_ms": 17.271917313337326,
+  "mean_loss": 0.00851431405171752,
+  "peak_memory_GB": 0.802226176,
+  "eval_accuracy": 1.0,
+  "throughput_tok_s": 118573.98126949926,
+  "world_size": 2
+}
