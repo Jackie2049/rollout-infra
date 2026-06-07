@@ -367,13 +367,145 @@ def activation_patching(model, device, num_prompts=50):
 
 
 # ============================================================
+# Feature Steering — Inject activations to control model output
+# ============================================================
+
+def feature_steering(model, device):
+    """Feature steering: inject clean activations from one answer into another.
+
+    Goal: Can we make the model answer "3+2=5" when the input is "1+0=?" by
+    injecting the equals-sign activation from a "correct" computation?
+
+    This is the interpretability version of "model editing" — changing behavior
+    by modifying internal representations rather than weights.
+    """
+    torch.manual_seed(42)
+    np.random.seed(42)
+    model.eval()
+
+    print("\n  Feature Steering Experiment:")
+    print("  Can we make model output correct_sum_A when input is A+B=?")
+    print("  by injecting equals-sign activation from correct computation?")
+    print("  " + "=" * 50)
+
+    # Collect reference activations from all possible correct computations
+    ref_activations = {}  # correct_sum → activation at equals sign position
+
+    for a in range(5):
+        for b in range(5):
+            correct_sum = a + b
+            input_ids = [TOKENS[str(a)], TOKENS['+'], TOKENS[str(b)], TOKENS['='], TOKENS['<eos>']]
+            input_tensor = torch.tensor([input_ids], dtype=torch.long, device=device)
+
+            acts = {}
+            hooks = []
+
+            def make_hook(name):
+                def hook_fn(module, input, output):
+                    acts[name] = output.detach().clone()
+                return hook_fn
+
+            for i, layer in enumerate(model.layers):
+                hooks.append(layer['ln2'].register_forward_hook(make_hook(f'ln2_{i}')))
+                hooks.append(layer['down_proj'].register_forward_hook(make_hook(f'mlp_{i}')))
+                hooks.append(layer['o_proj'].register_forward_hook(make_hook(f'attn_{i}')))
+
+            with torch.no_grad():
+                logits = model(input_tensor)
+
+            for h in hooks:
+                h.remove()
+
+            # Store the activation at equals-sign position (pos 3) from each layer
+            ref_activations[correct_sum] = {
+                layer_name: act[0, 3, :].clone()  # pos 3 = equals sign
+                for layer_name, act in acts.items()
+            }
+
+    # Now test: for each input A+B=?, inject different target_sum activations
+    steering_results = []
+
+    for a in range(5):
+        for b in range(5):
+            input_sum = a + b
+            input_ids = [TOKENS[str(a)], TOKENS['+'], TOKENS[str(b)], TOKENS['='], TOKENS['<eos>']]
+            input_tensor = torch.tensor([input_ids], dtype=torch.long, device=device)
+
+            for target_sum in range(9):  # Try steering to each possible answer
+                if target_sum == input_sum:
+                    continue  # No need to steer to correct answer
+
+                # Inject target_sum's equals-sign activation into this input
+                if target_sum not in ref_activations:
+                    continue
+
+                # Inject at the strongest layer: attn_0_pos3 (which had +40.5% effect)
+                target_act = ref_activations[target_sum]['attn_0']  # [H] vector at pos 3
+
+                hook = model.layers[0]['o_proj'].register_forward_hook(
+                    lambda mod, inp, out, ta=target_act: _inject_at_pos3(out, ta)
+                )
+
+                with torch.no_grad():
+                    logits = model(input_tensor)
+
+                hook.remove()
+
+                # Check if model now outputs target_sum
+                predicted = logits[0, -2, :].argmax().item()
+                target_prob = F.softmax(logits[0, -2, :], dim=-1)[target_sum].item()
+                original_prob = F.softmax(logits[0, -2, :], dim=-1)[input_sum].item()
+
+                steering_results.append({
+                    'input': f'{a}+{b}',
+                    'input_sum': input_sum,
+                    'target_sum': target_sum,
+                    'predicted': predicted,
+                    'target_prob': target_prob,
+                    'original_prob': original_prob,
+                    'steered_correct': predicted == target_sum,
+                })
+
+    # Analysis
+    success_count = sum(1 for r in steering_results if r['steered_correct'])
+    total_count = len(steering_results)
+
+    print(f"\n  Steering Results:")
+    print(f"  Successfully steered: {success_count}/{total_count} ({success_count/total_count:.1%})")
+
+    # Show key examples
+    for r in steering_results[:10]:
+        status = "SUCCESS" if r['steered_correct'] else "FAIL"
+        print(f"  {r['input']}=?→target={r['target_sum']}: predicted={r['predicted']} "
+              f"target_prob={r['target_prob']:.2%} original_prob={r['original_prob']:.2%} [{status}]")
+
+    # Per-target-sum analysis
+    print("\n  Success rate per target_sum:")
+    for target in range(9):
+        target_results = [r for r in steering_results if r['target_sum'] == target]
+        if target_results:
+            success = sum(1 for r in target_results if r['steered_correct'])
+            avg_prob = np.mean([r['target_prob'] for r in target_results])
+            print(f"  target={target}: {success}/{len(target_results)} success, avg_prob={avg_prob:.2%}")
+
+    return steering_results
+
+
+def _inject_at_pos3(output, target_activation):
+    """Hook that replaces activation at pos 3 (= sign) with target activation."""
+    patched = output.clone()
+    patched[0, 3] = target_activation
+    return patched
+
+
+# ============================================================
 # Main
 # ============================================================
 
 def main():
     parser = argparse.ArgumentParser(description='Mini Interpretability Pipeline')
     parser.add_argument('--mode', default='all',
-                        choices=['sae', 'patching', 'compare', 'all'])
+                        choices=['sae', 'patching', 'steering', 'all'])
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--num_layers', type=int, default=2)
@@ -462,6 +594,14 @@ def main():
         patch_results, avg_effects = activation_patching(model, device)
         all_results['patching'] = {
             'avg_effects': avg_effects, 'num_prompts': len(patch_results),
+        }
+
+    if args.mode in ['steering', 'all']:
+        print("\n--- Feature Steering ---")
+        steering_results = feature_steering(model, device)
+        all_results['steering'] = {
+            'success_rate': sum(1 for r in steering_results if r['steered_correct']) / len(steering_results),
+            'total_attempts': len(steering_results),
         }
 
     with open(args.output, 'w') as f:
