@@ -154,7 +154,39 @@ PPO: 算术电路34%robust + 66%specification gaming → eval 34%
 DAPO: 算术电路peak时强但不稳定 → 96.7→12.5%
 ```
 
-## 四、工具与实践
+## 四、实验结果 (RTX 4090, 76K模型)
+
+### 4.1 SAE训练结果
+
+- 256 features on 64-dim activations, λ=1.0 → L0=85.5 (33.4% active, still too dense)
+- λ=10 → L0=0 (所有feature死亡! 太强的L1惩罚杀死所有feature)
+- λ=3 → L0=0 (同样死亡)
+- **教训**: ReLU+L1 SAE有feature死亡问题 → 需用TopK SAE或resampling technique
+- 所有活跃feature对所有输入激活(200/200) → 无选择性 → 需更强稀疏性控制
+
+### 4.2 Activation Patching结果 (重要发现!)
+
+**实验设计**: Clean input "3+2=" → Corrupt input "1+0=" → Patch clean activation到corrupt run
+
+**关键发现**: 算术知识集中在**等号位置(pos 3)**!
+
+```
+Patching效果排名 (effect = patched_prob - corrupt_baseline):
+
+attn_0_pos3 (=等号): +40.5%  ← 最关键! Layer 0 attention在等号位置
+attn_1_pos3 (=等号): +24.9%  ← Layer 1 attention在等号位置也有强效果
+ln2_1_pos3 (=等号): +13.4%   ← Layer 1 MLP
+mlp_1_pos3 (=等号): +13.4%
+ln2_0_pos3 (=等号): +2.0%    ← Layer 0 MLP较弱
+其他位置: ~0%                 ← 算术知识不在数字位置!
+```
+
+**解读**:
+- 等号 `=` 是模型做出"决定"的位置 → 信息流最关键
+- 数字位置(pos 0,1,2)对答案几乎无影响 → 模型不需要"理解"数字含义
+- 这说明模型在等号位置已经完成了计算 → 等号位置是"算术电路"的输出节点
+
+**类比**: 等号就像大脑的"决策中心" → 数字只是输入信号 → 计算在决策中心完成
 
 ### 4.1 TransformerLens
 

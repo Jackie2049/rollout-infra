@@ -4,12 +4,6 @@
 Train a Sparse Autoencoder on MiniGQATransformer activations, then use activation patching
 to identify which layers/positions carry "arithmetic knowledge".
 
-Key experiments:
-1. SAE feature discovery: find "digit features" and "operation features"
-2. Activation patching: identify "arithmetic circuit" critical layers
-3. Compare GRPO-only vs SFT→GRPO models' internal representations
-4. Verify: SFT models have more robust arithmetic circuits
-
 Can run on CPU (76K model) or GPU.
 """
 
@@ -49,37 +43,25 @@ def generate_sft_dataset_local(n_examples):
 # ============================================================
 
 class SparseAutoencoder(nn.Module):
-    """Sparse Autoencoder for decomposing neural activations into interpretable features.
-
-    Architecture: z (d_dim) → encoder (d_dim → f_dim) → ReLU → decoder (f_dim → d_dim)
-    L1 sparsity forces most features to be zero → each active feature is interpretable.
-    """
+    """Sparse Autoencoder for decomposing neural activations into interpretable features."""
     def __init__(self, input_dim, feature_dim, sparsity_weight=0.01):
         super().__init__()
         self.input_dim = input_dim
         self.feature_dim = feature_dim
         self.sparsity_weight = sparsity_weight
 
-        # Encoder: z → f (with ReLU activation for sparsity)
         self.W_enc = nn.Parameter(torch.randn(feature_dim, input_dim) * 0.01)
         self.b_enc = nn.Parameter(torch.zeros(feature_dim))
-
-        # Decoder: f → z' (reconstruct from sparse features)
         self.W_dec = nn.Parameter(torch.randn(input_dim, feature_dim) * 0.01)
         self.b_dec = nn.Parameter(torch.zeros(input_dim))
 
     def forward(self, z):
-        """Encode to sparse features, then reconstruct."""
-        # Pre-activation features
         f_pre = F.linear(z, self.W_enc, self.b_enc)
-        # ReLU sparsity: most features are exactly 0
         f = F.relu(f_pre)
-        # Reconstruct from sparse features
         z_recon = F.linear(f, self.W_dec, self.b_dec)
         return f, z_recon
 
     def loss(self, z, f, z_recon):
-        """Reconstruction loss + L1 sparsity penalty."""
         recon_loss = F.mse_loss(z_recon, z)
         sparsity_loss = self.sparsity_weight * f.abs().mean()
         return recon_loss + sparsity_loss, recon_loss.item(), sparsity_loss.item()
@@ -90,10 +72,7 @@ class SparseAutoencoder(nn.Module):
 # ============================================================
 
 class ActivationCollector:
-    """Collect intermediate activations from MiniGQATransformer using forward hooks.
-
-    Saves: MLP activations, Residual stream activations, Attention output activations.
-    """
+    """Collect intermediate activations from MiniGQATransformer using forward hooks."""
     def __init__(self, model):
         self.model = model
         self.activations = defaultdict(list)
@@ -101,30 +80,24 @@ class ActivationCollector:
         self._register_hooks()
 
     def _register_hooks(self):
-        """Register forward hooks on all layers to capture activations."""
         for i, layer in enumerate(self.model.layers):
-            # Hook 1: Residual stream after attention (before MLP)
             self.hooks.append(layer['ln2'].register_forward_hook(
                 lambda mod, inp, out, idx=i: self.activations[f'residual_attn_{idx}'].append(out.detach())
             ))
-            # Hook 2: MLP output (after down_proj)
             self.hooks.append(layer['down_proj'].register_forward_hook(
                 lambda mod, inp, out, idx=i: self.activations[f'mlp_out_{idx}'].append(out.detach())
             ))
-            # Hook 3: Attention output (before o_proj reshape)
             self.hooks.append(layer['o_proj'].register_forward_hook(
                 lambda mod, inp, out, idx=i: self.activations[f'attn_out_{idx}'].append(out.detach())
             ))
 
     def collect(self, input_ids):
-        """Run forward pass and collect all activations."""
         self.activations.clear()
         with torch.no_grad():
             _ = self.model(input_ids)
         return dict(self.activations)
 
     def remove_hooks(self):
-        """Remove all registered hooks."""
         for hook in self.hooks:
             hook.remove()
         self.hooks = []
@@ -136,32 +109,20 @@ class ActivationCollector:
 
 def train_sae(model, sae, device, num_prompts=1000, batch_size=32, num_epochs=50,
               target_layer='residual_attn_0', lr=1e-3):
-    """Train SAE on collected activations from target_layer.
-
-    Steps:
-    1. Generate prompts and collect activations
-    2. Train SAE to reconstruct activations with L1 sparsity
-    """
     collector = ActivationCollector(model)
-
-    # Collect activations
-    print(f"  Collecting activations from {target_layer}...")
     all_activations = []
     for _ in range(num_prompts // batch_size + 1):
         batch_prompts = [generate_arithmetic_prompt() for _ in range(batch_size)]
-        # Build input tensor: [prompt + <eos>] for each prompt
         input_ids_list = []
         for prompt_tokens, correct_sum in batch_prompts:
             full_ids = prompt_tokens + [TOKENS['<eos>']]
             input_ids_list.append(full_ids)
-        # Pad to same length
         max_len = max(len(ids) for ids in input_ids_list)
         padded = [ids + [TOKENS['<pad>']] * (max_len - len(ids)) for ids in input_ids_list]
         input_ids = torch.tensor(padded, dtype=torch.long, device=device)
 
         acts = collector.collect(input_ids)
         if target_layer in acts:
-            # acts[target_layer] is a list of tensors from hooks
             for act_tensor in acts[target_layer]:
                 all_activations.append(act_tensor)
 
@@ -171,12 +132,10 @@ def train_sae(model, sae, device, num_prompts=1000, batch_size=32, num_epochs=50
         print(f"  WARNING: No activations collected for {target_layer}")
         return sae, []
 
-    # Concatenate: each activation is [B, S, H] → flatten to [N, H]
     flat_acts = []
     for act_tensor in all_activations:
         flat_acts.append(act_tensor.reshape(-1, model.hidden_dim))
     all_acts = torch.cat(flat_acts, dim=0)
-    # Remove padding positions (where all activations might be zero)
     all_acts = all_acts[all_acts.abs().sum(dim=1) > 0]
 
     print(f"  Collected {all_acts.shape[0]} activation vectors, dim={all_acts.shape[1]}")
@@ -186,7 +145,6 @@ def train_sae(model, sae, device, num_prompts=1000, batch_size=32, num_epochs=50
     metrics_history = []
 
     for epoch in range(num_epochs):
-        # Mini-batch training
         indices = torch.randperm(all_acts.shape[0])[:batch_size * 10]
         batch = all_acts[indices].to(device)
 
@@ -197,7 +155,6 @@ def train_sae(model, sae, device, num_prompts=1000, batch_size=32, num_epochs=50
         total_loss.backward()
         optimizer.step()
 
-        # Compute sparsity metrics
         active_features = (f > 0).float().mean()
         avg_l0 = (f > 0).float().sum(dim=1).mean()
 
@@ -206,11 +163,8 @@ def train_sae(model, sae, device, num_prompts=1000, batch_size=32, num_epochs=50
                   f"active={active_features:.1%}, L0={avg_l0:.1f}")
 
         metrics_history.append({
-            'epoch': epoch,
-            'recon_loss': recon_loss,
-            'sparsity_loss': sparsity_loss,
-            'active_ratio': active_features.item(),
-            'avg_l0': avg_l0.item(),
+            'epoch': epoch, 'recon_loss': recon_loss, 'sparsity_loss': sparsity_loss,
+            'active_ratio': active_features.item(), 'avg_l0': avg_l0.item(),
         })
 
     return sae, metrics_history
@@ -221,15 +175,8 @@ def train_sae(model, sae, device, num_prompts=1000, batch_size=32, num_epochs=50
 # ============================================================
 
 def analyze_sae_features(model, sae, device, num_prompts=200):
-    """Analyze which SAE features activate on which inputs.
-
-    For each feature, find the inputs that most activate it → interpret what it represents.
-    """
     collector = ActivationCollector(model)
-
-    # Collect activations with associated prompts
-    feature_activations = defaultdict(list)  # feature_idx → list of (prompt, correct_sum, activation_strength)
-    prompt_data = []
+    feature_activations = defaultdict(list)
 
     for _ in range(num_prompts):
         prompt_tokens, correct_sum = generate_arithmetic_prompt()
@@ -237,14 +184,11 @@ def analyze_sae_features(model, sae, device, num_prompts=200):
         input_ids = torch.tensor([full_ids], dtype=torch.long, device=device)
 
         acts = collector.collect(input_ids)
-        # Use last position's residual_attn_0 activation (where the model "decides" the answer)
         if 'residual_attn_0' in acts and len(acts['residual_attn_0']) > 0:
-            # acts dict values are lists of tensors from hooks; take first tensor [1, S, H]
-            z = acts['residual_attn_0'][0][0, -1, :]  # [H] last position
+            z = acts['residual_attn_0'][0][0, -1, :]
             f, _ = sae(z.unsqueeze(0))
-            f = f.squeeze(0)  # [feature_dim]
+            f = f.squeeze(0)
 
-            # Find top activating features
             top_features = f.topk(10)
             for feat_idx, feat_val in zip(top_features.indices, top_features.values):
                 if feat_val > 0:
@@ -253,15 +197,9 @@ def analyze_sae_features(model, sae, device, num_prompts=200):
                         'correct_sum': correct_sum,
                         'activation': feat_val.item(),
                     })
-            prompt_data.append({
-                'prompt_tokens': prompt_tokens,
-                'correct_sum': correct_sum,
-                'features': {IDX_TO_TOKEN.get(t, '?') for t in prompt_tokens},
-            })
 
     collector.remove_hooks()
 
-    # Analyze top features: what inputs activate them most?
     print("\n  SAE Feature Analysis:")
     print("  " + "=" * 50)
 
@@ -269,15 +207,12 @@ def analyze_sae_features(model, sae, device, num_prompts=200):
     for feat_idx, activations in feature_activations.items():
         avg_activation = np.mean([a['activation'] for a in activations])
         count = len(activations)
-        # Find common patterns in prompts that activate this feature
         sums = [a['correct_sum'] for a in activations]
         avg_sum = np.mean(sums)
         top_global_features.append((feat_idx, avg_activation, count, avg_sum))
 
-    # Sort by average activation
     top_global_features.sort(key=lambda x: x[1], reverse=True)
 
-    # Print top 10 features
     for feat_idx, avg_act, count, avg_sum in top_global_features[:10]:
         examples = feature_activations[feat_idx][:5]
         example_strs = [f"{e['prompt']}={e['correct_sum']}(act={e['activation']:.2f})" for e in examples]
@@ -291,41 +226,48 @@ def analyze_sae_features(model, sae, device, num_prompts=200):
 # Activation Patching (Causal Intervention)
 # ============================================================
 
-def activation_patching(model, device, num_prompts=50, max_response_len=3):
+def activation_patching(model, device, num_prompts=50):
     """Causal tracing: find which layer/position carries arithmetic knowledge.
 
-    Method:
-    1. Run model on correct input → get clean activations
-    2. Run model on corrupted input → get corrupted activations
-    3. Patch: replace corrupted activations with clean ones at each (layer, position)
-    4. Measure: how much does patching restore correct output?
+    Strategy: Run model on TWO different inputs with same format but different numbers.
+    - Clean: "3+2=" → correct_sum=5
+    - Corrupt: "1+0=" → wrong answer from the perspective of clean_sum=5
 
-    Corruption: replace the answer digit with a wrong digit.
+    Patch: inject clean activation at each (layer, position) into corrupt run.
+    Measure: how much does patching change corrupt output toward clean_sum.
     """
     torch.manual_seed(42)
+    np.random.seed(42)
     results = []
 
-    for trial in range(num_prompts):
-        a = np.random.randint(0, 5)
-        b = np.random.randint(0, 5)
-        correct_sum = a + b
-        wrong_sum = (correct_sum + 3) % 10  # Corrupted answer
+    avg_effects = defaultdict(float)
+    effect_counts = defaultdict(int)
 
-        # Clean input: a + b = <eos> (model predicts correct_sum at position after =)
-        clean_ids = [TOKENS[str(a)], TOKENS['+'], TOKENS[str(b)], TOKENS['='], TOKENS['<eos>']]
-        # Corrupted input: replace answer-related position
-        corrupt_ids = clean_ids.copy()
+    model.eval()
+
+    for trial in range(num_prompts):
+        # Generate two different prompts
+        a_clean, b_clean = np.random.randint(0, 5), np.random.randint(0, 5)
+        a_corrupt, b_corrupt = np.random.randint(0, 5), np.random.randint(0, 5)
+        # Ensure they're different
+        while a_clean == a_corrupt and b_clean == b_corrupt:
+            a_corrupt = np.random.randint(0, 5)
+        correct_sum = a_clean + b_clean
+
+        # Both inputs same length: [a, +, b, =, eos] (5 tokens)
+        clean_ids = [TOKENS[str(a_clean)], TOKENS['+'], TOKENS[str(b_clean)], TOKENS['='], TOKENS['<eos>']]
+        corrupt_ids = [TOKENS[str(a_corrupt)], TOKENS['+'], TOKENS[str(b_corrupt)], TOKENS['='], TOKENS['<eos>']]
 
         clean_tensor = torch.tensor([clean_ids], dtype=torch.long, device=device)
         corrupt_tensor = torch.tensor([corrupt_ids], dtype=torch.long, device=device)
 
-        # Collect clean activations with hooks
+        # Step 1: Collect clean activations
         clean_acts = {}
         hooks = []
 
-        def make_hook(layer_name):
+        def make_hook(name):
             def hook_fn(module, input, output):
-                clean_acts[layer_name] = output.detach().clone()
+                clean_acts[name] = output.detach().clone()
             return hook_fn
 
         for i, layer in enumerate(model.layers):
@@ -333,156 +275,82 @@ def activation_patching(model, device, num_prompts=50, max_response_len=3):
             hooks.append(layer['down_proj'].register_forward_hook(make_hook(f'mlp_{i}')))
             hooks.append(layer['o_proj'].register_forward_hook(make_hook(f'attn_{i}')))
 
-        # Run clean
-        model.eval()
         with torch.no_grad():
             clean_logits = model(clean_tensor)
-
-        # Remove hooks
+        clean_prob = F.softmax(clean_logits[0, -2, :], dim=-1)[correct_sum].item()
         for h in hooks:
             h.remove()
 
-        # Now patch each (layer, position) and measure effect
-        patching_effects = {}
-        for layer_name in clean_acts:
-            clean_act = clean_acts[layer_name]  # [1, S, H]
+        # Step 2: Get corrupt baseline probability for correct_sum
+        with torch.no_grad():
+            corrupt_logits = model(corrupt_tensor)
+        corrupt_prob = F.softmax(corrupt_logits[0, -2, :], dim=-1)[correct_sum].item()
 
-            # Patch at each position
-            for pos in range(clean_act.shape[1]):
-                # Create patched input: run corrupt, but replace activation at (layer, pos) with clean
+        # Step 3: Patch each (layer, position) with clean activation
+        layer_names = list(clean_acts.keys())
+
+        for layer_name in layer_names:
+            clean_act = clean_acts[layer_name]  # [1, 5, H]
+            seq_len = clean_act.shape[1]
+
+            for pos in range(seq_len):
                 patch_hooks = []
-                patched_output = [None]
 
-                def make_patch_hook(ln, p):
+                def make_patch_hook(ln, p, ca):
                     def hook_fn(module, input, output):
                         patched = output.clone()
-                        patched[0, p] = clean_act[0, p]
+                        if p < patched.shape[1]:
+                            patched[0, p] = ca[0, p]
                         return patched
                     return hook_fn
 
-                # Only patch the specific layer and position
-                target_hooks = []
                 for i, layer in enumerate(model.layers):
                     if f'ln2_{i}' == layer_name:
-                        target_hooks.append(layer['ln2'].register_forward_hook(make_patch_hook(layer_name, pos)))
+                        patch_hooks.append(layer['ln2'].register_forward_hook(
+                            make_patch_hook(layer_name, pos, clean_act)))
                     elif f'mlp_{i}' == layer_name:
-                        target_hooks.append(layer['down_proj'].register_forward_hook(make_patch_hook(layer_name, pos)))
+                        patch_hooks.append(layer['down_proj'].register_forward_hook(
+                            make_patch_hook(layer_name, pos, clean_act)))
                     elif f'attn_{i}' == layer_name:
-                        target_hooks.append(layer['o_proj'].register_forward_hook(make_patch_hook(layer_name, pos)))
+                        patch_hooks.append(layer['o_proj'].register_forward_hook(
+                            make_patch_hook(layer_name, pos, clean_act)))
 
                 with torch.no_grad():
                     patched_logits = model(corrupt_tensor)
 
-                # Remove patch hooks
-                for h in target_hooks:
+                patched_prob = F.softmax(patched_logits[0, -2, :], dim=-1)[correct_sum].item()
+
+                for h in patch_hooks:
                     h.remove()
 
-                # Measure effect: probability of correct_sum vs wrong_sum
-                last_logits = patched_logits[0, -2, :]  # Position after '=' sign
-                correct_prob = F.softmax(last_logits, dim=-1)[correct_sum].item()
-
-                patching_effects[f'{layer_name}_pos{pos}'] = correct_prob
+                effect = patched_prob - corrupt_prob
+                key = f'{layer_name}_pos{pos}'
+                avg_effects[key] += effect
+                effect_counts[key] += 1
 
         results.append({
-            'a': a, 'b': b, 'correct_sum': correct_sum,
-            'patching_effects': patching_effects,
+            'a_clean': a_clean, 'b_clean': b_clean, 'a_corrupt': a_corrupt, 'b_corrupt': b_corrupt,
+            'correct_sum': correct_sum, 'clean_prob': clean_prob, 'corrupt_prob': corrupt_prob,
         })
 
-    # Aggregate results
-    avg_effects = defaultdict(float)
-    for r in results:
-        for key, val in r['patching_effects'].items():
-            avg_effects[key] += val / len(results)
-
-    print("\n  Activation Patching Results (avg prob of correct answer):")
-    print("  " + "=" * 50)
-
-    # Sort by effect magnitude
-    sorted_effects = sorted(avg_effects.items(), key=lambda x: x[1], reverse=True)
-    for key, val in sorted_effects[:15]:
-        print(f"  {key}: {val:.3f}")
-
-    return results, avg_effects
-
-
-# ============================================================
-# Model Comparison: GRPO vs SFT→GRPO circuits
-# ============================================================
-
-def compare_model_circuits(grpo_model, sft_model, device, num_prompts=100):
-    """Compare internal representations of GRPO-only vs SFT→GRPO models.
-
-    Measures:
-    1. Cosine similarity of activations at each layer
-    2. Activation norm differences
-    3. Feature overlap (which SAE features activate in each model)
-    """
-    results = {'cosine_sim': {}, 'norm_diff': {}, 'activation_overlap': {}}
-
-    for _ in range(num_prompts):
-        prompt_tokens, correct_sum = generate_arithmetic_prompt()
-        full_ids = prompt_tokens + [TOKENS['<eos>']]
-        input_ids = torch.tensor([full_ids], dtype=torch.long, device=device)
-
-        # Collect activations from both models
-        grpo_acts = {}
-        sft_acts = {}
-
-        def make_hook(store, name):
-            def hook_fn(module, input, output):
-                store[name] = output.detach().clone()
-            return hook_fn
-
-        # GRPO model hooks
-        grpo_hooks = []
-        for i, layer in enumerate(grpo_model.layers):
-            grpo_hooks.append(layer['ln2'].register_forward_hook(make_hook(grpo_acts, f'ln2_{i}')))
-
-        with torch.no_grad():
-            _ = grpo_model(input_ids)
-        for h in grpo_hooks:
-            h.remove()
-
-        # SFT model hooks
-        sft_hooks = []
-        for i, layer in enumerate(sft_model.layers):
-            sft_hooks.append(layer['ln2'].register_forward_hook(make_hook(sft_acts, f'ln2_{i}')))
-
-        with torch.no_grad():
-            _ = sft_model(input_ids)
-        for h in sft_hooks:
-            h.remove()
-
-        # Compare activations at each layer
-        for layer_name in grpo_acts:
-            g_act = grpo_acts[layer_name].reshape(-1)
-            s_act = sft_acts[layer_name].reshape(-1)
-
-            # Cosine similarity
-            cos_sim = F.cosine_similarity(g_act.unsqueeze(0), s_act.unsqueeze(0)).item()
-
-            # Norm difference
-            norm_diff = (g_act.norm().item() - s_act.norm().item())
-
-            if layer_name not in results['cosine_sim']:
-                results['cosine_sim'][layer_name] = []
-                results['norm_diff'][layer_name] = []
-
-            results['cosine_sim'][layer_name].append(cos_sim)
-            results['norm_diff'][layer_name].append(norm_diff)
-
     # Aggregate
-    for layer_name in results['cosine_sim']:
-        results['cosine_sim'][layer_name] = np.mean(results['cosine_sim'][layer_name])
-        results['norm_diff'][layer_name] = np.mean(results['norm_diff'][layer_name])
+    final_effects = {}
+    for key in avg_effects:
+        final_effects[key] = avg_effects[key] / effect_counts[key]
 
-    print("\n  Model Circuit Comparison (GRPO vs SFT→GRPO):")
+    print("\n  Activation Patching Results (effect = patched_prob - corrupt_baseline):")
     print("  " + "=" * 50)
-    for layer_name in sorted(results['cosine_sim'].keys()):
-        print(f"  {layer_name}: cos_sim={results['cosine_sim'][layer_name]:.4f}, "
-              f"norm_diff={results['norm_diff'][layer_name]:.2f}")
 
-    return results
+    sorted_effects = sorted(final_effects.items(), key=lambda x: x[1], reverse=True)
+    for key, val in sorted_effects[:15]:
+        print(f"  {key}: {val:.4f}")
+
+    avg_clean = np.mean([r['clean_prob'] for r in results])
+    avg_corrupt = np.mean([r['corrupt_prob'] for r in results])
+    print(f"\n  Avg clean baseline prob: {avg_clean:.3f}")
+    print(f"  Avg corrupt baseline prob: {avg_corrupt:.3f}")
+
+    return results, final_effects
 
 
 # ============================================================
@@ -492,13 +360,11 @@ def compare_model_circuits(grpo_model, sft_model, device, num_prompts=100):
 def main():
     parser = argparse.ArgumentParser(description='Mini Interpretability Pipeline')
     parser.add_argument('--mode', default='all',
-                        choices=['sae', 'patching', 'compare', 'all'],
-                        help='Which experiment to run')
+                        choices=['sae', 'patching', 'compare', 'all'])
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--num_layers', type=int, default=2)
-    parser.add_argument('--sae_features', type=int, default=128,
-                        help='Number of SAE features (should be > hidden_dim)')
+    parser.add_argument('--sae_features', type=int, default=128)
     parser.add_argument('--sae_sparsity', type=float, default=0.01)
     parser.add_argument('--sae_epochs', type=int, default=50)
     parser.add_argument('--output', default='interpretability_results.json')
@@ -512,11 +378,10 @@ def main():
     print(f"Model: hidden={args.hidden_dim}, layers={args.num_layers}")
     print(f"SAE: features={args.sae_features}, sparsity={args.sae_sparsity}")
     print(f"Device: {device}")
-    print()
 
     all_results = {}
 
-    # Create model (same seed as GRPO training for consistency)
+    # Create and SFT-train model
     torch.manual_seed(42)
     np.random.seed(42)
     model = MiniGQATransformer(hidden_dim=args.hidden_dim, num_layers=args.num_layers,
@@ -524,15 +389,13 @@ def main():
     param_count = sum(p.numel() for p in model.parameters())
     print(f"Model params: {param_count}")
 
-    # Phase 1: SFT warmup — train model to learn arithmetic before interpretability
-    # Without training, patching is meaningless (all positions have random effect)
-    print("\n--- SFT Warmup (training model to learn arithmetic) ---")
+    # SFT warmup
+    print("\n--- SFT Warmup ---")
     sft_optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
     sft_dataset = generate_sft_dataset_local(500)
     for step in range(200):
         batch_idx = np.random.randint(0, len(sft_dataset), size=8)
         batch = [sft_dataset[i] for i in batch_idx]
-        # Pad to same length
         max_len = max(len(b['full_ids']) for b in batch)
         padded_full = [b['full_ids'] + [TOKENS['<pad>']] * (max_len - len(b['full_ids'])) for b in batch]
         padded_target = [b['target_ids'] + [TOKENS['<pad>']] * (max_len - len(b['target_ids'])) for b in batch]
@@ -544,7 +407,6 @@ def main():
         loss.backward()
         sft_optimizer.step()
         if step % 50 == 0:
-            # Quick eval
             correct = 0
             for _ in range(20):
                 pt, cs = generate_arithmetic_prompt()
@@ -555,7 +417,6 @@ def main():
                     correct += 1
             print(f"  SFT step {step}: loss={loss.item():.4f}, accuracy={correct/20:.1%}")
 
-    # Final eval
     model.eval()
     correct = 0
     for _ in range(100):
@@ -579,31 +440,19 @@ def main():
         sae, sae_metrics = train_sae(model, sae, device, num_epochs=args.sae_epochs)
         feature_acts = analyze_sae_features(model, sae, device)
         all_results['sae'] = {
-            'feature_dim': args.sae_features,
-            'sparsity': args.sae_sparsity,
-            'metrics': sae_metrics,
-            'param_count': sum(p.numel() for p in sae.parameters()),
+            'feature_dim': args.sae_features, 'sparsity': args.sae_sparsity,
+            'metrics': sae_metrics, 'param_count': sum(p.numel() for p in sae.parameters()),
         }
 
     if args.mode in ['patching', 'all']:
         print("\n--- Activation Patching ---")
         patch_results, avg_effects = activation_patching(model, device)
         all_results['patching'] = {
-            'avg_effects': avg_effects,
-            'num_prompts': len(patch_results),
+            'avg_effects': avg_effects, 'num_prompts': len(patch_results),
         }
 
-    # Save results
     with open(args.output, 'w') as f:
-        # Convert defaultdict to dict for JSON
-        serializable = {}
-        for key, val in all_results.items():
-            if isinstance(val, dict):
-                serializable[key] = {k: v if not isinstance(v, defaultdict) else dict(v)
-                                     for k, v in val.items()}
-            else:
-                serializable[key] = val
-        json.dump(serializable, f, indent=2)
+        json.dump(all_results, f, indent=2)
     print(f"\nResults saved to {args.output}")
 
 
