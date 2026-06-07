@@ -1,0 +1,386 @@
+{
+  "baseline": {
+    "model_params": 58020096,
+    "model_mem_GB": 0.116040192,
+    "decode_by_batch": {
+      "B1": {
+        "latency_ms": 2.0268410444259644,
+        "throughput_tok_s": 493.37860151890544,
+        "batch_size": 1
+      },
+      "B4": {
+        "latency_ms": 2.1540578454732895,
+        "throughput_tok_s": 1856.960345055692,
+        "batch_size": 4
+      },
+      "B8": {
+        "latency_ms": 2.211378887295723,
+        "throughput_tok_s": 3617.652337172819,
+        "batch_size": 8
+      },
+      "B16": {
+        "latency_ms": 2.3523569107055664,
+        "throughput_tok_s": 6801.688947448437,
+        "batch_size": 16
+      },
+      "B32": {
+        "latency_ms": 2.30368971824646,
+        "throughput_tok_s": 13890.759569981501,
+        "batch_size": 32
+      },
+      "B64": {
+        "latency_ms": 2.28097103536129,
+        "throughput_tok_s": 28058.22564505421,
+        "batch_size": 64
+      },
+      "B128": {
+        "latency_ms": 2.1713878959417343,
+        "throughput_tok_s": 58948.4726516292,
+        "batch_size": 128
+      },
+      "B256": {
+        "latency_ms": 2.2104140371084213,
+        "throughput_tok_s": 115815.40639096255,
+        "batch_size": 256
+      }
+    },
+    "peak_throughput_tok_s": 115815.40639096255,
+    "peak_batch": 256
+  },
+  "int4": {
+    "model_mem_GB": 0.029010048,
+    "kv_per_req_fp16_GB": 0.001048576,
+    "kv_per_req_int8_GB": 0.000524288,
+    "decode_by_batch": {
+      "B1": {
+        "latency_ms": 4.35691699385643,
+        "throughput_tok_s": 229.52009446360182,
+        "throughput_int8_kv_tok_s": 229.52009446360182,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B4": {
+        "latency_ms": 5.174972116947174,
+        "throughput_tok_s": 772.9510245863286,
+        "throughput_int8_kv_tok_s": 772.9510245863286,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B8": {
+        "latency_ms": 4.902109503746033,
+        "throughput_tok_s": 1631.9504886389543,
+        "throughput_int8_kv_tok_s": 1631.9504886389543,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B16": {
+        "latency_ms": 4.719140008091927,
+        "throughput_tok_s": 3390.448253826914,
+        "throughput_int8_kv_tok_s": 3390.448253826914,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B32": {
+        "latency_ms": 4.779128357768059,
+        "throughput_tok_s": 6695.781658173456,
+        "throughput_int8_kv_tok_s": 6695.781658173456,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B64": {
+        "latency_ms": 5.149537697434425,
+        "throughput_tok_s": 12428.300123307326,
+        "throughput_int8_kv_tok_s": 12428.300123307326,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B128": {
+        "latency_ms": 4.797246307134628,
+        "throughput_tok_s": 26681.973741818103,
+        "throughput_int8_kv_tok_s": 26681.973741818103,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      },
+      "B256": {
+        "latency_ms": 4.766723141074181,
+        "throughput_tok_s": 53705.65741359806,
+        "throughput_int8_kv_tok_s": 53705.65741359806,
+        "max_batch_fp16_kv": 16002,
+        "max_batch_int8_kv": 32004
+      }
+    }
+  },
+  "serving": {
+    "chat_short": {
+      "avg_prompt": 64,
+      "avg_response": 128,
+      "concurrent": 50,
+      "n_per_prompt": 1,
+      "effective_batch": 50,
+      "prefill_ms": 2.2169556468725204,
+      "decode_ms": 2.3616887629032135,
+      "decode_time_per_token_ms": 0.04723377525806427,
+      "naive_throughput_req_s": 121.02319476471956,
+      "decode_throughput_tok_s": 21171.290978467132,
+      "total_time_ms": 413.1439439952373,
+      "total_tokens": 9600,
+      "throughput_tok_s": 23236.45339482616,
+      "kv_per_req_GB": 9.8304e-05,
+      "kv_total_fp16_GB": 0.0049152,
+      "kv_total_int8_GB": 0.0024576,
+      "total_mem_fp16_GB": 0.120955392,
+      "total_mem_int4_int8_GB": 0.031467648,
+      "fits_24GB_fp16": true,
+      "fits_24GB_int4_int8": true
+    },
+    "chat_medium": {
+      "avg_prompt": 256,
+      "avg_response": 256,
+      "concurrent": 30,
+      "n_per_prompt": 1,
+      "effective_batch": 30,
+      "prefill_ms": 2.426816150546074,
+      "decode_ms": 2.2425130009651184,
+      "decode_time_per_token_ms": 0.07475043336550395,
+      "naive_throughput_req_s": 46.37589301898024,
+      "decode_throughput_tok_s": 13377.848862900144,
+      "total_time_ms": 646.8878127634525,
+      "total_tokens": 15360,
+      "throughput_tok_s": 23744.457225717888,
+      "kv_per_req_GB": 0.000262144,
+      "kv_total_fp16_GB": 0.007864320000000001,
+      "kv_total_int8_GB": 0.0039321600000000005,
+      "total_mem_fp16_GB": 0.123904512,
+      "total_mem_int4_int8_GB": 0.032942208,
+      "fits_24GB_fp16": true,
+      "fits_24GB_int4_int8": true
+    },
+    "batch_inference": {
+      "avg_prompt": 512,
+      "avg_response": 64,
+      "concurrent": 100,
+      "n_per_prompt": 1,
+      "effective_batch": 100,
+      "prefill_ms": 2.412758767604828,
+      "decode_ms": 2.1728910505771637,
+      "decode_time_per_token_ms": 0.021728910505771637,
+      "naive_throughput_req_s": 262.9220232401772,
+      "decode_throughput_tok_s": 46021.63554101711,
+      "total_time_ms": 380.34090399742126,
+      "total_tokens": 57600,
+      "throughput_tok_s": 151443.08538634205,
+      "kv_per_req_GB": 0.000294912,
+      "kv_total_fp16_GB": 0.0294912,
+      "kv_total_int8_GB": 0.0147456,
+      "total_mem_fp16_GB": 0.145531392,
+      "total_mem_int4_int8_GB": 0.043755648,
+      "fits_24GB_fp16": true,
+      "fits_24GB_int4_int8": true
+    },
+    "rl_rollout": {
+      "avg_prompt": 512,
+      "avg_response": 128,
+      "concurrent": 8,
+      "n_per_prompt": 8,
+      "effective_batch": 64,
+      "prefill_ms": 2.335917204618454,
+      "decode_ms": 2.2008270025253296,
+      "decode_time_per_token_ms": 0.034387921914458275,
+      "naive_throughput_req_s": 148.4214368769708,
+      "decode_throughput_tok_s": 29079.977629574463,
+      "total_time_ms": 300.3931939601898,
+      "total_tokens": 40960,
+      "throughput_tok_s": 136354.6206224243,
+      "kv_per_req_GB": 0.00032768,
+      "kv_total_fp16_GB": 0.02097152,
+      "kv_total_int8_GB": 0.01048576,
+      "total_mem_fp16_GB": 0.137011712,
+      "total_mem_int4_int8_GB": 0.039495808,
+      "fits_24GB_fp16": true,
+      "fits_24GB_int4_int8": true
+    },
+    "long_context": {
+      "avg_prompt": 8192,
+      "avg_response": 256,
+      "concurrent": 10,
+      "n_per_prompt": 1,
+      "effective_batch": 10,
+      "prefill_ms": 11.812448501586914,
+      "decode_ms": 2.148544415831566,
+      "decode_time_per_token_ms": 0.21485444158315659,
+      "naive_throughput_req_s": 14.966657531743857,
+      "decode_throughput_tok_s": 4654.313835131787,
+      "total_time_ms": 668.15185546875,
+      "total_tokens": 84480,
+      "throughput_tok_s": 126438.32282817211,
+      "kv_per_req_GB": 0.004325376,
+      "kv_total_fp16_GB": 0.043253759999999995,
+      "kv_total_int8_GB": 0.021626879999999998,
+      "total_mem_fp16_GB": 0.159293952,
+      "total_mem_int4_int8_GB": 0.050636928,
+      "fits_24GB_fp16": true,
+      "fits_24GB_int4_int8": true
+    }
+  },
+  "optimization_stacks": {
+    "baseline_fp16": {
+      "model_mem_GB": 0.116040192,
+      "kv_per_req_GB": 0.001048576,
+      "max_concurrent": 15944,
+      "effective_batch": 256,
+      "decode_latency_ms": 2.2461246699094772,
+      "throughput_tok_s": 113974.08319740207,
+      "total_mem_GB": 16.834535936
+    },
+    "int4_weights": {
+      "model_mem_GB": 0.029010048,
+      "kv_per_req_GB": 0.001048576,
+      "max_concurrent": 16002,
+      "effective_batch": 256,
+      "decode_latency_ms": 2.3214686661958694,
+      "throughput_tok_s": 110275.0184517892,
+      "total_mem_GB": 16.8083232
+    },
+    "int4_int8_kv": {
+      "model_mem_GB": 0.029010048,
+      "kv_per_req_GB": 0.000524288,
+      "max_concurrent": 32004,
+      "effective_batch": 256,
+      "decode_latency_ms": 2.2522397339344025,
+      "throughput_tok_s": 113664.63176315498,
+      "total_mem_GB": 16.8083232
+    },
+    "int4_int8_kv_gqa": {
+      "model_mem_GB": 0.029010048,
+      "kv_per_req_GB": 0.000131072,
+      "max_concurrent": 128018,
+      "effective_batch": 256,
+      "decode_latency_ms": 2.417435869574547,
+      "throughput_tok_s": 105897.3283312183,
+      "total_mem_GB": 16.808585344
+    },
+    "int4_int8_kv_prefix": {
+      "model_mem_GB": 0.029010048,
+      "kv_per_req_GB": 0.000524288,
+      "max_concurrent": 32004,
+      "effective_batch": 256,
+      "decode_latency_ms": 2.4170242249965668,
+      "throughput_tok_s": 260551.79484222774,
+      "total_mem_GB": 16.8083232
+    }
+  },
+  "sevenb_serving": {
+    "fp16_fp16_kv": {
+      "model_mem_GB": 14.0,
+      "kv_per_req_GB": 0.001048576,
+      "max_concurrent": 6675,
+      "decode_time_est_ms": 15.730337078651687,
+      "throughput_est_tok_s": 424339.2857142857,
+      "fits_24GB": true,
+      "total_mem_GB": 20.9992448
+    },
+    "fp16_int8_kv": {
+      "model_mem_GB": 14.0,
+      "kv_per_req_GB": 0.000524288,
+      "max_concurrent": 13351,
+      "decode_time_est_ms": 15.730337078651687,
+      "throughput_est_tok_s": 848742.1428571427,
+      "fits_24GB": true,
+      "total_mem_GB": 20.999769088
+    },
+    "fp16_int4_int8_kv": {
+      "model_mem_GB": 14.0,
+      "kv_per_req_GB": 0.000524288,
+      "max_concurrent": 13351,
+      "decode_time_est_ms": 15.730337078651687,
+      "throughput_est_tok_s": 848742.1428571427,
+      "fits_24GB": true,
+      "total_mem_GB": 20.999769088
+    },
+    "int4_fp16_kv": {
+      "model_mem_GB": 3.5,
+      "kv_per_req_GB": 0.001048576,
+      "max_concurrent": 13685,
+      "decode_time_est_ms": 3.9325842696629216,
+      "throughput_est_tok_s": 3479899.9999999995,
+      "fits_24GB": true,
+      "total_mem_GB": 17.849762560000002
+    },
+    "int4_int8_kv": {
+      "model_mem_GB": 3.5,
+      "kv_per_req_GB": 0.000524288,
+      "max_concurrent": 27370,
+      "decode_time_est_ms": 3.9325842696629216,
+      "throughput_est_tok_s": 6959799.999999999,
+      "fits_24GB": true,
+      "total_mem_GB": 17.849762560000002
+    },
+    "int4_int4_int8_kv": {
+      "model_mem_GB": 3.5,
+      "kv_per_req_GB": 0.000524288,
+      "max_concurrent": 27370,
+      "decode_time_est_ms": 3.9325842696629216,
+      "throughput_est_tok_s": 6959799.999999999,
+      "fits_24GB": true,
+      "total_mem_GB": 17.849762560000002
+    }
+  },
+  "roi": {
+    "GQA-4": {
+      "kv_savings": "4x KV (75%)",
+      "throughput_gain": "2x concurrent",
+      "latency_impact": "1.00x (zero overhead)",
+      "impl_cost": 1,
+      "roi": "HIGH \u2014 config change, zero cost"
+    },
+    "INT4 weights": {
+      "kv_savings": "model 75% smaller",
+      "throughput_gain": "3x concurrent (more KV room)",
+      "latency_impact": "0.87-1.08x (near-free)",
+      "impl_cost": 3,
+      "roi": "VERY HIGH \u2014 fused kernel needed but 75% memory"
+    },
+    "INT8 KV": {
+      "kv_savings": "2x KV capacity",
+      "throughput_gain": "2x concurrent",
+      "latency_impact": "1.00x (zero overhead)",
+      "impl_cost": 2,
+      "roi": "VERY HIGH \u2014 minimal code change, 2x capacity"
+    },
+    "Continuous batching": {
+      "kv_savings": "no savings",
+      "throughput_gain": "2-5x throughput (dynamic batching)",
+      "latency_impact": "0 latency impact",
+      "impl_cost": 3,
+      "roi": "HIGH \u2014 scheduling logic but huge throughput gain"
+    },
+    "Prefix sharing": {
+      "kv_savings": "2.46x compute savings (n=8)",
+      "throughput_gain": "2.46x for RL rollout",
+      "latency_impact": "0 latency impact",
+      "impl_cost": 4,
+      "roi": "MEDIUM \u2014 model-level modification, RL only"
+    },
+    "MLA": {
+      "kv_savings": "3.2x KV capacity",
+      "throughput_gain": "3.2x concurrent (capacity)",
+      "latency_impact": "2-8x slower per request",
+      "impl_cost": 5,
+      "roi": "LOW \u2014 only for 671B+, huge impl cost"
+    },
+    "FlashAttention": {
+      "kv_savings": "85-97% activation memory",
+      "throughput_gain": "1.03-1.10x prefill only",
+      "latency_impact": "0.67-0.84x decode (SLOWER!)",
+      "impl_cost": 1,
+      "roi": "LOW for decode, HIGH for memory savings"
+    },
+    "Speculative decoding": {
+      "kv_savings": "no savings",
+      "throughput_gain": "3-6x (if \u03b1\u22650.8, lr\u22640.2)",
+      "latency_impact": "0.13-0.76x if bad draft",
+      "impl_cost": 3,
+      "roi": "MEDIUM \u2014 needs good draft model, uncertain gain"
+    }
+  }
+}
