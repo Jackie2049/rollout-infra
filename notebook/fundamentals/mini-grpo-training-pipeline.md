@@ -75,7 +75,70 @@
 
 **与DeepSeek-R1的联系**: R1用outcome-only reward+大量样本(n=64)+长CoT → 模型通过更多探索找到正确路径 → 推理涌现。小模型+n=4 → 探索不足 → 很难找到精确解。
 
-## 收敛分析
+## 实验3: SFT Warmup → GRPO RL (DeepSeek-R1-style, RTX 4090)
+
+### Pipeline: 先SFT→再GRPO RL
+
+1. **SFT Phase** (200步, 2e-3 LR): 交叉熵监督训练 → 模型学会输出正确digit
+2. **GRPO Phase** (200步, 1e-3 LR, n=8): 组归一化RL → 精炼推理
+
+### SFT收敛曲线
+
+| Step | Loss | Eval Accuracy |
+|------|------|-------------|
+| 0    | 3.11  | 7%          |
+| 20   | 0.69  | 36%         |
+| 40   | 0.32  | 40%         |
+| 60   | 0.06  | 50%         |
+| 100  | 0.009 | 50%         |
+| 199  | 0.002 | 50%         |
+
+SFT给模型50%起始准确率(学会了部分digit)。
+
+### GRPO RL Phase
+
+GRPO RL从50%开始 → **直接达到100% eval accuracy!**
+
+### Final Eval: 全部正确!
+
+```
+3+0=3 (correct: 3) ← 完全正确!
+1+2=3 (correct: 3)
+3+2=5 (correct: 5)
+1+0=1 (correct: 1)
+0+4=4 (correct: 4)
+```
+
+### 与纯GRPO对比
+
+| 方案 | SFT Eval | Final Eval | 核心差异 |
+|------|---------|-----------|---------|
+| **SFT→GRPO** | 50% | **100%** | 先学格式→再精炼→完美 |
+| **纯GRPO** | — | 55% | 从随机开始→探索不足→重复问题 |
+
+### DeepSeek-R1 Pipeline验证
+
+本实验完全验证了DeepSeek-R1的pipeline设计:
+
+1. **Cold-start SFT** → 模型学会基本格式(50%准确率)
+2. **GRPO RL** → 组比较精炼推理(50%→100%)
+
+**为什么SFT→GRPO比纯GRPO好?**
+- SFT提供了warm start → GRPO不需要从随机探索
+- 纯GRPO从3%开始 → 需要大量探索才能偶然发现正确答案
+- SFT已学会基本digit → GRPO只需精炼"哪个digit对哪个prompt"
+
+**与DeepSeek-R1的联系**:
+- R1 Stage 1: cold-start SFT(~数千条long-CoT) → 模型学会推理格式
+- R1 Stage 2: GRPO RL(规则reward) → 推理涌现/精炼
+- 我们的实验: SFT→GRPO = 同样的pipeline, 但在更简单的任务上
+
+### 为什么纯GRPO只有55%?
+
+纯GRPO模型输出例子: `3+3=63333333` — 偏向重复某个数字(如"3"或"6")
+原因: 小模型+n=8 → 探索不足 → 偶然采到正确digit → 但无法泛化到所有(a,b)组合
+
+**关键洞察: SFT暖启动比纯RL探索更高效** → 这就是为什么DeepSeek-R1的4阶段pipeline中SFT是第一步!
 
 ### GRPO收敛特点
 

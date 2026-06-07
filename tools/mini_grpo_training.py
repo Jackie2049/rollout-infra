@@ -270,6 +270,68 @@ def grpo_training_step(model, prompts, n_samples, max_response_len, optimizer, d
     return metrics
 
 
+def generate_sft_dataset(num_examples=500):
+    """Generate supervised training data: prompt + correct answer."""
+    dataset = []
+    for _ in range(num_examples):
+        a = np.random.randint(0, 5)
+        b = np.random.randint(0, 5)
+        prompt_tokens = [TOKENS[str(a)], TOKENS['+'], TOKENS[str(b)], TOKENS['=']]
+        correct_sum = a + b
+        # Correct response: just the digit of the sum + EOS
+        response_tokens = [TOKENS[str(correct_sum)], TOKENS['<eos>']]
+        full_tokens = prompt_tokens + response_tokens
+        dataset.append((full_tokens, len(prompt_tokens)))
+    return dataset
+
+
+def sft_training_step(model, dataset, optimizer, device, batch_size=32):
+    """Supervised fine-tuning: cross-entropy loss on correct responses."""
+    model.train()
+    indices = np.random.choice(len(dataset), batch_size, replace=True)
+    total_loss = 0
+
+    for idx in indices:
+        full_tokens, prompt_len = dataset[idx]
+        full_ids = torch.tensor(full_tokens, dtype=torch.long, device=device).unsqueeze(0)
+
+        logits = model(full_ids)
+        # Only compute loss on response tokens (after prompt)
+        response_logits = logits[:, prompt_len-1:-1, :]  # positions that predict response
+        response_targets = torch.tensor(full_tokens[prompt_len:], dtype=torch.long, device=device).unsqueeze(0)
+
+        # Cross-entropy loss
+        if response_logits.size(1) == response_targets.size(1):
+            loss = F.cross_entropy(response_logits.reshape(-1, VOCAB_SIZE),
+                                   response_targets.reshape(-1))
+            total_loss += loss.item()
+
+    # Average and backward
+    avg_loss = total_loss / batch_size
+    optimizer.zero_grad()
+
+    # Compute loss for backward (need to recompute since we accumulated .item())
+    losses = []
+    for idx in indices:
+        full_tokens, prompt_len = dataset[idx]
+        full_ids = torch.tensor(full_tokens, dtype=torch.long, device=device).unsqueeze(0)
+        logits = model(full_ids)
+        response_logits = logits[:, prompt_len-1:-1, :]
+        response_targets = torch.tensor(full_tokens[prompt_len:], dtype=torch.long, device=device).unsqueeze(0)
+        if response_logits.size(1) == response_targets.size(1):
+            loss = F.cross_entropy(response_logits.reshape(-1, VOCAB_SIZE),
+                                   response_targets.reshape(-1))
+            losses.append(loss)
+
+    if len(losses) > 0:
+        total_backward_loss = sum(losses) / len(losses)
+        total_backward_loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+        return avg_loss
+    return avg_loss
+
+
 # ============================================================
 # PPO Training Step (with critic)
 # ============================================================
@@ -396,7 +458,8 @@ def main():
     parser.add_argument('--max_response_len', type=int, default=8, help='Max response tokens')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--num_prompts_per_step', type=int, default=8, help='Prompts per step')
-    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both'], help='Training mode')
+    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo'], help='Training mode')
+    parser.add_argument('--sft_steps', type=int, default=100, help='SFT warmup steps (for sft_grpo mode)')
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -409,6 +472,8 @@ def main():
     print(f"Reward: 1.0 if correct, 0.3 if ±1, 0.1 if ±2, 0 otherwise")
     print(f"Vocab size: {VOCAB_SIZE} (digits 0-9, +, =, special)")
     print(f"Mode: {args.mode}, n_samples: {args.n_samples}")
+    if args.mode == 'sft_grpo':
+        print(f"SFT warmup: {args.sft_steps} steps → then {args.num_steps} GRPO steps")
     print()
 
     # Initialize models
@@ -418,6 +483,44 @@ def main():
     print(f"Actor params: {param_count:,}")
 
     actor_optimizer = torch.optim.AdamW(actor.parameters(), lr=args.lr)
+
+    # SFT warmup phase
+    sft_metrics_history = []
+    if args.mode == 'sft_grpo':
+        print("\n--- Phase 1: SFT Warmup ---")
+        sft_dataset = generate_sft_dataset(500)
+        sft_lr = args.lr * 2  # Higher LR for SFT
+        sft_optimizer = torch.optim.AdamW(actor.parameters(), lr=sft_lr)
+
+        for step in range(args.sft_steps):
+            loss = sft_training_step(actor, sft_dataset, sft_optimizer, device)
+            sft_metrics_history.append({'step': step, 'loss': loss})
+
+            if step % 20 == 0 or step == args.sft_steps - 1:
+                # Quick eval during SFT
+                eval_prompts = [generate_arithmetic_prompt() for _ in range(50)]
+                correct = 0
+                actor.eval()
+                for prompt_tokens, correct_sum in eval_prompts:
+                    prompt_tensor = torch.tensor(prompt_tokens, dtype=torch.long, device=device).unsqueeze(0)
+                    current_ids = prompt_tensor.clone()
+                    response_tokens = []
+                    for _ in range(args.max_response_len):
+                        logits = actor(current_ids)
+                        next_token = logits[:, -1, :].argmax(dim=-1).item()
+                        if next_token == TOKENS['<eos>']:
+                            break
+                        response_tokens.append(next_token)
+                        current_ids = torch.cat([current_ids,
+                            torch.tensor([[next_token]], dtype=torch.long, device=device)], dim=1)
+                    reward = compute_reward(response_tokens, correct_sum)
+                    if reward == 1.0:
+                        correct += 1
+                actor.train()
+                print(f"  SFT step {step:3d}: loss={loss:.4f}, eval_acc={correct}%")
+
+        # Switch optimizer for GRPO phase (lower LR)
+        actor_optimizer = torch.optim.AdamW(actor.parameters(), lr=args.lr)
 
     if args.mode in ['ppo', 'both']:
         critic = SimpleCritic(hidden_dim=32, vocab_size=VOCAB_SIZE).to(device)
