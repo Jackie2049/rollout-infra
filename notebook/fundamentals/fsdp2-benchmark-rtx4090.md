@@ -106,6 +106,14 @@ FSDP2 (fully_shard composable):
 → 小模型DDP>FSDP1>FSDP2 — FSDP2通信overhead太大
 → DDP吞吐1.67x — 两GPU各独立forward+backward→AllReduce
 
+3.2M模型 Scaling:
+| GPUs | DDP(ms) | FSDP1(ms) | FSDP2(ms) | FSDP2+comp(ms) |
+| 2    | 8.89    | 9.40      | 23.4      | 23.9           |
+| 4    | 11.04   | 10.63     | 23.43     | 23.35          |
+| 8    | 12.00   | 11.82     | 23.59     | 24.07          |
+
+→ 小模型: DDP扩展最好(115→185→341K tok/s), FSDP1类似, FSDP2几乎flat
+
 25M模型 (2-GPU):
 | 方法         │ 时间(ms) │ 吞吐(tok/s) │ 内存(GB) │ 效率    │
 | Single       │ 13.9     │ 36,890      │ 0.536    │ 100%    │
@@ -118,6 +126,16 @@ FSDP2 (fully_shard composable):
 → DDP效率65% → AllReduce 13ms占31% → 严重通信瓶颈
 → FSDP2效率61% → 比DDP更慢 → composable API不成熟
 → FSDP2+compile 14%改善 → 但仍不如FSDP1
+
+25M模型 Scaling:
+| GPUs | DDP(ms)  | FSDP1(ms) | FSDP2(ms) | FSDP2+comp(ms) |
+| 2    | 42.5(65%) | 22.2(125%)| 45.7(61%) | 39.2(71%)      |
+| 4    | 39.3(70%) | 39.6(70%) | 53.7(51%) | 54.1(51%)      |
+| 8    | 42.1(65%) | 45.4(61%) | 56.3(49%) | 56.4(49%)      |
+
+→ **25M模型FSDP1在4/8 GPU失去优势!** 2GPU=125% → 4GPU=70% → 8GPU=61%
+→ FSDP2+compile在8GPU时与FSDP2几乎相同 → compile收益消失
+→ 所有方法在8GPU时退化到49-65%效率 → PCIe瓶颈
 ```
 
 ## 与之前DDP Scaling实验的串联
