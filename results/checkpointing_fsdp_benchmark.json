@@ -1,0 +1,108 @@
+{
+  "exp1_single": {
+    "2.3M_no_ckpt": {
+      "total_params": 3212800,
+      "peak_memory_GB": 0.092,
+      "median_ms": 7.69,
+      "throughput": 66562
+    },
+    "2.3M_every": {
+      "total_params": 3212800,
+      "peak_memory_GB": 0.084,
+      "median_ms": 14.26,
+      "throughput": 35915
+    },
+    "2.3M_every2": {
+      "total_params": 3212800,
+      "peak_memory_GB": 0.084,
+      "median_ms": 11.76,
+      "throughput": 43553
+    },
+    "4.5M_no_ckpt": {
+      "total_params": 6372608,
+      "peak_memory_GB": 0.161,
+      "median_ms": 13.04,
+      "throughput": 39265
+    },
+    "4.5M_every": {
+      "total_params": 6372608,
+      "peak_memory_GB": 0.147,
+      "median_ms": 25.41,
+      "throughput": 20148
+    },
+    "4.5M_every2": {
+      "total_params": 6372608,
+      "peak_memory_GB": 0.147,
+      "median_ms": 19.26,
+      "throughput": 26578
+    },
+    "25M_no_ckpt": {
+      "total_params": 25321216,
+      "peak_memory_GB": 0.542,
+      "median_ms": 15.20,
+      "throughput": 33682
+    },
+    "25M_every": {
+      "total_params": 25321216,
+      "peak_memory_GB": 0.545,
+      "median_ms": 26.71,
+      "throughput": 19167
+    },
+    "25M_every2": {
+      "total_params": 25321216,
+      "peak_memory_GB": 0.540,
+      "median_ms": 20.44,
+      "throughput": 25054
+    }
+  },
+  "exp2_fsdp": {
+    "fsdp1_no_ckpt": {
+      "median_ms": 23.12,
+      "throughput": 22146,
+      "peak_memory_GB": 0.478,
+      "total_params": 25321216,
+      "checkpoint_every": 0
+    },
+    "fsdp1_every": {
+      "median_ms": 36.74,
+      "throughput": 13936,
+      "peak_memory_GB": 0.530,
+      "total_params": 25321216,
+      "checkpoint_every": 1
+    },
+    "fsdp1_every2": {
+      "median_ms": 31.34,
+      "throughput": 16338,
+      "peak_memory_GB": 0.578,
+      "total_params": 25321216,
+      "checkpoint_every": 2
+    },
+    "fsdp1_every3": {
+      "median_ms": 29.70,
+      "throughput": 17237,
+      "peak_memory_GB": 0.630,
+      "total_params": 25321216,
+      "checkpoint_every": 3
+    }
+  },
+  "exp3_ddp": {
+    "ddp_no_ckpt": {
+      "median_ms": 22.41,
+      "throughput": 45684,
+      "peak_memory_GB": 0.742,
+      "checkpoint_every": 0
+    },
+    "ddp_every": {
+      "median_ms": 30.80,
+      "throughput": 33249,
+      "peak_memory_GB": 0.745,
+      "checkpoint_every": 1
+    },
+    "ddp_every2": {
+      "median_ms": 26.88,
+      "throughput": 38099,
+      "peak_memory_GB": 0.747,
+      "checkpoint_every": 2
+    }
+  }
+}
