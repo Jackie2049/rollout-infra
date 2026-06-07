@@ -1,0 +1,59 @@
+{
+  "config": {
+    "modes": [
+      "grpo"
+    ],
+    "num_steps": 3,
+    "n_samples": 8,
+    "hidden_dim": 64,
+    "num_layers": 2,
+    "lr": 0.001,
+    "device": "cpu"
+  },
+  "results": {
+    "grpo": {
+      "mode": "grpo",
+      "params": 76928,
+      "peak_accuracy": 0.078125,
+      "final_accuracy": 0.015625,
+      "eval_accuracy": 0.15,
+      "steps_ge_50pct": 0,
+      "avg_reward_last50": 0.09479166666666666,
+      "reward_std_last50": 0.01722691188389712,
+      "advantage_mean_avg": 4.625929269271485e-18,
+      "elapsed_seconds": 36.82129216194153,
+      "metrics_history": [
+        {
+          "loss": 0.0826917439699173,
+          "reward_mean": 0.115625,
+          "reward_std": 0.26880450028784864,
+          "accuracy": 0.078125,
+          "advantage_mean": 0.0,
+          "advantage_std": 1.0,
+          "num_valid": 64,
+          "num_groups": 8
+        },
+        {
+          "loss": 0.030443837866187096,
+          "reward_mean": 0.0953125,
+          "reward_std": 0.22180346558101838,
+          "accuracy": 0.046875,
+          "advantage_mean": 0.0,
+          "advantage_std": 0.9999999999999999,
+          "num_valid": 62,
+          "num_groups": 8
+        },
+        {
+          "loss": -0.06717198342084885,
+          "reward_mean": 0.07343749999999999,
+          "reward_std": 0.1563671435876156,
+          "accuracy": 0.015625,
+          "advantage_mean": 1.3877787807814457e-17,
+          "advantage_std": 0.9999999999999999,
+          "num_valid": 61,
+          "num_groups": 8
+        }
+      ]
+    }
+  }
+}
