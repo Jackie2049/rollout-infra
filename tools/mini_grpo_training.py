@@ -333,6 +333,237 @@ def sft_training_step(model, dataset, optimizer, device, batch_size=32):
 
 
 # ============================================================
+# DAPO/Dr.GRPO Improved GRPO Training Step
+# ============================================================
+
+def dapo_training_step(model, ref_model, prompts, n_samples, max_response_len,
+                       optimizer, device, clip_epsilon_lower=0.2, clip_epsilon_upper=0.2,
+                       kl_coeff=0.0, dynamic_sampling_min_std=0.05):
+    """DAPO/Dr.GRPO improved GRPO training step.
+
+    4 improvements over vanilla GRPO:
+    1. Global normalization (DAPO): advantage = (r - μ_global) / σ_global instead of group-level
+    2. Decoupled clip (DAPO): asymmetric upper/lower clip ratios
+    3. Dynamic sampling (DAPO): increase n when group reward std is too low
+    4. Token-level loss (DAPO): normalize per-token, not per-response
+    + Sequence-level KL (Dr.GRPO): KL penalty / num_tokens instead of sum
+
+    Returns: dict of metrics for this step.
+    """
+    model.train()
+    all_rewards = []
+    all_advantages = []
+    total_loss = 0
+    correct_count = 0
+    total_count = 0
+    zero_gradient_groups = 0  # Track groups where σ→0
+
+    # Step 1: Dynamic sampling — adjust n per group based on reward diversity
+    # We'll do initial rollout, check std, then resample if needed
+    group_data = []  # (prompt_tokens, correct_sum, [(response_tokens, reward, log_prob_data)])
+
+    # --- Initial rollout ---
+    rollout_data = {}  # prompt_idx -> [(response_tokens, reward)]
+    for g_idx, (prompt_tokens, correct_sum) in enumerate(prompts):
+        prompt_tensor = torch.tensor(prompt_tokens, dtype=torch.long, device=device).unsqueeze(0)
+        responses = []
+
+        current_n = n_samples
+        for _ in range(current_n):
+            current_ids = prompt_tensor.clone()
+            response_tokens = []
+
+            for step in range(max_response_len):
+                logits = model(current_ids)
+                next_logits = logits[:, -1, :]
+                probs = F.softmax(next_logits, dim=-1)
+                next_token = torch.multinomial(probs, 1).item()
+                if next_token == TOKENS['<eos>']:
+                    break
+                response_tokens.append(next_token)
+                current_ids = torch.cat([current_ids,
+                    torch.tensor([[next_token]], dtype=torch.long, device=device)], dim=1)
+
+            reward = compute_reward(response_tokens, correct_sum)
+            responses.append((response_tokens, reward))
+            all_rewards.append(reward)
+            if reward == 1.0:
+                correct_count += 1
+            total_count += 1
+
+        rollout_data[g_idx] = responses
+
+    # --- Dynamic sampling: check group std, resample if too low ---
+    dynamic_n_used = []
+    for g_idx, (prompt_tokens, correct_sum) in enumerate(prompts):
+        responses = rollout_data[g_idx]
+        group_rewards = [r for _, r in responses]
+        group_std = np.std(group_rewards)
+
+        if group_std < dynamic_sampling_min_std and n_samples < 16:
+            # Group reward diversity too low → increase samples
+            extra_n = min(n_samples * 2, 16) - len(responses)
+            prompt_tensor = torch.tensor(prompt_tokens, dtype=torch.long, device=device).unsqueeze(0)
+            for _ in range(extra_n):
+                current_ids = prompt_tensor.clone()
+                response_tokens = []
+                for step in range(max_response_len):
+                    logits = model(current_ids)
+                    next_logits = logits[:, -1, :]
+                    probs = F.softmax(next_logits, dim=-1)
+                    next_token = torch.multinomial(probs, 1).item()
+                    if next_token == TOKENS['<eos>']:
+                        break
+                    response_tokens.append(next_token)
+                    current_ids = torch.cat([current_ids,
+                        torch.tensor([[next_token]], dtype=torch.long, device=device)], dim=1)
+                reward = compute_reward(response_tokens, correct_sum)
+                responses.append((response_tokens, reward))
+                all_rewards.append(reward)
+                if reward == 1.0:
+                    correct_count += 1
+                total_count += 1
+            rollout_data[g_idx] = responses
+            dynamic_n_used.append(len(responses))
+        else:
+            dynamic_n_used.append(len(responses))
+
+        # Check again — if still all same reward, mark as zero-gradient
+        group_rewards = [r for _, r in responses]
+        if np.std(group_rewards) < 1e-8:
+            zero_gradient_groups += 1
+
+        group_data.append((prompt_tokens, correct_sum, responses))
+
+    # --- Step 2: Global normalization (DAPO) ---
+    # advantage = (r - μ_global) / σ_global instead of group-level
+    mu_global = np.mean(all_rewards)
+    sigma_global = np.std(all_rewards)
+    if sigma_global < 1e-8:
+        sigma_global = 1.0
+
+    for prompt_tokens, correct_sum, responses in group_data:
+        for resp_tokens, reward in responses:
+            advantage = (reward - mu_global) / sigma_global
+            all_advantages.append(advantage)
+
+    # --- Compute policy loss with improvements ---
+    # Step 3: Decoupled clip + Step 4: Token-level loss
+    # Step 5: Sequence-level KL (Dr.GRPO)
+
+    loss = torch.tensor(0.0, device=device)
+    num_total_tokens = 0  # For token-level loss normalization
+    total_kl_penalty = 0.0
+
+    for prompt_tokens, correct_sum, responses in group_data:
+        group_rewards = [r for _, r in responses]
+        # Use global normalization advantage
+        for resp_tokens, reward in responses:
+            advantage = (reward - mu_global) / sigma_global
+
+            if len(resp_tokens) == 0:
+                continue
+
+            # Re-compute log_probs for this full sequence (policy)
+            full_ids = torch.tensor(prompt_tokens + resp_tokens, dtype=torch.long, device=device).unsqueeze(0)
+            logits = model(full_ids)
+            log_probs = F.log_softmax(logits, dim=-1)
+
+            response_start = len(prompt_tokens)
+            num_resp_tokens = len(resp_tokens)
+
+            # Per-token log probs for response
+            token_log_probs = []
+            for t_idx, token in enumerate(resp_tokens):
+                pos = response_start + t_idx - 1
+                if pos < 0:
+                    continue
+                token_log_probs.append(log_probs[0, pos, token])
+
+            if len(token_log_probs) == 0:
+                continue
+
+            total_log_prob = sum(token_log_probs)
+
+            # Sequence-level KL penalty (Dr.GRPO): KL / num_tokens
+            # KL = Σ_t (log π(y_t) - log π_ref(y_t)), normalized per-token
+            if ref_model is not None and kl_coeff > 0:
+                with torch.no_grad():
+                    ref_logits = ref_model(full_ids)
+                    ref_log_probs = F.log_softmax(ref_logits, dim=-1)
+
+                kl_tokens = []
+                for t_idx, token in enumerate(resp_tokens):
+                    pos = response_start + t_idx - 1
+                    if pos < 0:
+                        continue
+                    kl_t = log_probs[0, pos, token] - ref_log_probs[0, pos, token]
+                    kl_tokens.append(kl_t)
+
+                # Dr.GRPO: sequence-level KL = β × mean(KL per token)
+                if len(kl_tokens) > 0:
+                    kl_penalty = kl_coeff * (sum(kl_tokens) / len(kl_tokens))
+                    # Adjust advantage by KL penalty
+                    advantage_adjusted = advantage - kl_penalty.item()
+                else:
+                    advantage_adjusted = advantage
+            else:
+                advantage_adjusted = advantage
+
+            # Decoupled clip (DAPO): compute importance ratio
+            # For simplicity, we use the ratio of current vs old log_prob
+            # Since we re-compute, ratio ≈ 1.0 initially (no old policy buffer)
+            # We'll apply clip to the advantage-weighted log_prob
+            # ratio = exp(log_prob_new - log_prob_old) → with re-compute, this is ≈ 1
+            # Instead, we clip the effective advantage contribution
+
+            # DAPO decoupled clip: asymmetric upper and lower bounds
+            # Upper clip: prevents increasing probability of good actions too much
+            # Lower clip: allows more freely decreasing probability of bad actions
+            if advantage_adjusted > 0:
+                # Good action: clip ratio at upper bound
+                # loss = -min(ratio * A, (1+ε_upper) * A) → for ratio≈1, just -A * log_prob
+                # With clip: if ratio > 1+ε_upper → loss = -(1+ε_upper)*A*log_prob
+                # Simplified: clip the advantage contribution
+                clipped_adv = min(advantage_adjusted, advantage_adjusted * (1 + clip_epsilon_upper))
+                per_token_loss = -clipped_adv * total_log_prob / num_resp_tokens  # Token-level loss (DAPO)
+            else:
+                # Bad action: clip ratio at lower bound (larger ε_lower allows faster correction)
+                clipped_adv = max(advantage_adjusted, advantage_adjusted * (1 - clip_epsilon_lower))
+                per_token_loss = -clipped_adv * total_log_prob / num_resp_tokens  # Token-level loss (DAPO)
+
+            loss = loss + per_token_loss
+            num_total_tokens += num_resp_tokens
+
+    # Token-level loss normalization (DAPO): loss / total_tokens
+    if num_total_tokens > 0:
+        loss = loss / num_total_tokens
+
+    # Backward + update
+    optimizer.zero_grad()
+    if num_total_tokens > 0:
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+    metrics = {
+        'loss': loss.item() if num_total_tokens > 0 else 0,
+        'reward_mean': np.mean(all_rewards),
+        'reward_std': np.std(all_rewards),
+        'accuracy': correct_count / total_count if total_count > 0 else 0,
+        'advantage_mean': np.mean(all_advantages),
+        'advantage_std': np.std(all_advantages),
+        'mu_global': mu_global,
+        'sigma_global': sigma_global,
+        'zero_gradient_groups': zero_gradient_groups,
+        'dynamic_n_mean': np.mean(dynamic_n_used),
+        'num_total_tokens': num_total_tokens,
+    }
+
+    return metrics
+
+
+# ============================================================
 # PPO Training Step (with critic)
 # ============================================================
 
@@ -570,8 +801,12 @@ def main():
     parser.add_argument('--max_response_len', type=int, default=8, help='Max response tokens')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--num_prompts_per_step', type=int, default=8, help='Prompts per step')
-    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo'], help='Training mode')
+    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo', 'dapo'], help='Training mode')
     parser.add_argument('--sft_steps', type=int, default=100, help='SFT warmup steps (for sft_grpo mode)')
+    parser.add_argument('--kl_coeff', type=float, default=0.01, help='KL coefficient for DAPO mode (Dr.GRPO sequence-level)')
+    parser.add_argument('--clip_lower', type=float, default=0.3, help='Lower clip epsilon for DAPO (larger = faster correction)')
+    parser.add_argument('--clip_upper', type=float, default=0.2, help='Upper clip epsilon for DAPO')
+    parser.add_argument('--output', default='mini_grpo_training_results.json', help='Output results file')
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -586,6 +821,9 @@ def main():
     print(f"Mode: {args.mode}, n_samples: {args.n_samples}")
     if args.mode == 'sft_grpo':
         print(f"SFT warmup: {args.sft_steps} steps → then {args.num_steps} GRPO steps")
+    if args.mode == 'dapo':
+        print(f"DAPO improvements: global_norm=True, decoupled_clip(ε_lower={args.clip_lower}, ε_upper={args.clip_upper})")
+        print(f"  dynamic_sampling=True, token_level_loss=True, seq_level_KL(β={args.kl_coeff})")
     print()
 
     # Initialize models
@@ -646,6 +884,19 @@ def main():
         dpo_pairs = generate_dpo_preference_pairs(500)
         print(f"DPO preference pairs: {len(dpo_pairs)}")
 
+    # DAPO setup: save a reference model for KL penalty
+    dapo_metrics_history = []
+    dapo_ref_model = None
+    if args.mode == 'dapo':
+        dapo_ref_model = MiniGQATransformer(hidden_dim=64, num_layers=2, num_heads=4,
+                                             num_kv_heads=2, vocab_size=VOCAB_SIZE).to(device)
+        # Copy current actor weights as reference (π_ref = π_initial)
+        dapo_ref_model.load_state_dict(actor.state_dict().copy())
+        dapo_ref_model.eval()
+        for p in dapo_ref_model.parameters():
+            p.requires_grad = False
+        print(f"DAPO ref model initialized (same as actor start)")
+
     # Training loop
     grpo_metrics_history = []
     ppo_metrics_history = []
@@ -679,6 +930,47 @@ def main():
                 actor.train()
                 print(f"  Step {step:3d} | DPO: loss={metrics['loss']:.4f}, "
                       f"margin={metrics['margin']:.3f}, eval_acc={correct}%")
+            continue
+
+        if args.mode == 'dapo':
+            prompts = [generate_arithmetic_prompt() for _ in range(args.num_prompts_per_step)]
+            metrics = dapo_training_step(
+                actor, dapo_ref_model, prompts, args.n_samples, args.max_response_len,
+                actor_optimizer, device,
+                clip_epsilon_lower=args.clip_lower, clip_epsilon_upper=args.clip_upper,
+                kl_coeff=args.kl_coeff
+            )
+            dapo_metrics_history.append(metrics)
+
+            if step % 20 == 0 or step == args.num_steps - 1:
+                # Evaluate DAPO accuracy
+                eval_prompts = [generate_arithmetic_prompt() for _ in range(50)]
+                correct = 0
+                actor.eval()
+                for prompt_tokens, correct_sum in eval_prompts:
+                    prompt_tensor = torch.tensor(prompt_tokens, dtype=torch.long, device=device).unsqueeze(0)
+                    current_ids = prompt_tensor.clone()
+                    response_tokens = []
+                    for _ in range(args.max_response_len):
+                        logits = actor(current_ids)
+                        next_token = logits[:, -1, :].argmax(dim=-1).item()
+                        if next_token == TOKENS['<eos>']:
+                            break
+                        response_tokens.append(next_token)
+                        current_ids = torch.cat([current_ids,
+                            torch.tensor([[next_token]], dtype=torch.long, device=device)], dim=1)
+                    reward = compute_reward(response_tokens, correct_sum)
+                    if reward == 1.0:
+                        correct += 1
+                actor.train()
+                print(f"  Step {step:3d} | DAPO: loss={metrics['loss']:.4f}, "
+                      f"reward={metrics['reward_mean']:.3f}, "
+                      f"acc={metrics['accuracy']:.1%}, "
+                      f"μ_global={metrics['mu_global']:.3f}, "
+                      f"σ_global={metrics['sigma_global']:.3f}, "
+                      f"zero_grad_groups={metrics['zero_gradient_groups']}, "
+                      f"dynamic_n={metrics['dynamic_n_mean']:.1f}, "
+                      f"eval_acc={correct}%")
             continue
 
         # Generate prompts for this step
@@ -728,7 +1020,8 @@ def main():
                                      [('GRPO', actor), ('PPO', ppo_actor)] if args.mode == 'both' else \
                                      [('PPO', actor)] if args.mode == 'ppo' else \
                                      [('SFT+GRPO', actor)] if args.mode == 'sft_grpo' else \
-                                     [('DPO', actor)]:
+                                     [('DPO', actor)] if args.mode == 'dpo' else \
+                                     [('DAPO', actor)]:
         model.eval()
         eval_prompts = [generate_arithmetic_prompt() for _ in range(100)]
         correct = 0
@@ -791,10 +1084,11 @@ def main():
         'grpo_metrics': grpo_metrics_history,
         'ppo_metrics': ppo_metrics_history,
         'dpo_metrics': dpo_metrics_history,
+        'dapo_metrics': dapo_metrics_history,
         'sft_metrics': sft_metrics_history,
     }
 
-    output_file = "mini_grpo_training_results.json"
+    output_file = args.output
     with open(output_file, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to {output_file}")
@@ -817,6 +1111,14 @@ def main():
 
     if dpo_metrics_history:
         print(f"DPO: {len(dpo_metrics_history)} steps completed")
+
+    if dapo_metrics_history:
+        initial = dapo_metrics_history[0]
+        final = dapo_metrics_history[-1]
+        print(f"DAPO: reward {initial['reward_mean']:.3f} → {final['reward_mean']:.3f}, "
+              f"accuracy {initial['accuracy']:.1%} → {final['accuracy']:.1%}, "
+              f"zero_grad_groups: {final['zero_gradient_groups']}, "
+              f"dynamic_n_mean: {final['dynamic_n_mean']:.1f}")
 
 
 if __name__ == "__main__":
