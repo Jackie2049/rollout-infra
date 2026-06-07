@@ -1,0 +1,70 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_mem_gb": 25.3,
+  "exp1_precision": [
+    {
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "prefix_ratio": 0.75,
+      "cos_sim_sdpa_vs_baseline": 0.999999,
+      "max_diff_sdpa_vs_baseline": 0.0039,
+      "cos_sim_lse_vs_baseline": 0.999999,
+      "max_diff_lse_vs_baseline": 0.0039,
+      "mean_diff_lse_vs_baseline": 0.000637,
+      "cos_sim_lse_vs_sdpa": 0.999999,
+      "max_diff_lse_vs_sdpa": 0.0042
+    },
+    {
+      "prefix_len": 1024,
+      "suffix_len": 256,
+      "total_len": 1280,
+      "prefix_ratio": 0.8,
+      "cos_sim_sdpa_vs_baseline": 0.999999,
+      "max_diff_sdpa_vs_baseline": 0.0039,
+      "cos_sim_lse_vs_baseline": 0.999999,
+      "max_diff_lse_vs_baseline": 0.0044,
+      "mean_diff_lse_vs_baseline": 0.000629,
+      "cos_sim_lse_vs_sdpa": 0.999999,
+      "max_diff_lse_vs_sdpa": 0.0042
+    }
+  ],
+  "exp2_performance": [
+    {
+      "prefix_len": 384,
+      "suffix_len": 128,
+      "total_len": 512,
+      "baseline_ms": 20.637,
+      "sdpa_full_ms": 35.288,
+      "lse_full_ms": 37.138,
+      "sdpa_attn_ms": 0.209,
+      "lse_attn_ms": 0.386,
+      "attn_speedup_lse_vs_sdpa": 0.54,
+      "full_speedup_lse_vs_sdpa": 0.95
+    },
+    {
+      "prefix_len": 1024,
+      "suffix_len": 256,
+      "total_len": 1280,
+      "baseline_ms": 44.812,
+      "sdpa_full_ms": 60.442,
+      "lse_full_ms": 59.83,
+      "sdpa_attn_ms": 0.227,
+      "lse_attn_ms": 0.447,
+      "attn_speedup_lse_vs_sdpa": 0.51,
+      "full_speedup_lse_vs_sdpa": 1.01
+    },
+    {
+      "prefix_len": 2048,
+      "suffix_len": 256,
+      "total_len": 2304,
+      "baseline_ms": 82.718,
+      "sdpa_full_ms": 100.005,
+      "lse_full_ms": 97.848,
+      "sdpa_attn_ms": 0.223,
+      "lse_attn_ms": 0.396,
+      "attn_speedup_lse_vs_sdpa": 0.56,
+      "full_speedup_lse_vs_sdpa": 1.02
+    }
+  ]
+}
