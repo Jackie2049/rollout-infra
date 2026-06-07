@@ -1,12 +1,25 @@
 # Triton Fused QKV Projection — RTX 4090
 
-> 2026-06-07 | Triton fused QKV kernel **比PyTorch更慢(0.19-0.57x)**, stacked QKV无明显加速(0.94-1.21x), cuBLAS已近最优, kernel launch主导小GEMM
+> 2026-06-07 | **cuBLAS不可超越**: v1 naive Triton 0.19-0.57x, v2 tl.dot() Triton 0.64-0.82x, stacked PyTorch 0.94-1.21x — 自定义kernel无法beat cuBLAS(101% peak FP16)
 
 ## 核心发现
 
 ```
-Triton fused QKV kernel: 正确性完美(cos_sim=1.0), 但比PyTorch慢2-5x!
-Stacked QKV (单matmul): 仅MHA时1.21x, GQA时0.97x → 无实际加速
+两代Triton QKV kernel都无法超越cuBLAS!
+
+┌──────────────────────────────────────────────────────────────┐
+│ QKV投影 RTX 4090 三代方法实测:                               │
+│ v1 Naive for-loop: 0.19-0.57x (逐元素dot product)          │
+│ v2 tl.dot() tiled: 0.64-0.82x (2-3x改善但仍慢)            │
+│ PyTorch cuBLAS:   **101% peak FP16** (不可超越!)           │
+│                                                              │
+│ cuBLAS有: split-K/persistent kernel/Tensor Core调度/        │
+│ software pipelining/swizzling/bank-conflict-free            │
+│ tl.dot()只有: 基本tiled GEMM → 缺少高级优化                 │
+│                                                              │
+│ **结论**: QKV投影不需要自定义kernel → cuBLAS已最优           │
+│ 正确优化路径: CUDA Graph(消除launch) + torch.compile(fusion)│
+└──────────────────────────────────────────────────────────────┘
 
 ┌──────────────────────────────────────────────────────────────┐
 │ QKV投影RTX 4090实测:                                        │
@@ -145,14 +158,50 @@ Triton kernel设计问题:
   → 可以额外fuse bias add → 节省1次kernel launch
 ```
 
+## v2: tl.dot() Tiled Matmul — 比naive好但仍不如cuBLAS
+
+```
+v2改进: 用tl.dot()做tiled GEMM + 单次kernel launch(stacked Q/K/V权重)
+
+结果: 0.64-0.82x → 比v1(0.19-0.57x)好2-3x → 但仍比cuBLAS慢!
+
+| 配置            │ cuBLAS(ms) │ Triton_dot(ms) │ Triton_dot↑ │ Stack↑ │
+| B1_S64_D256    │ 0.089      │ 0.112          │ 0.80x       │ 1.00x  │
+| B4_S128_D256   │ 0.082      │ 0.111          │ 0.74x       │ 0.99x  │
+| B16_S256_D256  │ 0.083      │ 0.106          │ 0.78x       │ 1.04x  │
+| B32_S256_D256  │ 0.081      │ 0.106          │ 0.76x       │ 1.00x  │
+| B64_S256_D256  │ 0.081      │ 0.126          │ 0.64x       │ 1.03x  │
+| B4_D512_GQA4   │ 0.088      │ 0.106          │ 0.83x       │ 1.00x  │
+| B4_D1024_GQA8  │ 0.080      │ 0.110          │ 0.73x       │ 1.01x  │
+
+→ tl.dot()比naive好2-3x → 正确的tiled GEMM算法
+→ 但cuBLAS仍有20-36%优势 → cuBLAS有split-K/persistent/swizzling等高级优化
+→ 正确性完美(cos_sim=1.0/max_diff=0) → FP32积累→FP16输出精确
+
+Block Size Tuning (10配置):
+  → 全部0.73-0.82x → block size影响不大 → 问题规模太小GPU未饱和
+  → Best: BM=64,BK=64,BN=64 (0.82x) → 大block稍好(更多SM利用)
+
+Decode vs Prefill:
+  → Decode: Triton 0.70-0.78x → kernel launch+小矩阵主导
+  → Prefill B4_S128: Triton 0.89x → 最接近cuBLAS但仍慢
+  → Prefill B64_S1024: Triton 0.48x → Triton大矩阵更差! cuBLAS大GEMM优化更成熟
+
+→ **核心结论**: 即使使用tl.dot()生产级Triton kernel → cuBLAS在QKV投影上仍快20-36%
+  → 原因: cuBLAS有多年优化(split-K/persistent kernel/Tensor Core调度/software pipelining)
+  → Triton只有基本tiled GEMM → 缺少这些高级优化
+  → 问题规模太小(M≤16K,N≤768) → GPU利用率低 → Triton无法发挥tiling优势
+```
+
 ## QKV投影的正确优化路径
 
 ```
-RTX 4090实测结论:
+RTX 4090实测结论(两代kernel+v2确认):
 
-❌ 自定义Triton kernel: 0.19-0.57x (更慢!)
-❌ Stacked matmul: 0.94-1.21x (无意义)
-✓ cuBLAS FP16: 101% peak (已最优!)
+❌ v1 Naive Triton kernel: 0.19-0.57x (逐元素dot product→cuBLAS的1/5)
+❌ v2 tl.dot() Triton kernel: 0.64-0.82x (tiled GEMM→但仍慢20-36%)
+❌ Stacked matmul: 0.94-1.21x (无意义, kernel launch主导)
+✓ cuBLAS FP16: 101% peak (不可超越!)
 
 正确优化路径:
 
@@ -211,5 +260,7 @@ RTX 4090实测结论:
 
 ## 工具
 
-- `tools/triton_fused_qkv_projection.py` — Triton fused QKV kernel + 4实验benchmark
-- `results/triton_fused_qkv_projection.json` — 完整结果数据
+- `tools/triton_fused_qkv_projection.py` — v1 naive Triton QKV kernel + 4实验
+- `tools/triton_fused_qkv_v2.py` — v2 tl.dot() tiled Triton QKV kernel + 4实验
+- `results/triton_fused_qkv_projection.json` — v1结果数据
+- `results/triton_fused_qkv_v2.json` — v2结果数据
