@@ -790,7 +790,12 @@ def ppo_training_step(actor, critic, prompts, n_samples, max_response_len,
     metrics = {
         'loss': total_loss.item() / total_count if total_count > 0 else 0,
         'reward_mean': np.mean(all_rewards) if len(all_rewards) > 0 else 0,
+        'reward_std': np.std(all_rewards) if len(all_rewards) > 0 else 0,
         'accuracy': correct_count / total_count if total_count > 0 else 0,
+        'advantage_mean': 0,  # PPO advantages not stored per-step
+        'advantage_std': 0,
+        'num_valid': total_count,
+        'num_groups': len(prompts),
     }
 
     return metrics

@@ -12,14 +12,32 @@ import numpy as np
 import json
 import argparse
 import time
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tools.mini_grpo_training import (
     MiniGQATransformer, VOCAB_SIZE, TOKENS,
     grpo_training_step, rloo_training_step,
     dapo_training_step, ppo_training_step,
     SimpleCritic, generate_arithmetic_prompt,
-    compute_reward, generate_sft_dataset,
-    generate_dpo_preference_pairs,
+    compute_reward, generate_dpo_preference_pairs,
 )
+
+
+def generate_sft_dataset(n_examples):
+    """Generate SFT dataset of (prompt, correct_answer) pairs."""
+    dataset = []
+    for _ in range(n_examples):
+        prompt_tokens, correct_sum = generate_arithmetic_prompt()
+        # Build full sequence: prompt + answer digits + eos
+        answer_str = str(correct_sum)
+        answer_tokens = [TOKENS.get(d, TOKENS['<unk>']) for d in answer_str]
+        full_ids = prompt_tokens + answer_tokens + [TOKENS['<eos>']]
+        # Target: shifted by 1 (predict next token)
+        target_ids = full_ids[1:]
+        dataset.append({'full_ids': full_ids, 'target_ids': target_ids,
+                        'correct_sum': correct_sum})
+    return dataset
 
 def run_single_mode(mode, num_steps, n_samples, num_prompts_per_step,
                     max_response_len, lr, device, hidden_dim=64, num_layers=2,
@@ -44,8 +62,12 @@ def run_single_mode(mode, num_steps, n_samples, num_prompts_per_step,
         for step in range(100):
             batch_idx = np.random.randint(0, len(sft_dataset), size=4)
             batch = [sft_dataset[i] for i in batch_idx]
-            full_ids = torch.tensor([b['full_ids'] for b in batch], dtype=torch.long, device=device)
-            targets = torch.tensor([b['target_ids'] for b in batch], dtype=torch.long, device=device)
+            # Pad sequences to same length
+            max_len = max(len(b['full_ids']) for b in batch)
+            padded_full = [b['full_ids'] + [TOKENS['<pad>']] * (max_len - len(b['full_ids'])) for b in batch]
+            padded_target = [b['target_ids'] + [TOKENS['<pad>']] * (max_len - len(b['target_ids'])) for b in batch]
+            full_ids = torch.tensor(padded_full, dtype=torch.long, device=device)
+            targets = torch.tensor(padded_target, dtype=torch.long, device=device)
             logits = actor(full_ids)
             loss = torch.nn.functional.cross_entropy(logits.view(-1, VOCAB_SIZE), targets.view(-1))
             sft_optimizer.zero_grad()
@@ -192,6 +214,9 @@ def run_single_mode(mode, num_steps, n_samples, num_prompts_per_step,
     final_acc = accs[-1]
     ge50 = sum(1 for a in accs if a >= 0.5)
 
+    # Handle optional fields that may not exist in all modes (e.g., PPO doesn't have advantage_mean)
+    adv_means = [m.get('advantage_mean', 0) for m in metrics_history]
+
     result = {
         'mode': mode,
         'params': param_count,
@@ -201,7 +226,7 @@ def run_single_mode(mode, num_steps, n_samples, num_prompts_per_step,
         'steps_ge_50pct': ge50,
         'avg_reward_last50': np.mean(rewards[-50:]) if len(rewards) >= 50 else np.mean(rewards),
         'reward_std_last50': np.std(rewards[-50:]) if len(rewards) >= 50 else np.std(rewards),
-        'advantage_mean_avg': np.mean([m['advantage_mean'] for m in metrics_history]),
+        'advantage_mean_avg': np.mean(adv_means),
         'elapsed_seconds': elapsed,
         'metrics_history': metrics_history,
     }
