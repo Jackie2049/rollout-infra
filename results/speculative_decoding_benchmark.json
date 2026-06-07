@@ -1,0 +1,318 @@
+{
+  "target": {
+    "params": 19575552,
+    "decode_latency_ms": 1.26742385327816,
+    "d_model": 256,
+    "n_heads": 8,
+    "n_layers": 4
+  },
+  "tiny_0.5M": {
+    "params": 4228096,
+    "draft_latency_ms": 0.6890725344419479,
+    "param_ratio": 0.21598859638798437,
+    "latency_ratio": 0.543679632239585,
+    "kl_divergence": 21.445999145507812,
+    "cos_sim_logits": 0.0016372184036299586,
+    "agreement_rate_top1": 0.0,
+    "acceptance_by_K": {
+      "K1": {
+        "K": 1,
+        "avg_accepted": 0.18,
+        "acceptance_rate": 0.18,
+        "tokens_per_step": 1.18,
+        "time_per_step_ms": 1.956496387720108,
+        "naive_time_ms": 1.495560146868229,
+        "speedup": 0.7644073131210812,
+        "speedup_formula": 0.7644073131210812
+      },
+      "K2": {
+        "K": 2,
+        "avg_accepted": 0.15,
+        "acceptance_rate": 0.075,
+        "tokens_per_step": 1.15,
+        "time_per_step_ms": 2.645568922162056,
+        "naive_time_ms": 1.4575374312698839,
+        "speedup": 0.5509353466696799,
+        "speedup_formula": 0.5509353466696799
+      },
+      "K3": {
+        "K": 3,
+        "avg_accepted": 0.15,
+        "acceptance_rate": 0.049999999999999996,
+        "tokens_per_step": 1.15,
+        "time_per_step_ms": 3.334641456604004,
+        "naive_time_ms": 1.4575374312698839,
+        "speedup": 0.43708969921888957,
+        "speedup_formula": 0.43708969921888957
+      },
+      "K4": {
+        "K": 4,
+        "avg_accepted": 0.17,
+        "acceptance_rate": 0.0425,
+        "tokens_per_step": 1.17,
+        "time_per_step_ms": 4.023713991045952,
+        "naive_time_ms": 1.4828859083354473,
+        "speedup": 0.3685366086246045,
+        "speedup_formula": 0.3685366086246045
+      },
+      "K5": {
+        "K": 5,
+        "avg_accepted": 0.08,
+        "acceptance_rate": 0.016,
+        "tokens_per_step": 1.08,
+        "time_per_step_ms": 4.7127865254879,
+        "naive_time_ms": 1.368817761540413,
+        "speedup": 0.29044764793344924,
+        "speedup_formula": 0.29044764793344924
+      },
+      "K8": {
+        "K": 8,
+        "avg_accepted": 0.08,
+        "acceptance_rate": 0.01,
+        "tokens_per_step": 1.08,
+        "time_per_step_ms": 6.780004128813744,
+        "naive_time_ms": 1.368817761540413,
+        "speedup": 0.20189040235583258,
+        "speedup_formula": 0.20189040235583258
+      }
+    }
+  },
+  "small_2M": {
+    "params": 9017344,
+    "draft_latency_ms": 1.1220071464776993,
+    "param_ratio": 0.46064315325565275,
+    "latency_ratio": 0.885265922347647,
+    "kl_divergence": 21.464309692382812,
+    "cos_sim_logits": -0.0007396801956929266,
+    "agreement_rate_top1": 0.0,
+    "acceptance_by_K": {
+      "K1": {
+        "K": 1,
+        "avg_accepted": 0.12,
+        "acceptance_rate": 0.12,
+        "tokens_per_step": 1.12,
+        "time_per_step_ms": 2.3894309997558594,
+        "naive_time_ms": 1.4195147156715395,
+        "speedup": 0.5940806475753344,
+        "speedup_formula": 0.5940806475753344
+      },
+      "K2": {
+        "K": 2,
+        "avg_accepted": 0.16,
+        "acceptance_rate": 0.08,
+        "tokens_per_step": 1.16,
+        "time_per_step_ms": 3.5114381462335587,
+        "naive_time_ms": 1.4702116698026657,
+        "speedup": 0.4186921735698649,
+        "speedup_formula": 0.4186921735698649
+      },
+      "K3": {
+        "K": 3,
+        "avg_accepted": 0.09,
+        "acceptance_rate": 0.03,
+        "tokens_per_step": 1.09,
+        "time_per_step_ms": 4.633445292711258,
+        "naive_time_ms": 1.3814920000731945,
+        "speedup": 0.29815653639989675,
+        "speedup_formula": 0.29815653639989675
+      },
+      "K4": {
+        "K": 4,
+        "avg_accepted": 0.12,
+        "acceptance_rate": 0.03,
+        "tokens_per_step": 1.12,
+        "time_per_step_ms": 5.755452439188957,
+        "naive_time_ms": 1.4195147156715395,
+        "speedup": 0.2466382496719187,
+        "speedup_formula": 0.2466382496719187
+      },
+      "K5": {
+        "K": 5,
+        "avg_accepted": 0.07,
+        "acceptance_rate": 0.014000000000000002,
+        "tokens_per_step": 1.07,
+        "time_per_step_ms": 6.8774595856666565,
+        "naive_time_ms": 1.3561435230076313,
+        "speedup": 0.1971866946094421,
+        "speedup_formula": 0.1971866946094421
+      },
+      "K8": {
+        "K": 8,
+        "avg_accepted": 0.09,
+        "acceptance_rate": 0.01125,
+        "tokens_per_step": 1.09,
+        "time_per_step_ms": 10.243481025099754,
+        "naive_time_ms": 1.3814920000731945,
+        "speedup": 0.1348654814401573,
+        "speedup_formula": 0.1348654814401573
+      }
+    }
+  },
+  "medium_7M": {
+    "params": 19575552,
+    "draft_latency_ms": 1.149442046880722,
+    "param_ratio": 1.0,
+    "latency_ratio": 0.9069121146076894,
+    "kl_divergence": -4.305056791054085e-07,
+    "cos_sim_logits": 1.0,
+    "agreement_rate_top1": 1.0,
+    "acceptance_by_K": {
+      "K1": {
+        "K": 1,
+        "avg_accepted": 1.0,
+        "acceptance_rate": 1.0,
+        "tokens_per_step": 2.0,
+        "time_per_step_ms": 2.416865900158882,
+        "naive_time_ms": 2.53484770655632,
+        "speedup": 1.0488160333552978,
+        "speedup_formula": 1.0488160333552978
+      },
+      "K2": {
+        "K": 2,
+        "avg_accepted": 2.0,
+        "acceptance_rate": 1.0,
+        "tokens_per_step": 3.0,
+        "time_per_step_ms": 3.566307947039604,
+        "naive_time_ms": 3.8022715598344803,
+        "speedup": 1.0661646768307682,
+        "speedup_formula": 1.0661646768307682
+      },
+      "K3": {
+        "K": 3,
+        "avg_accepted": 3.0,
+        "acceptance_rate": 1.0,
+        "tokens_per_step": 4.0,
+        "time_per_step_ms": 4.715749993920326,
+        "naive_time_ms": 5.06969541311264,
+        "speedup": 1.0750560185863607,
+        "speedup_formula": 1.0750560185863607
+      },
+      "K4": {
+        "K": 4,
+        "avg_accepted": 4.0,
+        "acceptance_rate": 1.0,
+        "tokens_per_step": 5.0,
+        "time_per_step_ms": 5.865192040801048,
+        "naive_time_ms": 6.3371192663908005,
+        "speedup": 1.0804623654787096,
+        "speedup_formula": 1.0804623654787096
+      },
+      "K5": {
+        "K": 5,
+        "avg_accepted": 5.0,
+        "acceptance_rate": 1.0,
+        "tokens_per_step": 6.0,
+        "time_per_step_ms": 7.01463408768177,
+        "naive_time_ms": 7.604543119668961,
+        "speedup": 1.0840969072104722,
+        "speedup_formula": 1.0840969072104722
+      },
+      "K8": {
+        "K": 8,
+        "avg_accepted": 8.0,
+        "acceptance_rate": 1.0,
+        "tokens_per_step": 9.0,
+        "time_per_step_ms": 10.462960228323936,
+        "naive_time_ms": 11.40681467950344,
+        "speedup": 1.0902091215662302,
+        "speedup_formula": 1.0902091215662302
+      }
+    }
+  },
+  "optimal_alpha0.5_lr0.1": {
+    "alpha": 0.5,
+    "latency_ratio": 0.1,
+    "optimal_K": 19,
+    "max_speedup": 3.6206896551724133
+  },
+  "optimal_alpha0.5_lr0.2": {
+    "alpha": 0.5,
+    "latency_ratio": 0.2,
+    "optimal_K": 19,
+    "max_speedup": 2.1874999999999996
+  },
+  "optimal_alpha0.5_lr0.3": {
+    "alpha": 0.5,
+    "latency_ratio": 0.3,
+    "optimal_K": 19,
+    "max_speedup": 1.5671641791044775
+  },
+  "optimal_alpha0.5_lr0.5": {
+    "alpha": 0.5,
+    "latency_ratio": 0.5,
+    "optimal_K": 1,
+    "max_speedup": 1.0
+  },
+  "optimal_alpha0.8_lr0.1": {
+    "alpha": 0.8,
+    "latency_ratio": 0.1,
+    "optimal_K": 19,
+    "max_speedup": 5.586206896551724
+  },
+  "optimal_alpha0.8_lr0.2": {
+    "alpha": 0.8,
+    "latency_ratio": 0.2,
+    "optimal_K": 19,
+    "max_speedup": 3.375
+  },
+  "optimal_alpha0.8_lr0.3": {
+    "alpha": 0.8,
+    "latency_ratio": 0.3,
+    "optimal_K": 19,
+    "max_speedup": 2.4179104477611943
+  },
+  "optimal_alpha0.8_lr0.5": {
+    "alpha": 0.8,
+    "latency_ratio": 0.5,
+    "optimal_K": 19,
+    "max_speedup": 1.5428571428571431
+  },
+  "optimal_alpha0.9_lr0.1": {
+    "alpha": 0.9,
+    "latency_ratio": 0.1,
+    "optimal_K": 19,
+    "max_speedup": 6.241379310344827
+  },
+  "optimal_alpha0.9_lr0.2": {
+    "alpha": 0.9,
+    "latency_ratio": 0.2,
+    "optimal_K": 19,
+    "max_speedup": 3.770833333333333
+  },
+  "optimal_alpha0.9_lr0.3": {
+    "alpha": 0.9,
+    "latency_ratio": 0.3,
+    "optimal_K": 19,
+    "max_speedup": 2.701492537313433
+  },
+  "optimal_alpha0.9_lr0.5": {
+    "alpha": 0.9,
+    "latency_ratio": 0.5,
+    "optimal_K": 19,
+    "max_speedup": 1.723809523809524
+  },
+  "optimal_alpha0.95_lr0.1": {
+    "alpha": 0.95,
+    "latency_ratio": 0.1,
+    "optimal_K": 19,
+    "max_speedup": 6.568965517241379
+  },
+  "optimal_alpha0.95_lr0.2": {
+    "alpha": 0.95,
+    "latency_ratio": 0.2,
+    "optimal_K": 19,
+    "max_speedup": 3.9687499999999996
+  },
+  "optimal_alpha0.95_lr0.3": {
+    "alpha": 0.95,
+    "latency_ratio": 0.3,
+    "optimal_K": 19,
+    "max_speedup": 2.843283582089552
+  },
+  "optimal_alpha0.95_lr0.5": {
+    "alpha": 0.95,
+    "latency_ratio": 0.5,
+    "optimal_K": 19,
+    "max_speedup": 1.8142857142857143
+  }
+}
