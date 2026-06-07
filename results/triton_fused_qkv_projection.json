@@ -1,0 +1,255 @@
+{
+  "exp1_correctness": {
+    "MHA_256": {
+      "config": {
+        "B": 4,
+        "S": 128,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "q_cos_sim": 1.0,
+      "k_cos_sim": 0.9999998807907104,
+      "v_cos_sim": 1.0,
+      "q_max_diff": 1.9073486328125e-05,
+      "k_max_diff": 1.9073486328125e-05,
+      "v_max_diff": 1.52587890625e-05
+    },
+    "GQA_equal": {
+      "config": {
+        "B": 4,
+        "S": 128,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 8,
+        "D_HEAD": 32
+      },
+      "q_cos_sim": 0.9999998807907104,
+      "k_cos_sim": 1.0,
+      "v_cos_sim": 1.0,
+      "q_max_diff": 1.52587890625e-05,
+      "k_max_diff": 1.621246337890625e-05,
+      "v_max_diff": 1.5735626220703125e-05
+    },
+    "large_GQA": {
+      "config": {
+        "B": 16,
+        "S": 512,
+        "D": 512,
+        "H_Q": 16,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "q_cos_sim": 1.0,
+      "k_cos_sim": 0.9999998807907104,
+      "v_cos_sim": 0.9999998807907104,
+      "q_max_diff": 4.863739013671875e-05,
+      "k_max_diff": 5.7220458984375e-05,
+      "v_max_diff": 6.4849853515625e-05
+    },
+    "small": {
+      "config": {
+        "B": 1,
+        "S": 64,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 2,
+        "D_HEAD": 32
+      },
+      "q_cos_sim": 0.9999999403953552,
+      "k_cos_sim": 1.0,
+      "v_cos_sim": 1.0,
+      "q_max_diff": 9.5367431640625e-06,
+      "k_max_diff": 1.52587890625e-05,
+      "v_max_diff": 1.52587890625e-05
+    }
+  },
+  "exp2_performance": {
+    "B1_GQA4": {
+      "config": {
+        "B": 1,
+        "S": 64,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "sequential_ms": 0.08806400001049042,
+      "stacked_ms": 0.08601599931716919,
+      "stacked_speedup": 1.023809532058909,
+      "triton_ms": 0.15513599663972855,
+      "triton_speedup": 0.5676567780397282
+    },
+    "B4_GQA4": {
+      "config": {
+        "B": 4,
+        "S": 128,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "sequential_ms": 0.09113600105047226,
+      "stacked_ms": 0.08960000053048134,
+      "stacked_speedup": 1.017142862844832,
+      "triton_ms": 0.15615999698638916,
+      "triton_speedup": 0.5836065753665174
+    },
+    "B16_GQA4": {
+      "config": {
+        "B": 16,
+        "S": 256,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "sequential_ms": 0.09020800143480301,
+      "stacked_ms": 0.0870399996638298,
+      "stacked_speedup": 1.036397079310763,
+      "triton_ms": 0.16326399892568588,
+      "triton_speedup": 0.5525284326513629
+    },
+    "B32_GQA4": {
+      "config": {
+        "B": 32,
+        "S": 256,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "sequential_ms": 0.07680000364780426,
+      "stacked_ms": 0.07884799689054489,
+      "stacked_speedup": 0.9740260587014834,
+      "triton_ms": 0.2544479966163635,
+      "triton_speedup": 0.30182986177563503
+    },
+    "B64_GQA4": {
+      "config": {
+        "B": 64,
+        "S": 256,
+        "D": 256,
+        "H_Q": 8,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "sequential_ms": 0.08089599758386612,
+      "stacked_ms": 0.08396799862384796,
+      "stacked_speedup": 0.963414621161289,
+      "triton_ms": 0.4362240135669708,
+      "triton_speedup": 0.18544599808338302
+    },
+    "D512_GQA4": {
+      "config": {
+        "B": 4,
+        "S": 128,
+        "D": 512,
+        "H_Q": 16,
+        "H_KV": 4,
+        "D_HEAD": 32
+      },
+      "sequential_ms": 0.08396799862384796,
+      "stacked_ms": 0.08964800089597702,
+      "stacked_speedup": 0.9366410604211929,
+      "triton_ms": 0.15467199683189392,
+      "triton_speedup": 0.5428778340213001
+    },
+    "D1024_GQA8": {
+      "config": {
+        "B": 4,
+        "S": 128,
+        "D": 1024,
+        "H_Q": 16,
+        "H_KV": 8,
+        "D_HEAD": 64
+      },
+      "sequential_ms": 0.09004800021648407,
+      "stacked_ms": 0.08089599758386612,
+      "stacked_speedup": 1.1131329473146052,
+      "triton_ms": 0.38819199800491333,
+      "triton_speedup": 0.23196768784333452
+    }
+  },
+  "exp3_gqa_benefit": {
+    "HQ8_HKV8": {
+      "H_Q": 8,
+      "H_KV": 8,
+      "sequential_ms": 0.08396799862384796,
+      "stacked_ms": 0.06913600116968155,
+      "stacked_speedup": 1.2145336323077758,
+      "q_only_ms": 0.03379200026392937,
+      "kv_only_ms": 0.050175998359918594,
+      "kv_pct_of_q": 100.0,
+      "total_kv_pct": 66.66666666666666
+    },
+    "HQ8_HKV4": {
+      "H_Q": 8,
+      "H_KV": 4,
+      "sequential_ms": 0.07577600330114365,
+      "stacked_ms": 0.07782399654388428,
+      "stacked_speedup": 0.9736842961851003,
+      "q_only_ms": 0.0358240008354187,
+      "kv_only_ms": 0.05222399905323982,
+      "kv_pct_of_q": 50.0,
+      "total_kv_pct": 50.0
+    },
+    "HQ8_HKV2": {
+      "H_Q": 8,
+      "H_KV": 2,
+      "sequential_ms": 0.0798719972372055,
+      "stacked_ms": 0.08089599758386612,
+      "stacked_speedup": 0.9873417674885705,
+      "q_only_ms": 0.03379200026392937,
+      "kv_only_ms": 0.052160000428557396,
+      "kv_pct_of_q": 25.0,
+      "total_kv_pct": 33.33333333333333
+    },
+    "HQ8_HKV1": {
+      "H_Q": 8,
+      "H_KV": 1,
+      "sequential_ms": 0.07884799689054489,
+      "stacked_ms": 0.07577600330114365,
+      "stacked_speedup": 1.040540454175087,
+      "q_only_ms": 0.03284800052642822,
+      "kv_only_ms": 0.05222399905323982,
+      "kv_pct_of_q": 12.5,
+      "total_kv_pct": 20.0
+    }
+  },
+  "exp4_decode_prefill": {
+    "decode_B1_S1": {
+      "B": 1,
+      "S": 1,
+      "sequential_ms": 0.08396799862384796,
+      "stacked_ms": 0.08089599758386612,
+      "stacked_speedup": 1.0379746975342885,
+      "is_decode": true
+    },
+    "decode_B1_S8": {
+      "B": 1,
+      "S": 8,
+      "sequential_ms": 0.08908800035715103,
+      "stacked_ms": 0.08908800035715103,
+      "stacked_speedup": 1.0,
+      "is_decode": true
+    },
+    "prefill_B4_S128": {
+      "B": 4,
+      "S": 128,
+      "sequential_ms": 0.08601599931716919,
+      "stacked_ms": 0.088128000497818,
+      "stacked_speedup": 0.9760348451261969,
+      "is_decode": false
+    },
+    "prefill_B16_S512": {
+      "B": 16,
+      "S": 512,
+      "sequential_ms": 0.0798719972372055,
+      "stacked_ms": 0.07683200016617775,
+      "stacked_speedup": 1.0395668089396688,
+      "is_decode": false
+    }
+  }
+}
