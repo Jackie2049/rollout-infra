@@ -390,6 +390,9 @@ def rloo_training_step(model, prompts, n_samples, max_response_len, optimizer, d
     }
 
     return metrics
+
+
+def generate_sft_dataset(num_examples):
     """Generate supervised training data: prompt + correct answer."""
     dataset = []
     for _ in range(num_examples):
@@ -397,7 +400,6 @@ def rloo_training_step(model, prompts, n_samples, max_response_len, optimizer, d
         b = np.random.randint(0, 5)
         prompt_tokens = [TOKENS[str(a)], TOKENS['+'], TOKENS[str(b)], TOKENS['=']]
         correct_sum = a + b
-        # Correct response: just the digit of the sum + EOS
         response_tokens = [TOKENS[str(correct_sum)], TOKENS['<eos>']]
         full_tokens = prompt_tokens + response_tokens
         dataset.append((full_tokens, len(prompt_tokens)))
@@ -925,7 +927,7 @@ def main():
     parser.add_argument('--max_response_len', type=int, default=8, help='Max response tokens')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--num_prompts_per_step', type=int, default=8, help='Prompts per step')
-    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo', 'dapo', 'rloo'], help='Training mode')
+    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo', 'dapo', 'sft_dapo', 'rloo'], help='Training mode')
     parser.add_argument('--sft_steps', type=int, default=100, help='SFT warmup steps (for sft_grpo mode)')
     parser.add_argument('--kl_coeff', type=float, default=0.01, help='KL coefficient for DAPO mode (Dr.GRPO sequence-level)')
     parser.add_argument('--clip_lower', type=float, default=0.3, help='Lower clip epsilon for DAPO (larger = faster correction)')
@@ -945,9 +947,9 @@ def main():
     print(f"Reward: 1.0 if correct, 0.3 if ±1, 0.1 if ±2, 0 otherwise")
     print(f"Vocab size: {VOCAB_SIZE} (digits 0-9, +, =, special)")
     print(f"Mode: {args.mode}, n_samples: {args.n_samples}")
-    if args.mode == 'sft_grpo':
-        print(f"SFT warmup: {args.sft_steps} steps → then {args.num_steps} GRPO steps")
-    if args.mode == 'dapo':
+    if args.mode in ['sft_grpo', 'sft_dapo']:
+        print(f"SFT warmup: {args.sft_steps} steps → then {args.num_steps} {args.mode.split('_')[1].upper()} steps")
+    if args.mode in ['dapo', 'sft_dapo']:
         print(f"DAPO improvements: global_norm=True, decoupled_clip(ε_lower={args.clip_lower}, ε_upper={args.clip_upper})")
         print(f"  dynamic_sampling=True, token_level_loss=True, seq_level_KL(β={args.kl_coeff})")
     print()
@@ -962,7 +964,7 @@ def main():
 
     # SFT warmup phase
     sft_metrics_history = []
-    if args.mode == 'sft_grpo':
+    if args.mode in ['sft_grpo', 'sft_dapo']:
         print("\n--- Phase 1: SFT Warmup ---")
         sft_dataset = generate_sft_dataset(500)
         sft_lr = args.lr * 2  # Higher LR for SFT
@@ -997,6 +999,16 @@ def main():
 
         # Switch optimizer for GRPO phase (lower LR)
         actor_optimizer = torch.optim.AdamW(actor.parameters(), lr=args.lr)
+
+    # SFT→DAPO: init ref model AFTER SFT warmup (π_ref = SFT model)
+    if args.mode == 'sft_dapo':
+        dapo_ref_model = MiniGQATransformer(hidden_dim=args.hidden_dim, num_layers=args.num_layers, num_heads=4,
+                                             num_kv_heads=2, vocab_size=VOCAB_SIZE).to(device)
+        dapo_ref_model.load_state_dict(actor.state_dict().copy())
+        dapo_ref_model.eval()
+        for p in dapo_ref_model.parameters():
+            p.requires_grad = False
+        print(f"DAPO ref model initialized (π_ref = SFT warmup model)")
 
     if args.mode in ['ppo', 'both']:
         critic = SimpleCritic(hidden_dim=32, vocab_size=VOCAB_SIZE).to(device)
@@ -1058,7 +1070,7 @@ def main():
                       f"margin={metrics['margin']:.3f}, eval_acc={correct}%")
             continue
 
-        if args.mode == 'dapo':
+        if args.mode in ['dapo', 'sft_dapo']:
             prompts = [generate_arithmetic_prompt() for _ in range(args.num_prompts_per_step)]
             metrics = dapo_training_step(
                 actor, dapo_ref_model, prompts, args.n_samples, args.max_response_len,
@@ -1160,6 +1172,7 @@ def main():
                                      [('GRPO', actor), ('PPO', ppo_actor)] if args.mode == 'both' else \
                                      [('PPO', actor)] if args.mode == 'ppo' else \
                                      [('SFT+GRPO', actor)] if args.mode == 'sft_grpo' else \
+                                     [('SFT+DAPO', actor)] if args.mode == 'sft_dapo' else \
                                      [('DPO', actor)] if args.mode == 'dpo' else \
                                      [('DAPO', actor)]:
         model.eval()
