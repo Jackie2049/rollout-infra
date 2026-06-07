@@ -190,7 +190,43 @@ ln2_0_pos3 (=等号): +2.0%    ← Layer 0 MLP较弱
 - 数字位置(pos 0,1,2)对答案几乎无影响 → 模型不需要"理解"数字含义
 - 这说明模型在等号位置已经完成了计算 → 等号位置是"算术电路"的输出节点
 
-### 4.3 Feature Steering结果 (重大发现!)
+### 4.4 GRPO vs SFT→GRPO Circuit比较 (验证核心假设!)
+
+**实验设计**: 训练两个模型(相同seed=42) → GRPO-only 300步 vs SFT→200步+GRPO 300步 → 比较内部电路差异
+
+**结果**: GRPO 81% eval vs SFT→GRPO **100% eval**!
+
+```
+Circuit差异 (cosine similarity):
+ln2_0:  0.77  ← LayerNorm差异较小
+mlp_0:  0.27  ← **MLP差异最大!**
+attn_0: 0.35  ← Attention也有差异
+ln2_1:  0.45
+mlp_1:  0.14  ← **MLP差异最显著!**
+attn_1: 0.17
+
+Position差异:
+pos 0 (digit a): 0.23  ← 数字位置差异大
+pos 1 (+):        0.42
+pos 2 (digit b):  0.32
+pos 3 (=):        0.49  ← **等号位置差异最显著!**
+pos 4 (eos):      0.32
+```
+
+**Patching敏感度 (at equals-sign pos 3)**:
+```
+Layer      GRPO-only  SFT→GRPO   Ratio
+attn_0     0.30       **0.71**   **2.34x** ← SFT→GRPO模型2.3x更敏感!
+attn_1     0.22       0.21       0.97x  ← Layer 1几乎相同
+ln2_1      0.15       0.19       1.23x
+mlp_1      0.15       0.19       1.23x
+```
+
+**核心洞察**:
+1. **MLP层是两种训练方式差异的核心** → SFT改变了MLP的内部表示 → MLP是"知识存储层"
+2. **SFT→GRPO的attn_0在等号位置2.3x更敏感** → 更容易响应正确的算术信息 → 更灵活
+3. **GRPO-only模型的attn_0更弱**(0.30 vs 0.71) → "算术电路"更脆弱 → 容易被错误信息误导
+4. **这解释了训练-eval gap**: GRPO-only的脆弱电路 → 训练reward高但eval低 → 电路不robust
 
 **实验**: 在等号位置注入不同target_sum的activation → 能否操控模型输出?
 
