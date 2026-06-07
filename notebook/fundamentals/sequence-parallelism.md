@@ -350,6 +350,18 @@ TP (对比):
 - **NVLink 下通信可忽略**: Ring 0.54ms vs 计算 ~100ms, 占比 < 1%
 - **USP 是最灵活方案**: 2D 切分平衡显存和通信
 
+## RTX 4090 PCIe 实测
+
+> 详见 `notebook/fundamentals/ring-attention-benchmark-rtx4090.md`
+
+关键发现:
+- **PCIe下Ring Attention比单GPU慢7-67倍!** 通信无法与计算overlap
+- **通信占比P=2 25%→P=4 72%→P=8 83%!** P越多通信越严重
+- **PCIe带宽仅5-6 GB/s** → NVLink 300 GB/s → 50-60x差距
+- **Causal负载不均衡=inf** → 某些GPU某些步骤完全空闲!
+- **Ring Attention = NVLink技术, PCIe不可行**
+- NVLink下仅1.16-1.94x开销 → overlap有效 → Ring Attention可行
+
 ## 参考
 
 - 论文: [DeepSpeed Ulysses](https://arxiv.org/abs/2304.14977)

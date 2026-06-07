@@ -1,0 +1,165 @@
+{
+  "world_size": 8,
+  "gpu": "RTX_4090_PCIe",
+  "correctness": {
+    "N": 512,
+    "P": 8,
+    "B": 2,
+    "H": 8,
+    "D": 64,
+    "max_diff": 1.4901161193847656e-06,
+    "cos_sim": 0.9999999403953552
+  },
+  "latency": {
+    "N512": {
+      "N": 512,
+      "P": 8,
+      "block_size": 64,
+      "ring_full_median_ms": 2.872128039598465,
+      "compute_median_ms": 2.2127721458673477,
+      "comm_median_ms": 0.5690120160579681,
+      "baseline_median_ms": 0.043060630559921265,
+      "comm_pct": 19.81151286477877,
+      "compute_pct": 77.04294917773589,
+      "ring_vs_baseline_ratio": 66.69962799550134,
+      "comm_volume_MB": 1.835008,
+      "nvlink_overlap_time_ms": 2.2127721458673477,
+      "pcie_serial_time_ms": 2.781784161925316,
+      "nvlink_speedup_vs_pcie": 1.2571489419372326
+    },
+    "N1024": {
+      "N": 1024,
+      "P": 8,
+      "block_size": 128,
+      "ring_full_median_ms": 3.1356215476989746,
+      "compute_median_ms": 2.3296959698200226,
+      "comm_median_ms": 0.9239949285984039,
+      "baseline_median_ms": 0.05676783621311188,
+      "comm_pct": 29.467680156633147,
+      "compute_pct": 74.29774079495124,
+      "ring_vs_baseline_ratio": 55.23588279686321,
+      "comm_volume_MB": 3.670016,
+      "nvlink_overlap_time_ms": 2.3296959698200226,
+      "pcie_serial_time_ms": 3.2536908984184265,
+      "nvlink_speedup_vs_pcie": 1.3966160995118113
+    },
+    "N2048": {
+      "N": 2048,
+      "P": 8,
+      "block_size": 256,
+      "ring_full_median_ms": 3.1410660594701767,
+      "compute_median_ms": 2.122398465871811,
+      "comm_median_ms": 1.6278624534606934,
+      "baseline_median_ms": 0.13502687215805054,
+      "comm_pct": 51.82515816732855,
+      "compute_pct": 67.56936739591555,
+      "ring_vs_baseline_ratio": 23.262525520057384,
+      "comm_volume_MB": 7.340032,
+      "nvlink_overlap_time_ms": 2.122398465871811,
+      "pcie_serial_time_ms": 3.7502609193325043,
+      "nvlink_speedup_vs_pcie": 1.7669919101604803
+    },
+    "N4096": {
+      "N": 4096,
+      "P": 8,
+      "block_size": 512,
+      "ring_full_median_ms": 3.700895234942436,
+      "compute_median_ms": 2.437423914670944,
+      "comm_median_ms": 3.0839405953884125,
+      "baseline_median_ms": 0.3434307873249054,
+      "comm_pct": 83.32958377937926,
+      "compute_pct": 65.86038674258381,
+      "ring_vs_baseline_ratio": 10.776247708511862,
+      "comm_volume_MB": 14.680064,
+      "nvlink_overlap_time_ms": 3.0839405953884125,
+      "pcie_serial_time_ms": 5.521364510059357,
+      "nvlink_speedup_vs_pcie": 1.7903602028896923
+    },
+    "N8192": {
+      "N": 8192,
+      "P": 8,
+      "block_size": 1024,
+      "ring_full_median_ms": 8.2768052816391,
+      "compute_median_ms": 2.34043225646019,
+      "comm_median_ms": 5.984043702483177,
+      "baseline_median_ms": 1.0676290839910507,
+      "comm_pct": 72.29895471575146,
+      "compute_pct": 28.27700032586367,
+      "ring_vs_baseline_ratio": 7.752510123364603,
+      "comm_volume_MB": 29.360128,
+      "nvlink_overlap_time_ms": 5.984043702483177,
+      "pcie_serial_time_ms": 8.324475958943367,
+      "nvlink_speedup_vs_pcie": 1.3911121597405762
+    }
+  },
+  "load_balance": {
+    "N": 2048,
+    "P": 8,
+    "rank": 0,
+    "active_counts_per_step": [
+      32896,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "total_causal_active": 32896,
+    "non_causal_active_per_step": 65536,
+    "striped_approx_active_per_step": 262144.0,
+    "imbalance_ratio": Infinity
+  },
+  "p2p_bandwidth": {
+    "size_0.5MB": {
+      "size_MB": 0.5,
+      "total_data_MB": 3.5,
+      "median_ms": 0.8273329585790634,
+      "effective_bandwidth_MB_s": 4230.461223267615,
+      "effective_bandwidth_GB_s": 4.131309788347281
+    },
+    "size_1MB": {
+      "size_MB": 1,
+      "total_data_MB": 7,
+      "median_ms": 1.5549026429653168,
+      "effective_bandwidth_MB_s": 4501.889575961149,
+      "effective_bandwidth_GB_s": 4.396376539024559
+    },
+    "size_2MB": {
+      "size_MB": 2,
+      "total_data_MB": 14,
+      "median_ms": 2.987906336784363,
+      "effective_bandwidth_MB_s": 4685.555175423285,
+      "effective_bandwidth_GB_s": 4.5757374759993015
+    },
+    "size_4MB": {
+      "size_MB": 4,
+      "total_data_MB": 28,
+      "median_ms": 5.922757089138031,
+      "effective_bandwidth_MB_s": 4727.52800403553,
+      "effective_bandwidth_GB_s": 4.616726566440947
+    },
+    "size_8MB": {
+      "size_MB": 8,
+      "total_data_MB": 56,
+      "median_ms": 11.785857379436493,
+      "effective_bandwidth_MB_s": 4751.457462713458,
+      "effective_bandwidth_GB_s": 4.640095178431111
+    },
+    "size_16MB": {
+      "size_MB": 16,
+      "total_data_MB": 112,
+      "median_ms": 23.635992780327797,
+      "effective_bandwidth_MB_s": 4738.535886388383,
+      "effective_bandwidth_GB_s": 4.627476451551155
+    },
+    "size_32MB": {
+      "size_MB": 32,
+      "total_data_MB": 224,
+      "median_ms": 46.80138826370239,
+      "effective_bandwidth_MB_s": 4786.182810173753,
+      "effective_bandwidth_GB_s": 4.6740066505603055
+    }
+  }
+}
