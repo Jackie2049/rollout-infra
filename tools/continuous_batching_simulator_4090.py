@@ -91,83 +91,81 @@ class Scheduler:
         self.token_budget = token_budget  # max tokens per step
         self.kv_manager = kv_manager
         self.waiting_queue = []  # waiting requests (FCFS)
-        self.running_set = []  # running requests
+        self.running_set = []  # running requests (decode + partial prefill)
         self.completed = []  # completed requests
 
-    def schedule(self, step_time):
-        """Schedule a batch of requests for one step."""
-        # Priority: running requests (decode) first
-        running_tokens = sum(
-            1 for r in self.running_set  # decode: 1 token per request
-        )
-        remaining_budget = self.token_budget - running_tokens
+    def step(self, current_time_ms, decode_latency_ms, prefill_latency_per_token_ms):
+        """Execute one scheduling + execution step.
 
-        # Add waiting requests (prefill) if budget available
-        new_prefill_requests = []
-        while remaining_budget > 0 and len(self.waiting_queue) > 0:
-            req = self.waiting_queue[0]
-            tokens_needed = req.prompt_len - req.num_computed_tokens
-            if tokens_needed <= 0:
-                # Already prefilled, move to decode
-                new_prefill_requests.append(req)
-                self.waiting_queue.pop(0)
-                continue
-
-            # Chunked prefill: allocate up to remaining budget
-            chunk_size = min(tokens_needed, remaining_budget)
-
-            # Check KV cache availability
-            total_tokens = req.num_computed_tokens + chunk_size
-            if not self.kv_manager.allocate(req.req_id, total_tokens):
-                break  # KV cache full, can't add more requests
-
-            req.num_computed_tokens += chunk_size
-            remaining_budget -= chunk_size
-
-            if req.num_computed_tokens >= req.prompt_len:
-                # Prefill complete, move to decode
-                req.state = "running"
-                req.first_token_time = step_time
-                new_prefill_requests.append(req)
-                self.waiting_queue.pop(0)
-            else:
-                # Partial prefill, keep in running
-                req.state = "running"
-                new_prefill_requests.append(req)
-                self.waiting_queue.pop(0)
-
-        # Add new running requests
-        self.running_set.extend(new_prefill_requests)
-
-        return running_tokens + (self.token_budget - remaining_budget)
-
-    def step(self, step_time_ms, latency_per_token_ms):
-        """Execute one step: all running requests get 1 decode token."""
+        vLLM V1 unified budget:
+        1. All RUNNING requests get 1 decode token (priority)
+        2. Remaining budget goes to WAITING requests (prefill)
+        3. Total tokens per step = token_budget
+        """
+        # Phase 1: Decode all running requests (1 token each)
+        decode_count = 0
         completed_this_step = []
         still_running = []
 
         for req in self.running_set:
-            if req.num_computed_tokens < req.prompt_len:
-                # Still in prefill (chunked), advance prefill
-                req.num_computed_tokens += 1
+            # Decode: 1 token per request per step
+            req.num_generated_tokens += 1
+            req.num_computed_tokens += 1
+            decode_count += 1
+
+            if req.num_generated_tokens >= req.response_len:
+                # Request completed
+                req.state = "completed"
+                req.completion_time = current_time_ms
+                completed_this_step.append(req)
+                self.kv_manager.free(req.req_id)
             else:
-                # Decode: generate 1 token
-                req.num_generated_tokens += 1
-                if req.num_generated_tokens >= req.response_len:
-                    req.state = "completed"
-                    req.completion_time = step_time_ms
-                    completed_this_step.append(req)
-                    self.kv_manager.free(req.req_id)
-                else:
-                    still_running.append(req)
+                still_running.append(req)
 
         self.running_set = still_running
         self.completed.extend(completed_this_step)
 
-        # Schedule new batch
-        total_tokens = self.schedule(step_time_ms)
+        # Phase 2: Prefill waiting requests with remaining budget
+        remaining_budget = self.token_budget - decode_count
+        new_running = []
 
-        return len(completed_this_step), total_tokens
+        while remaining_budget > 0 and len(self.waiting_queue) > 0:
+            req = self.waiting_queue[0]
+            tokens_needed = req.prompt_len  # full prefill
+
+            # Chunked prefill: allocate min(tokens_needed, remaining_budget)
+            chunk_size = min(tokens_needed, remaining_budget)
+
+            # Check KV availability
+            total_kv_tokens = chunk_size  # new KV tokens needed
+            blocks_needed = math.ceil(total_kv_tokens / 16)
+            if blocks_needed > self.kv_manager.free_blocks:
+                break  # KV cache full
+
+            # Allocate KV blocks
+            self.kv_manager.allocate(req.req_id, chunk_size)
+
+            # Mark TTFT (first token time)
+            if req.first_token_time is None:
+                req.first_token_time = current_time_ms + chunk_size * prefill_latency_per_token_ms
+
+            req.num_computed_tokens = chunk_size
+            req.state = "running"
+            remaining_budget -= chunk_size
+
+            # If full prefill complete, this request starts decode next step
+            new_running.append(req)
+            self.waiting_queue.pop(0)
+
+        self.running_set.extend(new_running)
+
+        # Calculate step time
+        total_tokens = decode_count + (self.token_budget - remaining_budget)
+        # Latency: decode portion + prefill portion
+        step_time_ms = max(decode_latency_ms,  # decode takes this long
+                          (self.token_budget - remaining_budget) * prefill_latency_per_token_ms)
+
+        return len(completed_this_step), total_tokens, step_time_ms
 
 
 def simulate_serving(
@@ -200,6 +198,13 @@ def simulate_serving(
 
     scheduler = Scheduler(token_budget, kv_manager)
 
+    # Decode and prefill latency
+    step_time_ms = latency_decode_ms if latency_decode_ms > 0 else 2.21
+    if use_int4_weights:
+        step_time_ms *= 0.87  # our benchmark data
+
+    prefill_per_token_ms = latency_prefill_per_token_ms if latency_prefill_per_token_ms > 0 else 0.01
+
     # Generate requests with Poisson arrival
     requests = []
     prefix_hashes = defaultdict(list)  # for prefix sharing
@@ -219,33 +224,49 @@ def simulate_serving(
         t += random.expovariate(arrival_rate) if arrival_rate > 0 else 0.1
 
     # Simulation
-    step_time = 0.0
-    step_ms = latency_decode_ms if latency_decode_ms > 0 else 2.21  # RTX 4090 baseline
-    if use_int4_weights:
-        # INT4 weight-only: slight latency reduction for 25M, significant for 7B
-        step_ms *= 0.87  # our benchmark data
-
+    completed_reqs = set()
+    total_time_ms = 0.0
     total_tokens_generated = 0
     total_steps = 0
     ttft_list = []
     latency_list = []
+    peak_concurrent = 0
+
+    # Inject requests over time based on arrival rate
+    request_idx = 0
+    next_arrival_time_ms = 0.0
 
     while len(scheduler.completed) < num_requests and total_steps < 50000:
-        completed, total_tokens = scheduler.step(step_time, step_ms)
-        total_tokens_generated += len(scheduler.running_set)  # decode tokens
-        step_time += step_ms
-        total_steps += 1
+        # Inject new requests that have arrived
+        while request_idx < num_requests and requests[request_idx].arrival_time * 1000 <= total_time_ms:
+            scheduler.waiting_queue.append(requests[request_idx])
+            request_idx += 1
 
+        # Run one step
+        completed_count, tokens, step_ms = scheduler.step(
+            total_time_ms,
+            step_time_ms if step_time_ms > 0 else 2.21,
+            prefill_per_token_ms,
+        )
+
+        total_time_ms += step_ms
+        total_tokens_generated += tokens
+        total_steps += 1
+        peak_concurrent = max(peak_concurrent, len(scheduler.running_set))
+
+        # Record metrics for completed requests
         for req in scheduler.completed:
-            if req.first_token_time is not None and req.first_token_time not in ttft_list:
-                ttft_list.append(req.first_token_time)
-            if req.completion_time is not None and req.completion_time not in latency_list:
-                latency_list.append(req.completion_time)
+            if req not in completed_reqs:
+                if req.first_token_time is not None:
+                    ttft_list.append(req.first_token_time)
+                if req.completion_time is not None:
+                    latency_list.append(req.completion_time)
+                completed_reqs.add(req)
 
     # Results
     avg_ttft = sum(ttft_list) / len(ttft_list) if ttft_list else 0
     avg_latency = sum(latency_list) / len(latency_list) if latency_list else 0
-    throughput = total_tokens_generated / (step_time / 1000) if step_time > 0 else 0
+    throughput = total_tokens_generated / (total_time_ms / 1000) if total_time_ms > 0 else 0
     eviction_rate = kv_manager.eviction_count / num_requests
 
     return {
@@ -253,7 +274,7 @@ def simulate_serving(
         "num_requests": num_requests,
         "completed": len(scheduler.completed),
         "total_steps": total_steps,
-        "total_time_ms": step_time,
+        "total_time_ms": total_time_ms,
         "avg_ttft_ms": avg_ttft,
         "avg_latency_ms": avg_latency,
         "throughput_tok_per_s": throughput,
