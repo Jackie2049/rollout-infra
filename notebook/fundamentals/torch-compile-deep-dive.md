@@ -98,7 +98,9 @@ Inductor调试:
   torch.compiler.config.trace_graph_tile = True → 可视化编译区域
 ```
 
-## 性能实测 (RTX 4090 已有数据)
+## 性能实测
+
+### RTX 4090 已有数据
 
 ```
 | 模型/场景       | torch.compile | Eager | 加速   | 备注
@@ -112,6 +114,59 @@ Inductor调试:
 → 大模型(7B) → compute占比大 → compile收益小 → 1.05x
 → 关键: compile收益 ∝ 1 - (compute_time / total_time)
 → 模型越大 → compute占比越高 → compile收益越低 → 但仍减少jitter
+```
+
+### MiniGQATransformer RTX 4090 Benchmark (2026-06-07)
+
+```
+模型: MiniGQATransformer 2.28M params (H=256, L=4, heads=8, kv=4)
+PyTorch: 2.9.0+cu128, CUDA: 12.8, GPU: RTX 4090 (24GB)
+
+实验1: Graph Break Analysis
+  torch._dynamo.explain → **0 graph breaks** ← MiniGQA完全Dynamo-friendly!
+  原因: 纯torch ops, 无数据依赖分支, 无Python side effects
+  Eager: 2.07ms → Compile: 1.49ms → 1.40x
+
+实验2: Compile Modes Comparison (Forward-only)
+  Eager baseline: 2.04ms
+  | Mode             | Median(ms) | Speedup | 备注
+  | default          | 1.51       | 1.35x   | 标准编译+kernel fusion
+  | reduce-overhead  | 0.54       | **3.75x** | CUDA Graph模式→消除launch
+  | max-autotune     | 0.55       | 3.70x   | 自动调优→与reduce-overhead接近
+
+  → reduce-overhead = CUDA Graph → 将整个计算图录制为单个GPU操作 → 消除所有kernel launch
+  → 3.75x vs 1.35x → CUDA Graph贡献2.8x额外加速!
+  → max-autotune几乎等于reduce-overhead → 2.28M模型已充分优化
+
+实验3: Training Step (Fwd+Bwd) Compile vs Eager
+  Eager train step: 7.85ms
+  Compile train step: 5.99ms → **1.31x**
+  → 训练加速低于推理(1.31x vs 3.75x)
+  → 原因: backward占比更大→compute-bound→compile收益被稀释
+  → backward=55% of training time → compute主导→launch占比低
+
+实验4: Batch Size × Compile Speedup
+  | Batch | Eager(ms) | Compile(ms) | Speedup
+  | 1     | 2.15      | 1.55        | 1.38x
+  | 4     | 2.05      | 1.48        | 1.39x
+  | 16    | 1.92      | 1.46        | 1.31x
+  | 32    | 2.02      | 1.45        | 1.39x
+  | 64    | 1.95      | 1.43        | 1.36x
+
+  → Speedup **flat** across batch sizes (1.31-1.39x)!
+  → 原因: 2.28M模型太小 → 所有batch都memory-bound → HBM带宽饱和
+  → batch增大→eager也很快→compile相对收益不明显
+
+关键发现:
+  1. **0 graph breaks** → MiniGQA架构Dynamo友好 → 无eager回退
+  2. **reduce-overhead 3.75x** → CUDA Graph对小模型推理巨大收益
+  3. **训练1.31x** → backward compute-bound → compile收益被稀释
+  4. **cuBLAS beats Triton** → Inductor自动选择cuBLAS作为最优kernel
+     → RTX 4090 cuBLAS高度优化(FP16 101% peak TFLOPS)
+     → Triton kernel仅在fusion场景有优势(cuBLAS不能融合的op组合)
+  5. **flat batch scaling** → 小模型memory-bound → batch不改变瓶颈性质
+
+工具: tools/torch_compile_benchmark_4090.py
 ```
 
 ## FSDP2 + torch.compile 组合
