@@ -1,0 +1,17 @@
+{
+  "ddp_dp4_76k": {
+    "strategy": "ddp",
+    "model_size": "76k",
+    "num_gpus": 4,
+    "grad_accum_steps": 1,
+    "effective_batch_size": 4,
+    "total_steps": 100,
+    "total_time_s": 0.9330885410308838,
+    "throughput_steps_s": 107.17096567225998,
+    "throughput_micro_steps_s": 107.17096567225998,
+    "final_loss": 0.025674523785710335,
+    "eval_accuracy": 0.9100000262260437,
+    "peak_gpu_mem_gb": 0.01890048,
+    "rank": 0
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "single_ga1_2.28m": {
+    "strategy": "single_gpu_grad_accum",
+    "model_size": "2.28m",
+    "num_gpus": 1,
+    "grad_accum_steps": 1,
+    "effective_batch_size": 1,
+    "total_steps": 100,
+    "total_time_s": 1.0825402736663818,
+    "throughput_steps_s": 92.37531612686965,
+    "throughput_micro_steps_s": 92.37531612686965,
+    "final_loss": 0.22364884614944458,
+    "eval_accuracy": 0.3,
+    "peak_gpu_mem_gb": 0.064524288
+  },
+  "single_ga2_2.28m": {
+    "strategy": "single_gpu_grad_accum",
+    "model_size": "2.28m",
+    "num_gpus": 1,
+    "grad_accum_steps": 2,
+    "effective_batch_size": 2,
+    "total_steps": 100,
+    "total_time_s": 1.2775676250457764,
+    "throughput_steps_s": 78.27374304073878,
+    "throughput_micro_steps_s": 156.54748608147756,
+    "final_loss": 2.227811813354492,
+    "eval_accuracy": 0.25,
+    "peak_gpu_mem_gb": 0.064524288
+  },
+  "single_ga4_2.28m": {
+    "strategy": "single_gpu_grad_accum",
+    "model_size": "2.28m",
+    "num_gpus": 1,
+    "grad_accum_steps": 4,
+    "effective_batch_size": 4,
+    "total_steps": 100,
+    "total_time_s": 2.41998291015625,
+    "throughput_steps_s": 41.32260586647835,
+    "throughput_micro_steps_s": 165.2904234659134,
+    "final_loss": 0.5027794614434242,
+    "eval_accuracy": 0.98,
+    "peak_gpu_mem_gb": 0.064524288
+  },
+  "single_ga8_2.28m": {
+    "strategy": "single_gpu_grad_accum",
+    "model_size": "2.28m",
+    "num_gpus": 1,
+    "grad_accum_steps": 8,
+    "effective_batch_size": 8,
+    "total_steps": 100,
+    "total_time_s": 4.742718935012817,
+    "throughput_steps_s": 21.08495176928079,
+    "throughput_micro_steps_s": 168.6796141542463,
+    "final_loss": 0.08057809330057353,
+    "eval_accuracy": 0.95,
+    "peak_gpu_mem_gb": 0.064524288
+  },
+  "single_ga16_2.28m": {
+    "strategy": "single_gpu_grad_accum",
+    "model_size": "2.28m",
+    "num_gpus": 1,
+    "grad_accum_steps": 16,
+    "effective_batch_size": 16,
+    "total_steps": 100,
+    "total_time_s": 9.410435914993286,
+    "throughput_steps_s": 10.626500292156907,
+    "throughput_micro_steps_s": 170.0240046745105,
+    "final_loss": 0.031007947225589305,
+    "eval_accuracy": 1.0,
+    "peak_gpu_mem_gb": 0.064524288
+  }
+}
