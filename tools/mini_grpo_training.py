@@ -270,7 +270,126 @@ def grpo_training_step(model, prompts, n_samples, max_response_len, optimizer, d
     return metrics
 
 
-def generate_sft_dataset(num_examples=500):
+def rloo_training_step(model, prompts, n_samples, max_response_len, optimizer, device):
+    """One RLOO (Reinforcement Learning with Leave-One-Out) training step.
+
+    Key difference from GRPO: advantage_i = reward_i - mean(rewards excluding i)
+    This eliminates the self-inclusion bias where GRPO includes r_i in the baseline.
+
+    RLOO does NOT normalize by group std — uses raw advantage values.
+    """
+    model.train()
+    all_rewards = []
+    all_advantages = []
+    total_loss = 0
+    correct_count = 0
+    total_count = 0
+    group_count = len(prompts)
+
+    # For each prompt, generate n responses (same rollout as GRPO)
+    group_data = []
+
+    for prompt_tokens, correct_sum in prompts:
+        prompt_tensor = torch.tensor(prompt_tokens, dtype=torch.long, device=device).unsqueeze(0)
+        responses = []
+
+        for _ in range(n_samples):
+            current_ids = prompt_tensor.clone()
+            response_tokens = []
+
+            for step in range(max_response_len):
+                logits = model(current_ids)
+                next_logits = logits[:, -1, :]
+                probs = F.softmax(next_logits, dim=-1)
+                next_token = torch.multinomial(probs, 1).item()
+                if next_token == TOKENS['<eos>']:
+                    break
+                response_tokens.append(next_token)
+                current_ids = torch.cat([current_ids,
+                    torch.tensor([[next_token]], dtype=torch.long, device=device)], dim=1)
+
+            reward = compute_reward(response_tokens, correct_sum)
+            responses.append((response_tokens, reward))
+            all_rewards.append(reward)
+            if reward == 1.0:
+                correct_count += 1
+            total_count += 1
+
+        group_data.append((prompt_tokens, correct_sum, responses))
+
+    # Compute RLOO advantages per group: leave-one-out baseline
+    for prompt_tokens, correct_sum, responses in group_data:
+        group_rewards = [r for _, r in responses]
+        n = len(group_rewards)
+
+        for i, (resp_tokens, reward) in enumerate(responses):
+            # Leave-one-out baseline: mean of all rewards EXCEPT current sample
+            if n > 1:
+                loo_mean = (sum(group_rewards) - reward) / (n - 1)
+            else:
+                loo_mean = 0.0  # No baseline possible with 1 sample
+            advantage = reward - loo_mean
+            all_advantages.append(advantage)
+
+    # Compute policy loss (same structure as GRPO but with RLOO advantages)
+    loss = 0
+    num_valid = 0
+    sample_idx = 0
+
+    for prompt_tokens, correct_sum, responses in group_data:
+        group_rewards = [r for _, r in responses]
+        n = len(group_rewards)
+
+        for i, (resp_tokens, reward) in enumerate(responses):
+            if n > 1:
+                loo_mean = (sum(group_rewards) - reward) / (n - 1)
+            else:
+                loo_mean = 0.0
+            advantage = reward - loo_mean
+
+            if len(resp_tokens) == 0:
+                sample_idx += 1
+                continue
+
+            full_ids = torch.tensor(prompt_tokens + resp_tokens, dtype=torch.long, device=device).unsqueeze(0)
+            logits = model(full_ids)
+            log_probs = F.log_softmax(logits, dim=-1)
+            response_start = len(prompt_tokens)
+            token_log_probs = []
+            for t_idx, token in enumerate(resp_tokens):
+                pos = response_start + t_idx - 1
+                if pos < 0:
+                    continue
+                token_log_probs.append(log_probs[0, pos, token])
+
+            if len(token_log_probs) > 0:
+                total_log_prob = sum(token_log_probs)
+                loss += -advantage * total_log_prob
+                num_valid += 1
+
+            sample_idx += 1
+
+    if num_valid > 0:
+        loss = loss / num_valid
+
+    optimizer.zero_grad()
+    if num_valid > 0:
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+        optimizer.step()
+
+    metrics = {
+        'loss': loss.item() if num_valid > 0 else 0,
+        'reward_mean': np.mean(all_rewards),
+        'reward_std': np.std(all_rewards),
+        'accuracy': correct_count / total_count if total_count > 0 else 0,
+        'advantage_mean': np.mean(all_advantages),
+        'advantage_std': np.std(all_advantages),
+        'num_valid': num_valid,
+        'num_groups': group_count,
+    }
+
+    return metrics
     """Generate supervised training data: prompt + correct answer."""
     dataset = []
     for _ in range(num_examples):
@@ -801,7 +920,7 @@ def main():
     parser.add_argument('--max_response_len', type=int, default=8, help='Max response tokens')
     parser.add_argument('--lr', type=float, default=1e-3, help='Learning rate')
     parser.add_argument('--num_prompts_per_step', type=int, default=8, help='Prompts per step')
-    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo', 'dapo'], help='Training mode')
+    parser.add_argument('--mode', default='grpo', choices=['grpo', 'ppo', 'both', 'sft_grpo', 'dpo', 'dapo', 'rloo'], help='Training mode')
     parser.add_argument('--sft_steps', type=int, default=100, help='SFT warmup steps (for sft_grpo mode)')
     parser.add_argument('--kl_coeff', type=float, default=0.01, help='KL coefficient for DAPO mode (Dr.GRPO sequence-level)')
     parser.add_argument('--clip_lower', type=float, default=0.3, help='Lower clip epsilon for DAPO (larger = faster correction)')
@@ -890,7 +1009,7 @@ def main():
     dapo_metrics_history = []
     dapo_ref_model = None
     if args.mode == 'dapo':
-        dapo_ref_model = MiniGQATransformer(hidden_dim=64, num_layers=2, num_heads=4,
+        dapo_ref_model = MiniGQATransformer(hidden_dim=args.hidden_dim, num_layers=args.num_layers, num_heads=4,
                                              num_kv_heads=2, vocab_size=VOCAB_SIZE).to(device)
         # Copy current actor weights as reference (π_ref = π_initial)
         dapo_ref_model.load_state_dict(actor.state_dict().copy())
@@ -991,6 +1110,19 @@ def main():
                       f"acc={metrics['accuracy']:.1%}, "
                       f"adv_mean={metrics['advantage_mean']:.3f}")
 
+        if args.mode == 'rloo':
+            metrics = rloo_training_step(
+                actor, prompts, args.n_samples, args.max_response_len,
+                actor_optimizer, device
+            )
+            grpo_metrics_history.append(metrics)  # Store in same slot
+
+            if step % 20 == 0 or step == args.num_steps - 1:
+                print(f"  Step {step:3d} | RLOO: loss={metrics['loss']:.4f}, "
+                      f"reward={metrics['reward_mean']:.3f}, "
+                      f"acc={metrics['accuracy']:.1%}, "
+                      f"adv_mean={metrics['advantage_mean']:.3f}")
+
         if args.mode == 'ppo' or args.mode == 'both':
             # For PPO, use a fresh actor
             if args.mode == 'both' and step == 0:
@@ -1019,6 +1151,7 @@ def main():
     print("\n--- Final Evaluation ---")
 
     for mode_name, model in [('GRPO', actor)] if args.mode == 'grpo' else \
+                                     [('RLOO', actor)] if args.mode == 'rloo' else \
                                      [('GRPO', actor), ('PPO', ppo_actor)] if args.mode == 'both' else \
                                      [('PPO', actor)] if args.mode == 'ppo' else \
                                      [('SFT+GRPO', actor)] if args.mode == 'sft_grpo' else \
