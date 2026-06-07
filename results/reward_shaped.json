@@ -1,0 +1,12 @@
+{
+  "reward_fn": "shaped",
+  "sft_steps": 200,
+  "grpo_steps": 300,
+  "final_eval_accuracy": 1.0,
+  "initial_reward": 1.0,
+  "final_reward": 1.0,
+  "peak_reward": 1.0,
+  "peak_accuracy": 1.0,
+  "final_accuracy": 1.0,
+  "final_loss": 0.0
+}
