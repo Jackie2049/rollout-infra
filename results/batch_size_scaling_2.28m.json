@@ -1,0 +1,250 @@
+{
+  "ga1_2.28m": {
+    "grad_accum_steps": 1,
+    "effective_batch_size": 1,
+    "model_size": "2.28m",
+    "num_micro_steps": 1000,
+    "num_optimizer_steps": 1000,
+    "total_time_s": 9.617870092391968,
+    "throughput_opt_steps_s": 103.973124027848,
+    "throughput_micro_steps_s": 103.973124027848,
+    "avg_opt_step_time_ms": 8.912604570388794,
+    "final_loss": 0.37890833616256714,
+    "min_loss": 0.00023251771926879883,
+    "final_eval_accuracy": 0.87,
+    "peak_eval_accuracy": 0.76,
+    "peak_gpu_mem_gb": 0.0645248,
+    "mean_grad_norm": 5.205025433009025,
+    "loss_variance": 1.121166746348914,
+    "eval_trajectory": [
+      {
+        "opt_step": 0,
+        "micro_step": 0,
+        "loss": 2.7734375,
+        "eval_accuracy": 0.02
+      },
+      {
+        "opt_step": 4,
+        "micro_step": 4,
+        "loss": 5.796875,
+        "eval_accuracy": 0.18
+      },
+      {
+        "opt_step": 9,
+        "micro_step": 9,
+        "loss": 2.163299560546875,
+        "eval_accuracy": 0.14
+      },
+      {
+        "opt_step": 19,
+        "micro_step": 19,
+        "loss": 2.025634765625,
+        "eval_accuracy": 0.22
+      },
+      {
+        "opt_step": 49,
+        "micro_step": 49,
+        "loss": 0.87060546875,
+        "eval_accuracy": 0.26
+      },
+      {
+        "opt_step": 99,
+        "micro_step": 99,
+        "loss": 2.832305908203125,
+        "eval_accuracy": 0.2
+      },
+      {
+        "opt_step": 999,
+        "micro_step": 999,
+        "loss": 0.37890833616256714,
+        "eval_accuracy": 0.76
+      }
+    ]
+  },
+  "ga2_2.28m": {
+    "grad_accum_steps": 2,
+    "effective_batch_size": 2,
+    "model_size": "2.28m",
+    "num_micro_steps": 1000,
+    "num_optimizer_steps": 500,
+    "total_time_s": 8.507290840148926,
+    "throughput_opt_steps_s": 58.77311701162519,
+    "throughput_micro_steps_s": 117.54623402325038,
+    "avg_opt_step_time_ms": 15.841928005218504,
+    "final_loss": 2.435635209083557,
+    "min_loss": 0.0018643736839294434,
+    "final_eval_accuracy": 0.85,
+    "peak_eval_accuracy": 0.8,
+    "peak_gpu_mem_gb": 0.0645248,
+    "mean_grad_norm": 4.6552650830298665,
+    "loss_variance": 1.5115262104879201,
+    "eval_trajectory": [
+      {
+        "opt_step": 0,
+        "micro_step": 0,
+        "loss": 4.85546875,
+        "eval_accuracy": 0.04
+      },
+      {
+        "opt_step": 4,
+        "micro_step": 8,
+        "loss": 1.8873291015625,
+        "eval_accuracy": 0.28
+      },
+      {
+        "opt_step": 9,
+        "micro_step": 18,
+        "loss": 2.43048095703125,
+        "eval_accuracy": 0.26
+      },
+      {
+        "opt_step": 19,
+        "micro_step": 38,
+        "loss": 2.4170761108398438,
+        "eval_accuracy": 0.12
+      },
+      {
+        "opt_step": 49,
+        "micro_step": 98,
+        "loss": 1.43994140625,
+        "eval_accuracy": 0.22
+      },
+      {
+        "opt_step": 99,
+        "micro_step": 198,
+        "loss": 1.7322311401367188,
+        "eval_accuracy": 0.56
+      },
+      {
+        "opt_step": 499,
+        "micro_step": 998,
+        "loss": 2.435635209083557,
+        "eval_accuracy": 0.8
+      }
+    ]
+  },
+  "ga4_2.28m": {
+    "grad_accum_steps": 4,
+    "effective_batch_size": 4,
+    "model_size": "2.28m",
+    "num_micro_steps": 1000,
+    "num_optimizer_steps": 250,
+    "total_time_s": 8.44711971282959,
+    "throughput_opt_steps_s": 29.59588694123713,
+    "throughput_micro_steps_s": 118.38354776494852,
+    "avg_opt_step_time_ms": 31.48590660095215,
+    "final_loss": 0.03696179389953613,
+    "min_loss": 0.006164252758026123,
+    "final_eval_accuracy": 0.89,
+    "peak_eval_accuracy": 0.84,
+    "peak_gpu_mem_gb": 0.0645248,
+    "mean_grad_norm": 2.367654306523502,
+    "loss_variance": 1.9933152524786915,
+    "eval_trajectory": [
+      {
+        "opt_step": 0,
+        "micro_step": 0,
+        "loss": 11.31640625,
+        "eval_accuracy": 0.22
+      },
+      {
+        "opt_step": 4,
+        "micro_step": 16,
+        "loss": 5.5299072265625,
+        "eval_accuracy": 0.18
+      },
+      {
+        "opt_step": 9,
+        "micro_step": 36,
+        "loss": 4.619293212890625,
+        "eval_accuracy": 0.18
+      },
+      {
+        "opt_step": 19,
+        "micro_step": 76,
+        "loss": 5.9144744873046875,
+        "eval_accuracy": 0.2
+      },
+      {
+        "opt_step": 49,
+        "micro_step": 196,
+        "loss": 0.3556022644042969,
+        "eval_accuracy": 0.66
+      },
+      {
+        "opt_step": 99,
+        "micro_step": 396,
+        "loss": 2.4361753463745117,
+        "eval_accuracy": 0.74
+      },
+      {
+        "opt_step": 249,
+        "micro_step": 996,
+        "loss": 0.03696179389953613,
+        "eval_accuracy": 0.84
+      }
+    ]
+  },
+  "ga8_2.28m": {
+    "grad_accum_steps": 8,
+    "effective_batch_size": 8,
+    "model_size": "2.28m",
+    "num_micro_steps": 1000,
+    "num_optimizer_steps": 125,
+    "total_time_s": 8.375327348709106,
+    "throughput_opt_steps_s": 14.924789777830751,
+    "throughput_micro_steps_s": 119.39831822264601,
+    "avg_opt_step_time_ms": 62.3952522277832,
+    "final_loss": 0.030771255493164062,
+    "min_loss": 0.005284667015075684,
+    "final_eval_accuracy": 1.0,
+    "peak_eval_accuracy": 1.0,
+    "peak_gpu_mem_gb": 0.0645248,
+    "mean_grad_norm": 1.0133981932476164,
+    "loss_variance": 3.4853947824826266,
+    "eval_trajectory": [
+      {
+        "opt_step": 0,
+        "micro_step": 0,
+        "loss": 24.92578125,
+        "eval_accuracy": 0.1
+      },
+      {
+        "opt_step": 4,
+        "micro_step": 32,
+        "loss": 10.10784912109375,
+        "eval_accuracy": 0.22
+      },
+      {
+        "opt_step": 9,
+        "micro_step": 72,
+        "loss": 6.7076263427734375,
+        "eval_accuracy": 0.36
+      },
+      {
+        "opt_step": 19,
+        "micro_step": 152,
+        "loss": 2.4997100830078125,
+        "eval_accuracy": 0.72
+      },
+      {
+        "opt_step": 49,
+        "micro_step": 392,
+        "loss": 0.1717395782470703,
+        "eval_accuracy": 1.0
+      },
+      {
+        "opt_step": 99,
+        "micro_step": 792,
+        "loss": 0.014844894409179688,
+        "eval_accuracy": 1.0
+      },
+      {
+        "opt_step": 124,
+        "micro_step": 992,
+        "loss": 0.030771255493164062,
+        "eval_accuracy": 1.0
+      }
+    ]
+  }
+}
