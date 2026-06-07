@@ -389,6 +389,65 @@ TE的FP8 DPA (Dot Product Attention, beta) 使用FP8 attention:
 
 ## 8. C++ CUDA Kernel Dispatch (RTX 4090 vs Blackwell)
 
+### 8.0 FP8 GEMM cuBLASLt Dispatch Chain (新Section!)
+
+```
+Python general_gemm()          → gemm.py:105-273
+  └ tex.generic_gemm()         → pybind11 C++ extension
+  └ C++ gemm()                 → gemm.cpp:144-414
+  └ nvte_cublas_gemm_v2()     → gemm.cpp:834-893
+  └ cublas_gemm()              → cublaslt_gemm.cu:315-799
+    └ CanonicalizeGemmInput()  → cublaslt_gemm.cu:102-307  (SM架构决定FP8布局)
+    └ cublasLtMatmul()         → NVIDIA cuBLASLt API (最终执行!)
+```
+
+#### 8.0.1 CanonicalizeGemmInput: SM架构决定FP8布局
+
+**RTX 4090 (SM89)**: `nvte_is_non_tn_fp8_gemm_supported()` = 0 → 只支持TN layout!
+- A not transposed → 使用columnwise数据(转置版) → 强制TN
+- B transposed → 使用columnwise数据(转置版) → 强制TN
+- **columnwise数据 = rowwise数据的转置** → backward不需重新量化!
+
+**Blackwell (SM100)**: `nvte_is_non_tn_fp8_gemm_supported()` = 1 → 支持任意layout
+
+#### 8.0.2 FP8 Scaling Mode Dispatch (cublaslt_gemm.cu:476-607)
+
+| Scaling Mode | cuBLAS API | RTX 4090 | Blackwell |
+|-------------|-----------|----------|----------|
+| Tensor Scaling (Delayed/Current) | `SCALAR_32F` | ✅ (per-tensor scale) | ✅ |
+| MXFP8 Block | `VEC32_UE8M0` | ❌ (需SM100) | ✅ (E8M0 per-32) |
+| NVFP4 Block | `VEC16_UE4M3` | ❌ (需SM100) | ✅ (E4M3 per-16) |
+| FP8 Block 1D/2D | `VEC128_32F/BLK128x128_32F` | ❌ (需CUDA 12.9) | ✅ |
+
+**RTX 4090只使用 `SCALAR_32F`** → 每tensor一个FP32 scale → DelayedScaling/CurrentScaling
+
+#### 8.0.3 FP8 Dequantization: Inside cuBLASLt
+
+cuBLASLt GEMM公式: `D = alpha * (A * scale_inv_A) @ (B * scale_inv_B) + beta * C`
+
+- `A_SCALE_POINTER` → A的scale_inv (per-tensor FP32)
+- `B_SCALE_POINTER` → B的scale_inv (per-tensor FP32)
+- cuBLASLt内部: FP8 × scale_inv → 自动反量化 → 高精度输出(BF16/FP32)
+- **无需Python-level量化/反量化** → 这解释了TE比Python FP8快1.48-1.59x!
+
+#### 8.0.4 Unfused vs Fused Quantization (gemm.cpp:222-229)
+
+**Fused (DelayedScaling per-tensor)**: cuBLASLt直接处理 → 1个kernel完成
+**Unfused (CurrentScaling等)**: GEMM→BF16→quantize → 需额外步骤
+
+#### 8.0.5 FAST_ACCUM / Split Accumulator (cublaslt_gemm.cu:478-480)
+
+- `use_split_accumulator=true` → FP32累加器 → 精确但稍慢
+- `use_split_accumulator=false AND FP8` → "fast accumulation" → 低精度但快
+
+#### 8.0.6 cuBLASLt Matmul: 最终GEMM调用 (cublaslt_gemm.cu:775-783)
+
+```cpp
+cublasLtMatmul(handle, operationDesc, alpha, param.A, Adesc,
+               param.B, Bdesc, beta, C, Cdesc, D, Ddesc,
+               &heuristicResult.algo, workspace, workspaceSize, stream);
+```
+
 ### 8.1 FP8 Quantize Kernel Dispatch (quantize_fp8.cuh)
 
 ```python
