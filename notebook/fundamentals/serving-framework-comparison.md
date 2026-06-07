@@ -220,7 +220,20 @@ SGLang 在 RL 场景有显著优势:
 4. **PD 分离成为标配**: vLLM 实验中, SGLang 已生产就绪
 5. **MoE serving 成熟**: 三个框架都支持 EP, MoE 成为主流架构
 
-## 8. 核心学习
+## 8. FP8/Quantization对比 (TransformerEngine深读补充)
+
+| 特性 | vLLM | SGLang | TRT-LLM |
+|------|------|--------|---------|
+| INT4 weight-only | ✅ (TurboQuant) | ✅ | ✅ (最佳) |
+| INT8 KV cache | ✅ | ✅ | ✅ |
+| FP8 training | TE集成(verl) | TE集成(verl) | ✅ (原生) |
+| FP8 recipe选择 | Delayed/Current | Delayed/Current | 所有5种 |
+| RTX 4090 FP8 | Delayed+Current | Delayed+Current | Delayed+Current |
+| MXFP8/NVFP4 | ❌ (需Blackwell) | ❌ (需Blackwell) | ✅ (Blackwell) |
+
+**关键**: RTX 4090(SM89)只能用DelayedScaling+Float8CurrentScaling → MXFP8/NVFP4需Blackwell(SM100+)
+
+## 9. 核心学习
 
 1. **数据结构选择很关键**: Radix Tree vs Hash Table 决定了 prefix caching 的效率上限
 2. **缓存感知调度是差异化**: SGLang 的 LPM 策略是其 RL 场景优势的核心
