@@ -1,0 +1,57 @@
+{
+  "config": {
+    "vocab_size": 20,
+    "param_count": 2374144,
+    "n_samples": 8,
+    "num_steps": 50,
+    "lr": 0.001,
+    "device": "cuda",
+    "mode": "sft_grpo"
+  },
+  "grpo_metrics": [],
+  "ppo_metrics": [],
+  "dpo_metrics": [],
+  "dapo_metrics": [],
+  "sft_metrics": [
+    {
+      "step": 0,
+      "loss": 3.186877816915512
+    },
+    {
+      "step": 1,
+      "loss": 1.37311393301934
+    },
+    {
+      "step": 2,
+      "loss": 1.1730959750711918
+    },
+    {
+      "step": 3,
+      "loss": 0.7711300645023584
+    },
+    {
+      "step": 4,
+      "loss": 1.1275673029012978
+    },
+    {
+      "step": 5,
+      "loss": 0.9705991446971893
+    },
+    {
+      "step": 6,
+      "loss": 0.6302755805663764
+    },
+    {
+      "step": 7,
+      "loss": 0.5980764529667795
+    },
+    {
+      "step": 8,
+      "loss": 0.41998698422685266
+    },
+    {
+      "step": 9,
+      "loss": 0.47700872062705457
+    }
+  ]
+}
