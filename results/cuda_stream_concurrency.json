@@ -1,0 +1,169 @@
+{
+  "exp1_launch_overhead": {
+    "M=1": {
+      "measured_ms": 0.0488,
+      "compute_theoretical_us": 0.2,
+      "mem_theoretical_us": 37.69,
+      "launch_overhead_us": 11.14,
+      "launch_pct": 22.8
+    },
+    "M=4": {
+      "measured_ms": 0.0362,
+      "compute_theoretical_us": 0.79,
+      "mem_theoretical_us": 37.74,
+      "launch_overhead_us": 0,
+      "launch_pct": 0.0
+    },
+    "M=16": {
+      "measured_ms": 0.0695,
+      "compute_theoretical_us": 3.17,
+      "mem_theoretical_us": 37.96,
+      "launch_overhead_us": 31.54,
+      "launch_pct": 45.4
+    },
+    "M=64": {
+      "measured_ms": 0.0345,
+      "compute_theoretical_us": 12.66,
+      "mem_theoretical_us": 38.84,
+      "launch_overhead_us": 0,
+      "launch_pct": 0.0
+    },
+    "M=256": {
+      "measured_ms": 0.071,
+      "compute_theoretical_us": 50.65,
+      "mem_theoretical_us": 42.38,
+      "launch_overhead_us": 20.31,
+      "launch_pct": 28.6
+    },
+    "M=1024": {
+      "measured_ms": 0.2296,
+      "compute_theoretical_us": 202.59,
+      "mem_theoretical_us": 56.5,
+      "launch_overhead_us": 27.04,
+      "launch_pct": 11.8
+    }
+  },
+  "exp2_multi_stream": {
+    "M=1": {
+      "single_stream_ms": 0.0828,
+      "dual_stream_ms": 0.0925,
+      "speedup": 0.9,
+      "overlap_pct": 0
+    },
+    "M=4": {
+      "single_stream_ms": 0.0577,
+      "dual_stream_ms": 0.0826,
+      "speedup": 0.7,
+      "overlap_pct": 0
+    },
+    "M=16": {
+      "single_stream_ms": 0.1251,
+      "dual_stream_ms": 0.1107,
+      "speedup": 1.13,
+      "overlap_pct": 11.5
+    },
+    "M=64": {
+      "single_stream_ms": 0.0551,
+      "dual_stream_ms": 0.0799,
+      "speedup": 0.69,
+      "overlap_pct": 0
+    },
+    "M=128": {
+      "single_stream_ms": 0.0845,
+      "dual_stream_ms": 0.0978,
+      "speedup": 0.86,
+      "overlap_pct": 0
+    }
+  },
+  "exp3_stream_priority": {
+    "M=1": {
+      "default_ms": 0.0487,
+      "high_priority_ms": 0.0736,
+      "low_priority_ms": 0.0761
+    },
+    "M=16": {
+      "default_ms": 0.0705,
+      "high_priority_ms": 0.0942,
+      "low_priority_ms": 0.0945
+    },
+    "M=64": {
+      "default_ms": 0.035,
+      "high_priority_ms": 0.0605,
+      "low_priority_ms": 0.0614
+    },
+    "M=256": {
+      "default_ms": 0.0708,
+      "high_priority_ms": 0.1015,
+      "low_priority_ms": 0.1012
+    }
+  },
+  "exp4_transfer_overlap": {
+    "transfer=1MB": {
+      "transfer_ms": 0.1389,
+      "compute_ms": 0.2431,
+      "overlap_ms": 0.3785,
+      "ideal_ms": 0.2431,
+      "overlap_pct": 2.5,
+      "transfer_bandwidth_gb_s": 7.03
+    },
+    "transfer=4MB": {
+      "transfer_ms": 0.378,
+      "compute_ms": 0.224,
+      "overlap_ms": 0.5983,
+      "ideal_ms": 0.378,
+      "overlap_pct": 1.6,
+      "transfer_bandwidth_gb_s": 10.33
+    },
+    "transfer=16MB": {
+      "transfer_ms": 1.2636,
+      "compute_ms": 0.2223,
+      "overlap_ms": 1.427,
+      "ideal_ms": 1.2636,
+      "overlap_pct": 26.5,
+      "transfer_bandwidth_gb_s": 12.37
+    },
+    "transfer=64MB": {
+      "transfer_ms": 9.1497,
+      "compute_ms": 0.2244,
+      "overlap_ms": 8.9837,
+      "ideal_ms": 9.1497,
+      "overlap_pct": 174.0,
+      "transfer_bandwidth_gb_s": 6.83
+    }
+  },
+  "exp5_prefill_decode_concurrent": {
+    "prefill_decode": {
+      "prefill_only_ms": 0.2311,
+      "decode_only_ms": 0.0533,
+      "sequential_ms": 0.2965,
+      "concurrent_ms": 0.2977,
+      "concurrent_speedup": 1.0,
+      "decode_in_prefill_pct": 23.05
+    },
+    "prefill+1decode": {
+      "concurrent_ms": 0.3075,
+      "sequential_theoretical_ms": 0.2844,
+      "speedup": 0.92
+    },
+    "prefill+4decode": {
+      "concurrent_ms": 0.4262,
+      "sequential_theoretical_ms": 0.4442,
+      "speedup": 1.04
+    },
+    "prefill+8decode": {
+      "concurrent_ms": 0.6414,
+      "sequential_theoretical_ms": 0.6573,
+      "speedup": 1.02
+    },
+    "prefill+16decode": {
+      "concurrent_ms": 0.902,
+      "sequential_theoretical_ms": 1.0835,
+      "speedup": 1.2
+    },
+    "prefill+32decode": {
+      "concurrent_ms": 1.4564,
+      "sequential_theoretical_ms": 1.9359,
+      "speedup": 1.33
+    }
+  }
+}
