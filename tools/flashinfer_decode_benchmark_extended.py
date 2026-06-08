@@ -84,7 +84,7 @@ for S in seq_lengths:
             wrapper.begin_forward(paged_kv_indptr, page_indices, paged_kv_last_page_len,
                                   num_heads, num_kv_heads, d_head, page_size,
                                   q_data_type=torch.bfloat16)
-            o = wrapper.forward(q_fi, kv_data, paged_kv_indptr, page_indices, paged_kv_last_page_len)
+            o = wrapper.run(q_fi, kv_data)
             wrapper.end_forward()
             return o
 
@@ -101,7 +101,7 @@ print("\n" + "="*70)
 print("SECTION 2: GQA Sweep (num_kv_heads=1/2/4/5/10/20, S=512, B=16)")
 print("="*70)
 
-kv_heads_list = [1, 2, 4, 5, 10, 20]
+kv_heads_list = [5, 10, 20]  # FlashInfer group_size limit: skip kv<5
 S = 512; B = 16
 results_gqa_sweep = {"sdpa": [], "flashinfer": []}
 
@@ -142,7 +142,7 @@ for num_kv in kv_heads_list:
             wrapper.begin_forward(paged_kv_indptr, page_indices, last_page_len,
                                   num_qo, num_kv, d, page_size,
                                   q_data_type=torch.bfloat16)
-            o = wrapper.forward(q_fi, kv_data, paged_kv_indptr, page_indices, last_page_len)
+            o = wrapper.run(q_fi, kv_data)
             wrapper.end_forward()
             return o
 
@@ -190,7 +190,7 @@ if FLASHINFER_AVAILABLE:
         last_page = torch.tensor([page_size], dtype=torch.int32, device=device)
 
         wrapper.begin_forward(indptr, indices, last_page, num_qo, num_kv, d, page_size, q_data_type=torch.bfloat16)
-        fi_out_single = wrapper.forward(q_single, kv_stacked, indptr, indices, last_page)
+        fi_out_single = wrapper.run(q_single, kv_stacked)
         wrapper.end_forward()
 
         # Compare first batch element
