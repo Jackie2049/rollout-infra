@@ -1,0 +1,34 @@
+{
+  "exp1_decode_breakdown_b1": {
+    "qkv_proj": {"avg_us": 109.48, "shape": "1x4096 → 1x12288"},
+    "q_proj": {"avg_us": 59.96},
+    "k_proj": {"avg_us": 50.51},
+    "v_proj": {"avg_us": 50.64},
+    "qkv_separate_total": {"avg_us": 177.11, "note": "fused QKV saves 2 kernel launches ~16us"},
+    "out_proj": {"avg_us": 50.83},
+    "gate_proj": {"avg_us": 145.85, "shape": "1x4096 → 1x14336"},
+    "up_proj": {"avg_us": 145.58},
+    "silu_mul": {"avg_us": 25.97, "note": "SiLU+mul element-wise"},
+    "down_proj": {"avg_us": 146.96, "shape": "1x14336 → 1x4096"},
+    "mlp_total": {"avg_us": 464.4},
+    "rmsnorm": {"avg_us": 46.26, "note": "2 per layer"},
+    "lm_head": {"avg_us": 314.93, "shape": "1x4096 → 1x32000"},
+    "softmax": {"avg_us": 41.66},
+    "multinomial": {"avg_us": 158.47},
+    "sampling_total": {"avg_us": 200.1},
+    "kv_cache_read": {"avg_us": 20.54, "bandwidth_gbps": 760.71, "note": "1 layer, 8 KV heads, S=4096"},
+    "layer_summary": {"attn_total_us": 273.4, "mlp_total_us": 510.6, "per_layer_us": 784.0, "attn_pct": 34.9, "mlp_pct": 65.1},
+    "decode_summary": {"n_layers": 32, "total_decode_us": 25602.7, "total_decode_ms": 25.603, "tok_per_s": 39.1, "lm_head_pct": 1.2, "sampling_pct": 0.8}
+  },
+  "exp2_batch_scaling": {
+    "1": {"per_layer_us": 384.1, "total_decode_ms": 12.654, "tok_per_s": 79, "lm_head_pct": 2.5},
+    "4": {"per_layer_us": 386.9, "total_decode_ms": 12.728, "tok_per_s": 314, "lm_head_pct": 2.3},
+    "8": {"per_layer_us": 388.7, "total_decode_ms": 12.787, "tok_per_s": 626, "lm_head_pct": 2.3},
+    "16": {"per_layer_us": 393.4, "total_decode_ms": 12.937, "tok_per_s": 1237, "lm_head_pct": 2.3},
+    "32": {"per_layer_us": 393.9, "total_decode_ms": 12.965, "tok_per_s": 2468, "lm_head_pct": 2.4},
+    "55": {"per_layer_us": 399.2, "total_decode_ms": 13.128, "tok_per_s": 4190, "lm_head_pct": 2.3}
+  },
+  "exp4_quantization_impact": {
+    "32": {"bf16_tok_per_s": 58, "int4_int8kv_tok_per_s": 216, "int4_int8kv_int8lm_tok_per_s": 223, "int4_int8kv_speedup": 3.7, "int4_int8kv_int8lm_speedup": 3.81}
+  }
+}
