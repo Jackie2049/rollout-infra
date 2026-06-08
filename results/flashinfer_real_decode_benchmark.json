@@ -1,0 +1,345 @@
+{
+  "exp1_flashinfer_vs_sdpa": {
+    "B=1": {
+      "flashinfer": {
+        "batch_size": 1,
+        "seq_len": 4096,
+        "num_kv_heads": 8,
+        "group_size": 4,
+        "kv_dtype": "bfloat16",
+        "avg_ms": 0.209,
+        "throughput_tok_s": 4791.0
+      },
+      "sdpa": {
+        "batch_size": 1,
+        "seq_len": 4096,
+        "avg_ms_with_expansion": 1.154,
+        "avg_ms_pure_sdpa": 1.061,
+        "throughput_tok_s_with_exp": 866.0,
+        "kv_expansion_pct": 8.1
+      },
+      "attention_speedup": 5.52
+    },
+    "B=4": {
+      "flashinfer": {
+        "batch_size": 4,
+        "seq_len": 4096,
+        "num_kv_heads": 8,
+        "group_size": 4,
+        "kv_dtype": "bfloat16",
+        "avg_ms": 0.212,
+        "throughput_tok_s": 18846.0
+      },
+      "sdpa": {
+        "batch_size": 4,
+        "seq_len": 4096,
+        "avg_ms_with_expansion": 5.153,
+        "avg_ms_pure_sdpa": 4.756,
+        "throughput_tok_s_with_exp": 776.0,
+        "kv_expansion_pct": 7.7
+      },
+      "attention_speedup": 24.31
+    },
+    "B=8": {
+      "flashinfer": {
+        "batch_size": 8,
+        "seq_len": 4096,
+        "num_kv_heads": 8,
+        "group_size": 4,
+        "kv_dtype": "bfloat16",
+        "avg_ms": 0.338,
+        "throughput_tok_s": 23702.0
+      },
+      "sdpa": {
+        "batch_size": 8,
+        "seq_len": 4096,
+        "avg_ms_with_expansion": 10.146,
+        "avg_ms_pure_sdpa": 9.406,
+        "throughput_tok_s_with_exp": 788.0,
+        "kv_expansion_pct": 7.3
+      },
+      "attention_speedup": 30.02
+    },
+    "B=16": {
+      "flashinfer": {
+        "batch_size": 16,
+        "seq_len": 4096,
+        "num_kv_heads": 8,
+        "group_size": 4,
+        "kv_dtype": "bfloat16",
+        "avg_ms": 0.477,
+        "throughput_tok_s": 33534.0
+      },
+      "sdpa": {
+        "batch_size": 16,
+        "seq_len": 4096,
+        "avg_ms_with_expansion": 20.371,
+        "avg_ms_pure_sdpa": 18.867,
+        "throughput_tok_s_with_exp": 785.0,
+        "kv_expansion_pct": 7.4
+      },
+      "attention_speedup": 42.71
+    },
+    "B=32": {
+      "flashinfer": {
+        "batch_size": 32,
+        "seq_len": 4096,
+        "num_kv_heads": 8,
+        "group_size": 4,
+        "kv_dtype": "bfloat16",
+        "avg_ms": 0.77,
+        "throughput_tok_s": 41561.0
+      },
+      "sdpa": {
+        "batch_size": 32,
+        "seq_len": 4096,
+        "avg_ms_with_expansion": 40.722,
+        "avg_ms_pure_sdpa": 37.795,
+        "throughput_tok_s_with_exp": 786.0,
+        "kv_expansion_pct": 7.2
+      },
+      "attention_speedup": 52.89
+    },
+    "B=55": {
+      "flashinfer": {
+        "batch_size": 55,
+        "seq_len": 4096,
+        "num_kv_heads": 8,
+        "group_size": 4,
+        "kv_dtype": "bfloat16",
+        "avg_ms": 1.166,
+        "throughput_tok_s": 47160.0
+      },
+      "sdpa": {
+        "oom": true,
+        "reason": "KV expansion 8\u219232 heads \u00d7 B=55"
+      },
+      "attention_speedup": 60.03
+    }
+  },
+  "exp2_overall_throughput": {
+    "B=1": {
+      "roofline_latency_ms": 14.92,
+      "attention_sdpa_ms": 1.154,
+      "attention_flashinfer_ms": 0.209,
+      "sampling_ms": 0.06,
+      "total_sdpa_ms": 16.13,
+      "total_flashinfer_ms": 15.19,
+      "throughput_sdpa_tok_s": 62.0,
+      "throughput_flashinfer_tok_s": 66.0,
+      "overall_speedup": 1.06,
+      "attention_pct_sdpa": 7.2,
+      "attention_pct_flashinfer": 1.4
+    },
+    "B=4": {
+      "roofline_latency_ms": 15.76,
+      "attention_sdpa_ms": 5.153,
+      "attention_flashinfer_ms": 0.212,
+      "sampling_ms": 0.06,
+      "total_sdpa_ms": 20.97,
+      "total_flashinfer_ms": 16.03,
+      "throughput_sdpa_tok_s": 191.0,
+      "throughput_flashinfer_tok_s": 250.0,
+      "overall_speedup": 1.31,
+      "attention_pct_sdpa": 24.6,
+      "attention_pct_flashinfer": 1.3
+    },
+    "B=8": {
+      "roofline_latency_ms": 16.88,
+      "attention_sdpa_ms": 10.146,
+      "attention_flashinfer_ms": 0.338,
+      "sampling_ms": 0.06,
+      "total_sdpa_ms": 27.09,
+      "total_flashinfer_ms": 17.28,
+      "throughput_sdpa_tok_s": 295.0,
+      "throughput_flashinfer_tok_s": 463.0,
+      "overall_speedup": 1.57,
+      "attention_pct_sdpa": 37.5,
+      "attention_pct_flashinfer": 2.0
+    },
+    "B=16": {
+      "roofline_latency_ms": 19.13,
+      "attention_sdpa_ms": 20.371,
+      "attention_flashinfer_ms": 0.477,
+      "sampling_ms": 0.06,
+      "total_sdpa_ms": 39.56,
+      "total_flashinfer_ms": 19.67,
+      "throughput_sdpa_tok_s": 404.0,
+      "throughput_flashinfer_tok_s": 814.0,
+      "overall_speedup": 2.01,
+      "attention_pct_sdpa": 51.5,
+      "attention_pct_flashinfer": 2.4
+    },
+    "B=32": {
+      "roofline_latency_ms": 23.62,
+      "attention_sdpa_ms": 40.722,
+      "attention_flashinfer_ms": 0.77,
+      "sampling_ms": 0.06,
+      "total_sdpa_ms": 64.4,
+      "total_flashinfer_ms": 24.45,
+      "throughput_sdpa_tok_s": 497.0,
+      "throughput_flashinfer_tok_s": 1309.0,
+      "overall_speedup": 2.63,
+      "attention_pct_sdpa": 63.2,
+      "attention_pct_flashinfer": 3.1
+    },
+    "B=55": {
+      "roofline_latency_ms": 30.07,
+      "attention_sdpa_ms": 69.991,
+      "attention_flashinfer_ms": 1.166,
+      "sampling_ms": 0.06,
+      "total_sdpa_ms": 100.12,
+      "total_flashinfer_ms": 31.3,
+      "throughput_sdpa_tok_s": 549.0,
+      "throughput_flashinfer_tok_s": 1757.0,
+      "overall_speedup": 3.2,
+      "attention_pct_sdpa": 69.9,
+      "attention_pct_flashinfer": 3.7
+    }
+  },
+  "exp3_int4_awq_throughput": {
+    "B=16": {
+      "roofline_latency_ms": 8.15,
+      "attention_ms": 0.477,
+      "total_ms": 8.69,
+      "throughput_tok_s": 1842.0
+    },
+    "B=32": {
+      "roofline_latency_ms": 12.64,
+      "attention_ms": 0.77,
+      "total_ms": 13.47,
+      "throughput_tok_s": 2376.0
+    },
+    "B=55": {
+      "roofline_latency_ms": 19.09,
+      "attention_ms": 0.378,
+      "total_ms": 19.53,
+      "throughput_tok_s": 2816.0
+    },
+    "B=118": {
+      "roofline_latency_ms": 36.78,
+      "attention_ms": 0.811,
+      "total_ms": 37.65,
+      "throughput_tok_s": 3134.0
+    }
+  },
+  "exp4_fp8_kv_flashinfer": {
+    "B=1": {
+      "error": "Mismatched type on argument #16 when calling: `run(0: DLTensor*, 1: DLTensor*, 2: Array<int>, 3: DLTensor*, 4: DLTensor*, 5: DLTensor*, 6: DLTensor*, 7: DLTensor*, 8: DLTensor*, 9: DLTensor*, 10: Optional<DLTensor*>, 11: int, 12: int, 13: bool, 14: Optional<ffi.Tensor>, 15: float, 16: float, 17: float, 18: float) -> void`. Expected `float` but got `ffi.Tensor`"
+    },
+    "B=4": {
+      "error": "Mismatched type on argument #16 when calling: `run(0: DLTensor*, 1: DLTensor*, 2: Array<int>, 3: DLTensor*, 4: DLTensor*, 5: DLTensor*, 6: DLTensor*, 7: DLTensor*, 8: DLTensor*, 9: DLTensor*, 10: Optional<DLTensor*>, 11: int, 12: int, 13: bool, 14: Optional<ffi.Tensor>, 15: float, 16: float, 17: float, 18: float) -> void`. Expected `float` but got `ffi.Tensor`"
+    },
+    "B=8": {
+      "error": "Mismatched type on argument #16 when calling: `run(0: DLTensor*, 1: DLTensor*, 2: Array<int>, 3: DLTensor*, 4: DLTensor*, 5: DLTensor*, 6: DLTensor*, 7: DLTensor*, 8: DLTensor*, 9: DLTensor*, 10: Optional<DLTensor*>, 11: int, 12: int, 13: bool, 14: Optional<ffi.Tensor>, 15: float, 16: float, 17: float, 18: float) -> void`. Expected `float` but got `ffi.Tensor`"
+    },
+    "B=16": {
+      "error": "Mismatched type on argument #16 when calling: `run(0: DLTensor*, 1: DLTensor*, 2: Array<int>, 3: DLTensor*, 4: DLTensor*, 5: DLTensor*, 6: DLTensor*, 7: DLTensor*, 8: DLTensor*, 9: DLTensor*, 10: Optional<DLTensor*>, 11: int, 12: int, 13: bool, 14: Optional<ffi.Tensor>, 15: float, 16: float, 17: float, 18: float) -> void`. Expected `float` but got `ffi.Tensor`"
+    },
+    "B=32": {
+      "error": "Mismatched type on argument #16 when calling: `run(0: DLTensor*, 1: DLTensor*, 2: Array<int>, 3: DLTensor*, 4: DLTensor*, 5: DLTensor*, 6: DLTensor*, 7: DLTensor*, 8: DLTensor*, 9: DLTensor*, 10: Optional<DLTensor*>, 11: int, 12: int, 13: bool, 14: Optional<ffi.Tensor>, 15: float, 16: float, 17: float, 18: float) -> void`. Expected `float` but got `ffi.Tensor`"
+    },
+    "B=55": {
+      "error": "Mismatched type on argument #16 when calling: `run(0: DLTensor*, 1: DLTensor*, 2: Array<int>, 3: DLTensor*, 4: DLTensor*, 5: DLTensor*, 6: DLTensor*, 7: DLTensor*, 8: DLTensor*, 9: DLTensor*, 10: Optional<DLTensor*>, 11: int, 12: int, 13: bool, 14: Optional<ffi.Tensor>, 15: float, 16: float, 17: float, 18: float) -> void`. Expected `float` but got `ffi.Tensor`"
+    }
+  },
+  "exp5_memory_footprint": {
+    "7B_GQA8_BF16_BF16KV": {
+      "weight_gb": 13.04,
+      "kv_per_req_gb": 0.5,
+      "kv_total_gb": 8.5,
+      "overhead_gb": 2.0,
+      "total_used_gb": 23.54,
+      "available_kv_gb": 8.96,
+      "max_concurrent": 17
+    },
+    "7B_GQA8_BF16_INT8KV": {
+      "weight_gb": 13.04,
+      "kv_per_req_gb": 0.25,
+      "kv_total_gb": 8.75,
+      "overhead_gb": 2.0,
+      "total_used_gb": 23.79,
+      "available_kv_gb": 8.96,
+      "max_concurrent": 35
+    },
+    "7B_GQA8_BF16_FP8KV": {
+      "weight_gb": 13.04,
+      "kv_per_req_gb": 0.25,
+      "kv_total_gb": 8.75,
+      "overhead_gb": 2.0,
+      "total_used_gb": 23.79,
+      "available_kv_gb": 8.96,
+      "max_concurrent": 35
+    },
+    "7B_GQA8_INT4_INT8KV": {
+      "weight_gb": 3.26,
+      "kv_per_req_gb": 0.25,
+      "kv_total_gb": 18.5,
+      "overhead_gb": 2.0,
+      "total_used_gb": 23.76,
+      "available_kv_gb": 18.74,
+      "max_concurrent": 74
+    }
+  },
+  "exp5b_gqa_sweep": {
+    "mha": {
+      "num_kv_heads": 32,
+      "group_size": 1,
+      "flashinfer_ms": 2.436,
+      "sdpa_ms": 42.436,
+      "speedup": 17.42,
+      "kv_per_token_kb": 512.0
+    },
+    "gqa8": {
+      "num_kv_heads": 8,
+      "group_size": 4,
+      "flashinfer_ms": 0.754,
+      "sdpa_ms": 40.735,
+      "speedup": 54.03,
+      "kv_per_token_kb": 128.0
+    },
+    "gqa4": {
+      "num_kv_heads": 4,
+      "group_size": 8,
+      "flashinfer_ms": 0.485,
+      "sdpa_ms": 40.454,
+      "speedup": 83.41,
+      "kv_per_token_kb": 64.0
+    },
+    "mqa": {
+      "error": "Error in function 'operator()' at /home/zxw/.cache/flashinfer/0.6.12/89/generated/batch_decode_with_kv_cache_dtype_q_bf16_dtype_kv_bf16_dtype_o_bf16_dtype_idx_i32_head_dim_qk_128_head_dim_vo_128_posenc_0_use_swa_False_use_logits_cap_False/batch_decode.cu:63: Unsupported group_size: 32"
+    }
+  },
+  "exp6_speculative_flashinfer": {
+    "baseline": {
+      "batch_size": 55,
+      "gain": 1.0,
+      "base_tp_tok_s": 1757.0,
+      "spec_tp_tok_s": 1757.0
+    },
+    "ngram_d3": {
+      "batch_size": 55,
+      "gain": 2.14,
+      "base_tp_tok_s": 1757.0,
+      "spec_tp_tok_s": 3761.0
+    },
+    "eagle_d1": {
+      "batch_size": 52,
+      "gain": 1.76,
+      "base_tp_tok_s": 1762.0,
+      "spec_tp_tok_s": 3101.0
+    },
+    "eagle_d5": {
+      "batch_size": 52,
+      "gain": 4.2,
+      "base_tp_tok_s": 1762.0,
+      "spec_tp_tok_s": 7401.0
+    },
+    "medusa": {
+      "batch_size": 52,
+      "gain": 3.68,
+      "base_tp_tok_s": 1762.0,
+      "spec_tp_tok_s": 6485.0
+    }
+  }
+}

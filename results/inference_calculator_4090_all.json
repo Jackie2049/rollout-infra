@@ -4,7 +4,7 @@
     "model": "LLaMA-7B-GQA5",
     "weight_quant": "BF16",
     "kv_quant": "INT8 KV",
-    "speculative": "N-gram depth=3 (\u03b1\u22480.4)",
+    "speculative": "No speculative decoding",
     "context_mode": "default",
     "actual_seq_len": 4096,
     "memory": {
@@ -29,9 +29,53 @@
     },
     "throughput": {
       "baseline_tok_s": 2240.0,
-      "with_spec_tok_s": 4793.0,
-      "with_flashinfer_tok_s": 3359.0,
-      "with_flashinfer_spec_tok_s": 7189.0,
+      "with_spec_tok_s": 2240.0,
+      "with_flashinfer_tok_s": 7167.0,
+      "with_flashinfer_spec_tok_s": 7167.0,
+      "spec_gain_x": 1.0
+    },
+    "quality": {
+      "weight_cos_sim": 1.0,
+      "kv_cos_sim": 0.99996,
+      "ppl_increase_pct": 0,
+      "combined_quality": "excellent"
+    },
+    "rope_scaling": null,
+    "recommendation": "\u2705 Good throughput for RTX 4090! Recommended."
+  },
+  "7B_gqa8_bf16_int8_S4096_default": {
+    "gpu": "RTX 4090",
+    "model": "LLaMA-7B-GQA8",
+    "weight_quant": "BF16",
+    "kv_quant": "INT8 KV",
+    "speculative": "N-gram depth=3 (\u03b1\u22480.4)",
+    "context_mode": "default",
+    "actual_seq_len": 4096,
+    "memory": {
+      "model_weight_gb": 13.28,
+      "lm_head_gb": 0.24,
+      "lm_head_pct_of_weight": 1.8,
+      "spec_extra_gb": 0,
+      "available_kv_gb": 8.72,
+      "kv_per_token_kb": 64.0,
+      "kv_per_request_gb": 0.25,
+      "total_used_gb": 23.78
+    },
+    "concurrency": {
+      "max_concurrent": 34,
+      "batch_size_used": 34
+    },
+    "latency": {
+      "decode_per_token_ms": 24.45,
+      "ttft_ms": 13.96,
+      "ttl_256tok_ms": 6274.0,
+      "inter_token_latency_ms": 24.45
+    },
+    "throughput": {
+      "baseline_tok_s": 1390.0,
+      "with_spec_tok_s": 2976.0,
+      "with_flashinfer_tok_s": 3726.0,
+      "with_flashinfer_spec_tok_s": 7973.0,
       "spec_gain_x": 2.14
     },
     "quality": {
@@ -74,8 +118,8 @@
     "throughput": {
       "baseline_tok_s": 2240.0,
       "with_spec_tok_s": 2240.0,
-      "with_flashinfer_tok_s": 3359.0,
-      "with_flashinfer_spec_tok_s": 3359.0,
+      "with_flashinfer_tok_s": 7167.0,
+      "with_flashinfer_spec_tok_s": 7167.0,
       "spec_gain_x": 1.0
     },
     "quality": {
@@ -118,8 +162,8 @@
     "throughput": {
       "baseline_tok_s": 4791.0,
       "with_spec_tok_s": 4791.0,
-      "with_flashinfer_tok_s": 7186.0,
-      "with_flashinfer_spec_tok_s": 7186.0,
+      "with_flashinfer_tok_s": 22810.0,
+      "with_flashinfer_spec_tok_s": 22810.0,
       "spec_gain_x": 1.0
     },
     "quality": {
@@ -162,8 +206,8 @@
     "throughput": {
       "baseline_tok_s": 541.0,
       "with_spec_tok_s": 541.0,
-      "with_flashinfer_tok_s": 974.0,
-      "with_flashinfer_spec_tok_s": 974.0,
+      "with_flashinfer_tok_s": 969.0,
+      "with_flashinfer_spec_tok_s": 969.0,
       "spec_gain_x": 1.0
     },
     "quality": {
@@ -211,8 +255,8 @@
     "throughput": {
       "baseline_tok_s": 2238.0,
       "with_spec_tok_s": 2238.0,
-      "with_flashinfer_tok_s": 3357.0,
-      "with_flashinfer_spec_tok_s": 3357.0,
+      "with_flashinfer_tok_s": 7161.0,
+      "with_flashinfer_spec_tok_s": 7161.0,
       "spec_gain_x": 1.0
     },
     "quality": {
@@ -259,8 +303,8 @@
     "throughput": {
       "baseline_tok_s": 167.0,
       "with_spec_tok_s": 167.0,
-      "with_flashinfer_tok_s": 301.0,
-      "with_flashinfer_spec_tok_s": 301.0,
+      "with_flashinfer_tok_s": 219.0,
+      "with_flashinfer_spec_tok_s": 219.0,
       "spec_gain_x": 1.0
     },
     "quality": {
@@ -303,8 +347,8 @@
     "throughput": {
       "baseline_tok_s": 6647.0,
       "with_spec_tok_s": 6647.0,
-      "with_flashinfer_tok_s": 9970.0,
-      "with_flashinfer_spec_tok_s": 9970.0,
+      "with_flashinfer_tok_s": 26587.0,
+      "with_flashinfer_spec_tok_s": 26587.0,
       "spec_gain_x": 1.0
     },
     "quality": {
@@ -347,8 +391,8 @@
     "throughput": {
       "baseline_tok_s": 13598.0,
       "with_spec_tok_s": 13598.0,
-      "with_flashinfer_tok_s": 20398.0,
-      "with_flashinfer_spec_tok_s": 20398.0,
+      "with_flashinfer_tok_s": 54394.0,
+      "with_flashinfer_spec_tok_s": 54394.0,
       "spec_gain_x": 1.0
     },
     "quality": {

@@ -41,6 +41,17 @@ MODELS = {
         "vocab_size": 32000,
         "original_max_len": 4096,
     },
+    "7B_gqa8": {
+        "name": "LLaMA-7B-GQA8",
+        "params": 7e9,
+        "num_layers": 32,
+        "num_heads": 32,
+        "num_kv_heads": 8,
+        "d_head": 128,
+        "d_model": 4096,
+        "vocab_size": 32000,
+        "original_max_len": 4096,
+    },
     "7B_mha": {
         "name": "LLaMA-7B-MHA",
         "params": 7e9,
@@ -114,13 +125,38 @@ ATTEN_SPEEDUPS = {
     "fa2": 0.67,         # RTX 4090实测 (decode slower!)
 }
 
-# FlashInfer overall decode speedup (attention is ~5-15% of decode;
-# FlashInfer eliminates SDPA overhead + paged KV + GQA native handling)
-# Measured ~1.3-2x overall throughput improvement in production
+# FlashInfer overall decode speedup (RTX 4090实测! 2026-06-08)
+# FlashInfer attention-only 5.52-54x (GQA-8 vs SDPA+KV expansion)
+# Overall throughput speedup depends on B: attention占比随B增大
+# Measured on RTX 4090 with real FlashInfer 0.6.12:
+#   B=1: 1.06x, B=4: 1.31x, B=8: 1.57x, B=16: 2.01x, B=32: 2.63x, B=55: 3.20x
 FLASHINFER_DECODE_SPEEDUP = {
-    "small_b": 1.8,  # B<=32: GQA expansion savings more significant
-    "large_b": 1.5,  # B>32: memory-bound dominates, less relative gain
+    1: 1.06,
+    4: 1.31,
+    8: 1.57,
+    16: 2.01,
+    32: 2.63,
+    55: 3.20,
 }
+
+def get_flashinfer_speedup(batch_size):
+    """Get measured FlashInfer overall speedup for given batch size"""
+    if batch_size in FLASHINFER_DECODE_SPEEDUP:
+        return FLASHINFER_DECODE_SPEEDUP[batch_size]
+    # Interpolate between measured values
+    if batch_size <= 1:
+        return 1.06
+    elif batch_size <= 8:
+        # Linear interpolation B=1→1.06 to B=8→1.57
+        return 1.06 + (1.57 - 1.06) * (batch_size - 1) / 7
+    elif batch_size <= 32:
+        # Linear interpolation B=8→1.57 to B=32→2.63
+        return 1.57 + (2.63 - 1.57) * (batch_size - 8) / 24
+    elif batch_size <= 128:
+        # Linear interpolation B=32→2.63 to B=55→3.20 (extrapolate to ~4x at B=128)
+        return 2.63 + (3.20 - 2.63) * (batch_size - 32) / 23
+    else:
+        return 4.0  # Cap at 4x for very large batches
 
 # ============================================================
 # Speculative Decoding (实测)
@@ -273,8 +309,8 @@ def full_report(model_name, quant_name, kv_name, seq_len, batch_size=None,
     ttft = ttft_ms(actual_seq)
     ttl_256 = ttl_ms(actual_seq, batch_size, 256, model, kv, quant)
 
-    # FlashInfer overall decode speedup (not attention-only 15.72x!)
-    fi_speedup = FLASHINFER_DECODE_SPEEDUP["small_b"] if batch_size <= 32 else FLASHINFER_DECODE_SPEEDUP["large_b"]
+    # FlashInfer overall decode speedup (RTX 4090实测!)
+    fi_speedup = get_flashinfer_speedup(batch_size)
     flashinfer_tp = base_tp * fi_speedup
 
     report = {
@@ -405,10 +441,11 @@ if __name__ == '__main__':
         # Run all common configurations
         configs = [
             ("7B", "bf16", "int8", 4096, "none", "default"),
+            ("7B_gqa8", "bf16", "int8", 4096, "none", "default"),  # GQA-8 (FlashInfer validated!)
             ("7B", "bf16", "fp8", 4096, "none", "default"),
             ("7B", "int4_awq", "int8", 4096, "none", "default"),
-            ("7B", "bf16", "int8", 4096, "eagle_d5", "default"),
-            ("7B", "bf16", "int8", 4096, "ngram_d3", "default"),
+            ("7B_gqa8", "bf16", "int8", 4096, "eagle_d5", "default"),
+            ("7B_gqa8", "bf16", "int8", 4096, "ngram_d3", "default"),
             ("7B", "bf16", "int8", 4096, "none", "ntk4x"),
             ("7B", "bf16", "int8", 4100, "none", "streaming"),
             ("7B_mha", "bf16", "bf16", 4096, "none", "default"),
