@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """torch.compile Benchmark — RTX 4090
 
-4 experiments:
-1. Graph break analysis: torch._dynamo.explain on MiniGQATransformer
-2. Compile modes: default/reduce-overhead/max-autotune vs eager
-3. Fwd+Bwd compile: training step comparison
-4. MiniGRPO compile: GRPO training step with compile
+Benchmarks torch.compile (PyTorch 2.x) performance on RTX 4090:
+1. Forward pass: compiled vs eager (7M, 25M, 7B-proxy models)
+2. Training step: compiled vs eager (7M, 25M models)
+3. Compile modes comparison (default/reduce-overhead/max-autotune)
+4. Dynamic shapes (variable batch/seq)
+5. Memory overhead analysis
+
+Goal: Validate torch.compile speedup claims with real RTX 4090 data.
 
 Usage:
   CUDA_VISIBLE_DEVICES=0 python -u tools/torch_compile_benchmark_4090.py
@@ -13,23 +16,36 @@ Usage:
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import json
-import time
-import argparse
 import os
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.mini_grpo_training import (
-    MiniGQATransformer, VOCAB_SIZE, TOKENS,
-    generate_arithmetic_prompt, generate_sft_dataset,
-)
 
 
-def measure_time(fn, warmup=5, repeat=20):
-    """Measure function execution time with warmup."""
+class SimpleTransformer(nn.Module):
+    """Simple transformer for benchmarking — no flash attention dependency."""
+
+    def __init__(self, hidden=512, layers=4, heads=8, vocab=32000, seq_len=128):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab, hidden)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden, nhead=heads, dim_feedforward=4*hidden,
+            dropout=0.0, activation='gelu', batch_first=True, norm_first=True)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=layers)
+        self.norm = nn.LayerNorm(hidden)
+        self.head = nn.Linear(hidden, vocab)
+
+    def forward(self, input_ids):
+        x = self.embedding(input_ids)
+        x = self.encoder(x)
+        x = self.norm(x)
+        return self.head(x)
+
+
+def measure_time(fn, warmup=10, repeat=50):
     for _ in range(warmup):
         fn()
     torch.cuda.synchronize()
@@ -45,223 +61,307 @@ def measure_time(fn, warmup=5, repeat=20):
     return np.median(times), np.mean(times), np.std(times)
 
 
-def exp1_graph_breaks(device):
-    """Analyze graph breaks in MiniGQATransformer."""
-    print("\n" + "="*50)
-    print("Exp 1: Graph Break Analysis")
-    print("="*50)
-
-    model = MiniGQATransformer(
-        hidden_dim=256, num_layers=4, num_heads=8,
-        num_kv_heads=4, vocab_size=VOCAB_SIZE).to(device)
-
-    # Test with typical input
-    prompt_tokens = [TOKENS['2'], TOKENS['+'], TOKENS['1'], TOKENS['=']]
-    input_ids = torch.tensor([prompt_tokens + [TOKENS['<eos>'], TOKENS['3']]],
-                              dtype=torch.long, device=device)
-
-    # Explain graph breaks
-    try:
-        explanation = torch._dynamo.explain(model, input_ids)
-        print(f"  Graph breaks: {explanation.graph_break_count}")
-        print(f"  Ops captured: {len(explanation.ops)}")
-        for gb in explanation.graph_break_reasons:
-            print(f"    Break: {gb}")
-    except Exception as e:
-        print(f"  Explain failed: {e}")
-
-    # Compile and measure
-    compiled = torch.compile(model, mode="default")
-    compiled(input_ids)  # warmup
-
-    median_eager, _, _ = measure_time(lambda: model(input_ids))
-    median_compile, _, _ = measure_time(lambda: compiled(input_ids))
-    speedup = median_eager / median_compile
-    print(f"  Eager: {median_eager:.2f}ms, Compile: {median_compile:.2f}ms, Speedup: {speedup:.2f}x")
-
-    return {'graph_breaks': getattr(explanation, 'graph_break_count', 'unknown'),
-            'eager_ms': median_eager, 'compile_ms': median_compile, 'speedup': speedup}
+MODEL_CONFIGS = {
+    "7M": {"hidden": 512, "layers": 4, "heads": 8, "vocab": 32000},
+    "25M": {"hidden": 1024, "layers": 8, "heads": 16, "vocab": 32000},
+    "7B-proxy": {"hidden": 2560, "layers": 4, "heads": 20, "vocab": 32000},
+}
 
 
-def exp2_compile_modes(device):
-    """Compare compile modes: default/reduce-overhead/max-autotune."""
-    print("\n" + "="*50)
-    print("Exp 2: Compile Modes Comparison")
-    print("="*50)
+def benchmark_forward(model_name, config, batch_sizes=[1, 4, 16, 32], seq_len=128):
+    """Benchmark forward pass: compiled vs eager."""
+    print(f"\n=== Forward Pass: {model_name} ===")
 
-    model = MiniGQATransformer(
-        hidden_dim=256, num_layers=4, num_heads=8,
-        num_kv_heads=4, vocab_size=VOCAB_SIZE).to(device)
+    model = SimpleTransformer(**config, seq_len=seq_len).to("cuda:0").to(torch.bfloat16)
+    model.eval()
 
-    prompt_tokens = [TOKENS['2'], TOKENS['+'], TOKENS['1'], TOKENS['=']]
-    input_ids = torch.tensor([prompt_tokens + [TOKENS['<eos>'], TOKENS['3']]],
-                              dtype=torch.long, device=device)
+    # Compile with default mode (max-autotune for best performance)
+    compiled_model = torch.compile(model, mode="max-autotune")
 
-    results = {}
+    results = []
+    for B in batch_sizes:
+        input_ids = torch.randint(0, config["vocab"], (B, seq_len), device="cuda:0")
+
+        # Warmup compiled model (first run triggers compilation)
+        with torch.no_grad():
+            compiled_model(input_ids)
+        torch.cuda.synchronize()
+
+        # Eager
+        def eager_fwd():
+            with torch.no_grad():
+                return model(input_ids)
+
+        # Compiled
+        def compiled_fwd():
+            with torch.no_grad():
+                return compiled_model(input_ids)
+
+        eager_time = measure_time(eager_fwd, warmup=5, repeat=20)
+        compiled_time = measure_time(compiled_fwd, warmup=5, repeat=20)
+
+        speedup = eager_time[0] / compiled_time[0]
+        results.append({
+            "batch": B,
+            "eager_ms": round(eager_time[0], 4),
+            "compiled_ms": round(compiled_time[0], 4),
+            "speedup": round(speedup, 2),
+        })
+        print(f"  B={B}: eager={eager_time[0]:.3f}ms, compiled={compiled_time[0]:.3f}ms -> {speedup:.2f}x")
+
+    del model, compiled_model
+    torch.cuda.empty_cache()
+    return results
+
+
+def benchmark_training(model_name, config, batch_sizes=[4, 16, 32], seq_len=128):
+    """Benchmark training step: compiled vs eager."""
+    print(f"\n=== Training Step: {model_name} ===")
+
+    model = SimpleTransformer(**config, seq_len=seq_len).to("cuda:0").to(torch.bfloat16)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+
+    compiled_model = torch.compile(model, mode="max-autotune")
+    compiled_optimizer = torch.optim.AdamW(compiled_model.parameters(), lr=1e-4)
+
+    results = []
+    for B in batch_sizes:
+        input_ids = torch.randint(0, config["vocab"], (B, seq_len), device="cuda:0")
+        targets = torch.randint(0, config["vocab"], (B, seq_len), device="cuda:0")
+
+        # Warmup compiled
+        compiled_optimizer.zero_grad()
+        loss = nn.CrossEntropyLoss()(compiled_model(input_ids).view(-1, config["vocab"]),
+                                     targets.view(-1))
+        loss.backward()
+        compiled_optimizer.step()
+        torch.cuda.synchronize()
+
+        # Eager training step
+        def eager_train():
+            optimizer.zero_grad()
+            loss = nn.CrossEntropyLoss()(model(input_ids).view(-1, config["vocab"]),
+                                         targets.view(-1))
+            loss.backward()
+            optimizer.step()
+
+        # Compiled training step
+        def compiled_train():
+            compiled_optimizer.zero_grad()
+            loss = nn.CrossEntropyLoss()(compiled_model(input_ids).view(-1, config["vocab"]),
+                                         targets.view(-1))
+            loss.backward()
+            compiled_optimizer.step()
+
+        eager_time = measure_time(eager_train, warmup=3, repeat=10)
+        compiled_time = measure_time(compiled_train, warmup=3, repeat=10)
+
+        speedup = eager_time[0] / compiled_time[0]
+        results.append({
+            "batch": B,
+            "eager_ms": round(eager_time[0], 4),
+            "compiled_ms": round(compiled_time[0], 4),
+            "speedup": round(speedup, 2),
+        })
+        print(f"  B={B}: eager={eager_time[0]:.3f}ms, compiled={compiled_time[0]:.3f}ms -> {speedup:.2f}x")
+
+    del model, compiled_model, optimizer, compiled_optimizer
+    torch.cuda.empty_cache()
+    return results
+
+
+def benchmark_compile_modes(model_name="7M", config=None, B=16, seq_len=128):
+    """Benchmark different torch.compile modes."""
+    if config is None:
+        config = MODEL_CONFIGS[model_name]
+
+    print(f"\n=== Compile Modes Comparison: {model_name} B={B} ===")
+
+    modes = ["default", "reduce-overhead", "max-autotune"]
+    input_ids = torch.randint(0, config["vocab"], (B, seq_len), device="cuda:0")
 
     # Eager baseline
-    median, mean, std = measure_time(lambda: model(input_ids))
-    results['eager'] = {'median_ms': median, 'mean_ms': mean, 'std_ms': std}
+    model_eager = SimpleTransformer(**config, seq_len=seq_len).to("cuda:0").to(torch.bfloat16)
+    model_eager.eval()
+    def eager_fwd():
+        with torch.no_grad():
+            return model_eager(input_ids)
+    eager_time = measure_time(eager_fwd, warmup=5, repeat=20)
+    print(f"  eager: {eager_time[0]:.3f}ms (baseline)")
 
-    for mode in ['default', 'reduce-overhead', 'max-autotune']:
+    results = [{"mode": "eager", "time_ms": round(eager_time[0], 4), "speedup": 1.0}]
+
+    for mode in modes:
+        model = SimpleTransformer(**config, seq_len=seq_len).to("cuda:0").to(torch.bfloat16)
+        model.eval()
         compiled = torch.compile(model, mode=mode)
+
         # Warmup (compilation happens here)
-        for _ in range(10):
+        with torch.no_grad():
             compiled(input_ids)
         torch.cuda.synchronize()
 
-        median, mean, std = measure_time(lambda: compiled(input_ids))
-        speedup = results['eager']['median_ms'] / median
-        results[mode] = {'median_ms': median, 'mean_ms': mean, 'std_ms': std, 'speedup': speedup}
-        print(f"  {mode}: {median:.2f}ms ({speedup:.2f}x)")
+        def compiled_fwd():
+            with torch.no_grad():
+                return compiled(input_ids)
+
+        t = measure_time(compiled_fwd, warmup=5, repeat=20)
+        speedup = eager_time[0] / t[0]
+        results.append({"mode": mode, "time_ms": round(t[0], 4), "speedup": round(speedup, 2)})
+        print(f"  {mode}: {t[0]:.3f}ms -> {speedup:.2f}x")
+
+        del model, compiled
+        torch.cuda.empty_cache()
 
     return results
 
 
-def exp3_training_step(device):
-    """Compare training step (fwd+bwd) with compile."""
-    print("\n" + "="*50)
-    print("Exp 3: Training Step (Fwd+Bwd) Compile vs Eager")
-    print("="*50)
+def benchmark_dynamic_shapes(model_name="7M", config=None):
+    """Benchmark torch.compile with dynamic shapes (variable batch/seq)."""
+    if config is None:
+        config = MODEL_CONFIGS[model_name]
 
-    model = MiniGQATransformer(
-        hidden_dim=256, num_layers=4, num_heads=8,
-        num_kv_heads=4, vocab_size=VOCAB_SIZE).to(device)
+    print(f"\n=== Dynamic Shapes: {model_name} ===")
 
-    dataset = generate_sft_dataset(100)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-3)
+    model = SimpleTransformer(**config, seq_len=128).to("cuda:0").to(torch.bfloat16)
+    model.eval()
+    compiled = torch.compile(model, mode="max-autotune", dynamic=True)
 
-    def train_step_eager():
-        optimizer.zero_grad()
-        idx = np.random.randint(len(dataset))
-        full_tokens, prompt_len = dataset[idx]
-        input_ids = torch.tensor([full_tokens], dtype=torch.long, device=device)
-        targets = input_ids.clone()
-        logits = model(input_ids)
-        loss = F.cross_entropy(
-            logits[:, prompt_len-1:-1, :].reshape(-1, VOCAB_SIZE),
-            targets[:, prompt_len:].reshape(-1))
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-        optimizer.step()
-
-    # Compile model and optimizer step
-    compiled_model = torch.compile(model, mode='default')
-    compiled_optimizer = torch.optim.AdamW(compiled_model.parameters(), lr=2e-3)
-
-    def train_step_compile():
-        compiled_optimizer.zero_grad()
-        idx = np.random.randint(len(dataset))
-        full_tokens, prompt_len = dataset[idx]
-        input_ids = torch.tensor([full_tokens], dtype=torch.long, device=device)
-        targets = input_ids.clone()
-        logits = compiled_model(input_ids)
-        loss = F.cross_entropy(
-            logits[:, prompt_len-1:-1, :].reshape(-1, VOCAB_SIZE),
-            targets[:, prompt_len:].reshape(-1))
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(compiled_model.parameters(), max_norm=1.0)
-        compiled_optimizer.step()
-
-    # Warmup both
-    for _ in range(20):
-        train_step_eager()
-    for _ in range(20):
-        train_step_compile()
+    # Warmup with different shapes
+    for B, S in [(4, 64), (16, 128), (32, 256)]:
+        ids = torch.randint(0, config["vocab"], (B, S), device="cuda:0")
+        with torch.no_grad():
+            compiled(ids)
     torch.cuda.synchronize()
 
-    median_eager, _, _ = measure_time(lambda: train_step_eager(), warmup=3, repeat=30)
-    median_compile, _, _ = measure_time(lambda: train_step_compile(), warmup=3, repeat=30)
+    test_shapes = [(4, 64), (8, 128), (16, 128), (32, 128), (16, 256)]
+    results = []
+    for B, S in test_shapes:
+        input_ids = torch.randint(0, config["vocab"], (B, S), device="cuda:0")
 
-    speedup = median_eager / median_compile
-    print(f"  Eager train step: {median_eager:.2f}ms")
-    print(f"  Compile train step: {median_compile:.2f}ms")
-    print(f"  Speedup: {speedup:.2f}x")
+        # Eager
+        model_eager = SimpleTransformer(**config, seq_len=S).to("cuda:0").to(torch.bfloat16)
+        model_eager.eval()
+        def eager_fwd():
+            with torch.no_grad():
+                return model_eager(input_ids)
+        eager_time = measure_time(eager_fwd, warmup=3, repeat=10)
 
-    return {'eager_ms': median_eager, 'compile_ms': median_compile, 'speedup': speedup}
+        # Compiled (dynamic)
+        def compiled_fwd():
+            with torch.no_grad():
+                return compiled(input_ids)
+        compiled_time = measure_time(compiled_fwd, warmup=3, repeat=10)
 
+        speedup = eager_time[0] / compiled_time[0]
+        results.append({
+            "batch": B, "seq_len": S,
+            "eager_ms": round(eager_time[0], 4),
+            "compiled_ms": round(compiled_time[0], 4),
+            "speedup": round(speedup, 2),
+        })
+        print(f"  B={B} S={S}: eager={eager_time[0]:.3f}ms, compiled={compiled_time[0]:.3f}ms -> {speedup:.2f}x")
 
-def exp4_batch_scaling(device):
-    """Compile speedup across batch sizes."""
-    print("\n" + "="*50)
-    print("Exp 4: Batch Size × Compile Speedup")
-    print("="*50)
+        del model_eager
+        torch.cuda.empty_cache()
 
-    model = MiniGQATransformer(
-        hidden_dim=256, num_layers=4, num_heads=8,
-        num_kv_heads=4, vocab_size=VOCAB_SIZE).to(device)
-
-    compiled = torch.compile(model, mode='default')
-
-    prompt_tokens = [TOKENS['2'], TOKENS['+'], TOKENS['1'], TOKENS['=']]
-    batch_sizes = [1, 4, 16, 32, 64]
-
-    results = {}
-    for b in batch_sizes:
-        input_ids = torch.tensor(
-            [[prompt_tokens + [TOKENS['<eos>'], TOKENS['3']]] * b],
-            dtype=torch.long, device=device).squeeze(0)
-
-        # Warmup
-        model(input_ids)
-        compiled(input_ids)
-        torch.cuda.synchronize()
-
-        median_eager, _, _ = measure_time(lambda: model(input_ids), warmup=3, repeat=20)
-        median_compile, _, _ = measure_time(lambda: compiled(input_ids), warmup=3, repeat=20)
-        speedup = median_eager / median_compile
-        results[f'batch_{b}'] = {'eager_ms': median_eager, 'compile_ms': median_compile, 'speedup': speedup}
-        print(f"  Batch={b}: Eager {median_eager:.2f}ms → Compile {median_compile:.2f}ms ({speedup:.2f}x)")
-
+    del model, compiled
+    torch.cuda.empty_cache()
     return results
 
 
 def main():
-    device = torch.device('cuda:0')
-    print("=" * 70)
-    print("torch.compile Benchmark — RTX 4090")
-    print("=" * 70)
-    print(f"GPU: {torch.cuda.get_device_name(0)}")
+    print(f"=== torch.compile Benchmark -- RTX 4090 ===")
+    print(f"GPU: {torch.cuda.get_device_name()}")
     print(f"PyTorch: {torch.__version__}")
     print(f"CUDA: {torch.version.cuda}")
+    print()
 
-    all_results = {}
+    results = {
+        "device": {
+            "name": torch.cuda.get_device_name(),
+            "pytorch_version": torch.__version__,
+            "cuda_version": torch.version.cuda,
+        },
+    }
 
-    all_results['exp1_graph_breaks'] = exp1_graph_breaks(device)
-    all_results['exp2_compile_modes'] = exp2_compile_modes(device)
-    all_results['exp3_training_step'] = exp3_training_step(device)
-    all_results['exp4_batch_scaling'] = exp4_batch_scaling(device)
+    # Section 1: Forward pass speedup by model size
+    for model_name, config in MODEL_CONFIGS.items():
+        if model_name == "7B-proxy":
+            # Only test smaller batch sizes for 7B-proxy to avoid OOM
+            results[f"forward_{model_name}"] = benchmark_forward(
+                model_name, config, batch_sizes=[1, 4, 8])
+        else:
+            results[f"forward_{model_name}"] = benchmark_forward(model_name, config)
 
-    print("\n" + "=" * 70)
-    print("Summary: torch.compile Performance on RTX 4090")
-    print("=" * 70)
+    # Section 2: Training step speedup
+    for model_name in ["7M", "25M"]:
+        results[f"training_{model_name}"] = benchmark_training(model_name, MODEL_CONFIGS[model_name])
 
-    e1 = all_results['exp1_graph_breaks']
-    print(f"  Graph breaks: {e1['graph_breaks']}")
-    print(f"  Forward speedup: {e1['speedup']:.2f}x")
+    # Section 3: Compile modes comparison
+    results["compile_modes"] = benchmark_compile_modes()
 
-    e2 = all_results['exp2_compile_modes']
-    print(f"  Mode comparison:")
-    for mode in ['default', 'reduce-overhead', 'max-autotune']:
-        if mode in e2:
-            print(f"    {mode}: {e2[mode]['speedup']:.2f}x")
+    # Section 4: Dynamic shapes
+    results["dynamic_shapes"] = benchmark_dynamic_shapes()
 
-    e3 = all_results['exp3_training_step']
-    print(f"  Training step speedup: {e3['speedup']:.2f}x")
+    # Summary
+    print("\n=== Summary ===")
+    forward_speedups = []
+    training_speedups = []
+    for key, data in results.items():
+        if key.startswith("forward_"):
+            for r in data:
+                forward_speedups.append(r["speedup"])
+        if key.startswith("training_"):
+            for r in data:
+                training_speedups.append(r["speedup"])
 
-    e4 = all_results['exp4_batch_scaling']
-    print(f"  Batch scaling:")
-    for b in [1, 4, 16, 32, 64]:
-        key = f'batch_{b}'
-        if key in e4:
-            print(f"    B={b}: {e4[key]['speedup']:.2f}x")
+    avg_fwd = np.mean(forward_speedups) if forward_speedups else 0
+    avg_train = np.mean(training_speedups) if training_speedups else 0
+    print(f"  Average forward speedup: {avg_fwd:.2f}x")
+    print(f"  Average training speedup: {avg_train:.2f}x")
+    print(f"  Best forward speedup: {max(forward_speedups):.2f}x")
+    print(f"  Best training speedup: {max(training_speedups):.2f}x")
 
-    output_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                'results', 'torch_compile_benchmark.json')
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w') as f:
-        json.dump(all_results, f, indent=2)
-    print(f"\nResults saved to {output_path}")
+    results["summary"] = {
+        "avg_forward_speedup": round(avg_fwd, 2),
+        "avg_training_speedup": round(avg_train, 2),
+        "best_forward_speedup": round(max(forward_speedups), 2),
+        "best_training_speedup": round(max(training_speedups), 2),
+    }
+
+    # Memory analysis
+    print("\n=== Memory Analysis ===")
+    torch.cuda.reset_peak_memory_stats()
+    model = SimpleTransformer(**MODEL_CONFIGS["7M"]).to("cuda:0").to(torch.bfloat16)
+    input_ids = torch.randint(0, 32000, (16, 128), device="cuda:0")
+    with torch.no_grad():
+        model(input_ids)
+    peak_eager = torch.cuda.max_memory_allocated() / 1e6
+
+    torch.cuda.reset_peak_memory_stats()
+    compiled = torch.compile(model, mode="max-autotune")
+    with torch.no_grad():
+        compiled(input_ids)
+    peak_compiled = torch.cuda.max_memory_allocated() / 1e6
+
+    print(f"  Eager peak: {peak_eager:.1f}MB")
+    print(f"  Compiled peak: {peak_compiled:.1f}MB")
+    print(f"  Memory overhead: {(peak_compiled - peak_eager) / peak_eager * 100:.1f}%")
+
+    results["memory"] = {
+        "eager_peak_mb": round(peak_eager, 1),
+        "compiled_peak_mb": round(peak_compiled, 1),
+        "overhead_pct": round((peak_compiled - peak_eager) / peak_eager * 100, 1),
+    }
+
+    # Save results
+    output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              'results', 'torch_compile_benchmark.json')
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    with open(output_file, 'w') as f:
+        json.dump(results, f, indent=2)
+    print(f"\nResults saved to {output_file}")
 
 
 if __name__ == '__main__':
