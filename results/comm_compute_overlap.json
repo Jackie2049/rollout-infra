@@ -1,0 +1,107 @@
+{
+  "exp1_baseline": {
+    "compute_us": 426.13,
+    "compute_desc": "MLP forward (gate+up+silu+down) B=32",
+    "comm_times": {
+      "1": {
+        "time_us": 183.35,
+        "bw_mbps": 5454.05
+      },
+      "4": {
+        "time_us": 610.21,
+        "bw_mbps": 6555.12
+      },
+      "16": {
+        "time_us": 2290.08,
+        "bw_mbps": 6986.66
+      },
+      "64": {
+        "time_us": 8815.81,
+        "bw_mbps": 7259.68
+      },
+      "256": {
+        "time_us": 35493.67,
+        "bw_mbps": 7212.55
+      }
+    }
+  },
+  "exp2_overlap": {
+    "4": {
+      "compute_us": 426.13,
+      "comm_us": 610.21,
+      "sequential_us": 1024.66,
+      "overlapped_us": 751.56,
+      "time_saved_us": 273.1,
+      "overlap_efficiency_pct": 65.9,
+      "theoretical_min_us": 610.21
+    },
+    "16": {
+      "compute_us": 426.13,
+      "comm_us": 2290.08,
+      "sequential_us": 2723.13,
+      "overlapped_us": 2428.08,
+      "time_saved_us": 295.05,
+      "overlap_efficiency_pct": 68.1,
+      "theoretical_min_us": 2290.08
+    },
+    "64": {
+      "compute_us": 426.13,
+      "comm_us": 8815.81,
+      "sequential_us": 9319.26,
+      "overlapped_us": 8894.57,
+      "time_saved_us": 424.69,
+      "overlap_efficiency_pct": 84.4,
+      "theoretical_min_us": 8815.81
+    }
+  },
+  "exp3_fsdp_overlap": {
+    "4": {
+      "rs_us": 356.28,
+      "ag_us": 361.02,
+      "compute_us": 426.13,
+      "sequential_us": 780.06,
+      "overlapped_us": 600.54,
+      "overlap_efficiency_pct": 50.7
+    },
+    "16": {
+      "rs_us": 1326.5,
+      "ag_us": 1326.55,
+      "compute_us": 426.13,
+      "sequential_us": 2135.27,
+      "overlapped_us": 1496.36,
+      "overlap_efficiency_pct": 79.0
+    }
+  },
+  "exp4_max_connections": {
+    "default_overlap_us": 2428.08,
+    "forced_serial_us": 2760.71,
+    "sequential_us": 2723.13,
+    "overlap_vs_serial_pct": 12.0
+  },
+  "exp5_fsdp_scaling": {
+    "1": {
+      "shard_per_gpu_mb": 0.953,
+      "rs_us": 179835.0,
+      "ag_us": 179835.0,
+      "compute_us": 500,
+      "no_overlap_us": 360670.0,
+      "overlap_us": 360170.0,
+      "comm_ratio_no_overlap_pct": 99.7,
+      "comm_ratio_overlap_pct": 99.9,
+      "speedup_no_overlap": 0.0,
+      "speedup_overlap": 0.0
+    },
+    "2": {
+      "shard_per_gpu_mb": 0.477,
+      "rs_us": 89917.0,
+      "ag_us": 89917.0,
+      "compute_us": 500,
+      "no_overlap_us": 180835.0,
+      "overlap_us": 180335.0,
+      "comm_ratio_no_overlap_pct": 99.4,
+      "comm_ratio_overlap_pct": 99.7,
+      "speedup_no_overlap": 0.0,
+      "speedup_overlap": 0.0
+    }
+  }
+}
