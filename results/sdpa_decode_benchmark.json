@@ -1,0 +1,49 @@
+{
+  "device": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "sm": "8.9"
+  },
+  "sdpa_decode": [
+    {
+      "B": 1,
+      "ms": 0.234,
+      "tok_per_s": 4265.6,
+      "peak_mem_GB": 0.035
+    },
+    {
+      "B": 4,
+      "ms": 0.396,
+      "tok_per_s": 10099.5,
+      "peak_mem_GB": 0.122
+    },
+    {
+      "B": 8,
+      "ms": 0.842,
+      "tok_per_s": 9497.1,
+      "peak_mem_GB": 0.235
+    },
+    {
+      "B": 16,
+      "ms": 1.732,
+      "tok_per_s": 9237.0,
+      "peak_mem_GB": 0.462
+    },
+    {
+      "B": 32,
+      "ms": 3.445,
+      "tok_per_s": 9287.6,
+      "peak_mem_GB": 0.916
+    }
+  ],
+  "gqa_overhead": {
+    "gqa_expand_ms": 0.838,
+    "gqa_expand_tok_s": 9541.1,
+    "gqa_expand_mem_GB": 0.277,
+    "mha_no_expand_ms": 0.831,
+    "mha_no_expand_tok_s": 9622.8,
+    "mha_no_expand_mem_GB": 0.103,
+    "overhead_ratio": 1.01,
+    "kv_saving_pct": 75.0
+  },
+  "note": "FlashInfer not installed (tvm_ffi dependency blocked by campus auth). Only SDPA results available."
+}
