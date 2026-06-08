@@ -196,6 +196,12 @@
     Prefill+16decode = 1.20x → B≥16开始overlap → 但收益有限
     vLLM V1 single stream+token budget = 最优方案
 
+  CUDA Memory Allocator:
+    碎片化=0-1%(极低!) → alloc/free不累积 → 不是瓶颈
+    Pool slice=3.9x faster(3us vs 12us dynamic) → vLLM PagedAttention验证
+    Pool冷启动231ms for 10GB → 之后近零 → 生产可接受
+    7B BF16 13GB → OOM at 20GB → 量化是必需品
+
   Batched GEMM MoE:
     torch.bmm 0.38-0.77x vs sequential → bmm更慢!
     MoE GEMM 3-17% peak → 极低利用率 → dense model更优
