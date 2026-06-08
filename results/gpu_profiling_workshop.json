@@ -1,0 +1,23 @@
+{
+  "exp1_cpu_overhead": {
+    "attn_GEMM_1x4096x4096": {"wall_us": 48.16, "cpu_dispatch_us": 10.72, "gpu_compute_us": 37.44, "overhead_pct": 22.3},
+    "attn_GEMM_32x4096x4096": {"wall_us": 32.76, "cpu_dispatch_us": 14.33, "gpu_compute_us": 18.43, "overhead_pct": 43.7},
+    "mlp_gate_1x4096x14336": {"wall_us": 146.18, "cpu_dispatch_us": 14.15, "gpu_compute_us": 132.03, "overhead_pct": 9.7},
+    "mlp_gate_32x4096x14336": {"wall_us": 147.34, "cpu_dispatch_us": 12.63, "gpu_compute_us": 134.71, "overhead_pct": 8.6},
+    "lm_head_1x4096x32000": {"wall_us": 382.71, "cpu_dispatch_us": 13.68, "gpu_compute_us": 369.03, "overhead_pct": 3.6},
+    "lm_head_32x4096x32000": {"wall_us": 309.83, "cpu_dispatch_us": 15.09, "gpu_compute_us": 294.74, "overhead_pct": 4.9},
+    "rmsnorm_1x4096": {"wall_us": 42.86, "cpu_dispatch_us": 30.42, "gpu_compute_us": 12.44, "overhead_pct": 71.0},
+    "rmsnorm_32x4096": {"wall_us": 40.4, "cpu_dispatch_us": 29.04, "gpu_compute_us": 11.36, "overhead_pct": 71.9}
+  },
+  "exp4_cuda_graph": {
+    "1": {"eager_us": 520.66, "graph_us": 516.52, "capture_ms": 6.42, "speedup": 1.01},
+    "4": {"eager_us": 525.04, "graph_us": 516.14, "capture_ms": 3.53, "speedup": 1.02},
+    "16": {"eager_us": 531.94, "graph_us": 525.22, "capture_ms": 5.20, "speedup": 1.01},
+    "32": {"eager_us": 544.68, "graph_us": 536.31, "capture_ms": 5.07, "speedup": 1.02}
+  },
+  "exp5_pipeline_summary": {
+    "1": {"cpu_dispatch_us": 2328, "gpu_compute_us": 25603, "total_us": 27931, "overhead_pct": 8.3, "graph_speedup": 1.09},
+    "32": {"cpu_dispatch_us": 2328, "gpu_compute_us": 13000, "total_us": 15328, "overhead_pct": 15.2, "graph_speedup": 1.18},
+    "55": {"cpu_dispatch_us": 2328, "gpu_compute_us": 13000, "total_us": 15328, "overhead_pct": 15.2, "graph_speedup": 1.18}
+  }
+}
