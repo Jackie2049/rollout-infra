@@ -233,7 +233,40 @@ SGLang 在 RL 场景有显著优势:
 
 **关键**: RTX 4090(SM89)只能用DelayedScaling+Float8CurrentScaling → MXFP8/NVFP4需Blackwell(SM100+)
 
-## 9. 核心学习
+## 9. RTX 4090实测数据补充 (2026-06-08)
+
+### FlashInfer vs SDPA Decode (RTX 4090实测)
+| B | SDPA(tok/s) | FlashInfer(tok/s) | Speedup |
+|---|------------|-------------------|---------|
+| 1 | 3,662 | 4,494 | 1.23x |
+| 32 | 9,278 | **145,827** | **15.72x** |
+
+### torch.compile Benchmark (RTX 4090实测)
+| B | Eager(ms) | Compiled(ms) | Speedup |
+|---|----------|-------------|---------|
+| 1 | 1.227 | 0.300 | **4.09x** |
+| 4 | 1.245 | 1.555 | 0.80x ❌ |
+| 32 | 2.037 | 2.323 | 0.88x ❌ |
+
+**结论**: torch.compile对推理无用(B>=4反而慢) → FlashInfer才是推理答案!
+
+### LoRA Benchmark (RTX 4090实测)
+| 配置 | val_loss | 参数 | 推理overhead |
+|------|---------|------|------------|
+| Full FT | 3.81 | 2.69M(100%) | baseline |
+| LoRA r=8 | 3.68 | 192K(7.1%) | merged 0.97x ✅ |
+| LoRA r=2 | **3.62** | 74K(2.8%) | merged ~0.97x |
+
+**结论**: LoRA merge=零推理overhead(0.97x) → LoRA比Full FT更好(小模型anti-overfitting)
+
+### RTX 4090最优框架推荐
+- **通用推理**: vLLM V1 + FlashInfer + INT8KV → 145K tok/s(B=32) → $0.01/Mtok
+- **LoRA serving**: vLLM V1 Multi-LoRA → SegMM → INT4 base + BF16 adapters
+- **GRPO训练**: verl + vLLM → sleep/wake → 单卡LoRA → $0.35/hr
+- **TRT-LLM**: 不推荐 → 构建复杂+RTX 4090收益小
+- **不需要MLA/MoE** → GQA-5足够 → 简单有效!
+
+## 10. 核心学习
 
 1. **数据结构选择很关键**: Radix Tree vs Hash Table 决定了 prefix caching 的效率上限
 2. **缓存感知调度是差异化**: SGLang 的 LPM 策略是其 RL 场景优势的核心
