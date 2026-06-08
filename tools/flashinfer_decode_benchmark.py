@@ -137,6 +137,7 @@ if FLASHINFER_AVAILABLE:
                 num_heads,
                 num_kv_heads,
                 d_head,
+                page_size,
             )
             o = wrapper.forward(
                 q,
