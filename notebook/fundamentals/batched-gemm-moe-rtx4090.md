@@ -1,5 +1,5 @@
 # Batched GEMM MoE Compute — RTX 4090
-> 2026-06-07 | 5个实验: Grouped vs Sequential GEMM, Scatter-Gather, MoE Layer e2e, 负载倾斜, Shared Expert
+> 2026-06-07/08 | 两轮实验: 第一轮5实验(Grouped/Scatter-Gather/MoE e2e/负载倾斜/Shared) + 第二轮3实验(Single vs Sequential/BMM详细/MoE-like shapes)
 
 ## 一、Grouped vs Sequential GEMM (torch.bmm失败!)
 
@@ -138,3 +138,73 @@ Sources:
 - [Mixtral-8x7B](https://arxiv.org/abs/2401.04088)
 - [vLLM FusedMoE Source](https://github.com/vllm-project/vllm)
 - [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437)
+
+---
+
+## 八、第二轮实测 (2026-06-08): GEMM Shape + Batched GEMM 详细分析
+
+### 8.1 Single Large vs N Small Sequential: 效率急剧下降
+
+```
+Single M=64 vs N experts × M_each (K=N=4096):
+
+    | Config              | ms     | TFLOPS | Peak%  | vs Single |
+    |---------------------|--------|--------|--------|-----------|
+    | Single M=64         | 0.0407 | 52.83  | 31.1%  | 1.0x      |
+    | 2 experts × M=32    | 0.0583 | 36.86  | 21.7%  | **0.69x** |
+    | 4 experts × M=16    | 0.1055 | 20.36  | 12.0%  | **0.39x** |
+    | 8 experts × M=8     | 0.1800 | 11.94  | 7.0%   | **0.23x** |
+    | 16 experts × M=4    | 0.3367 | 6.40   | 3.8%   | **0.12x** |
+
+  → MoE分N小GEMM → 效率急剧下降! M=4 → 3.8%peak → vs 31.1%peak → 8x差距
+  → → 每个expert仅4 tokens → 1-2 SM → 128 SM几乎全闲置!
+```
+
+### 8.2 torch.bmm详细: BMM Slower for Most Configs
+
+```
+Batched GEMM (torch.bmm) vs Sequential (K=N=4096):
+
+    | N experts | M_each | bmm vs seq | Peak%  |
+    |-----------|---------|------------|--------|
+    | 2         | 1       | **0.77x**  | 0.6%   | ← bmm更慢!
+    | 2         | 4       | **1.19x**  | 3.2%   | ← bmm略快(唯一!)
+    | 2         | 16      | **1.21x**  | 12.1%  | ← bmm略快
+    | 4         | 1       | **0.55x**  | 0.5%   | ← bmm慢2x!
+    | 8         | 1       | **0.53x**  | 0.5%   | ← bmm慢2x!
+    | 16        | 1       | **0.38x**  | 0.4%   | ← bmm慢3x!
+    | 64        | 1       | **0.43x**  | 0.5%   | ← bmm慢2.5x!
+
+  → BMM比sequential慢0.38-0.77x → 在大多数配置下!
+  → → 原因: bmm strided memory + kernel dispatch overhead → contiguous sequential更快
+  → → → 只有2 experts + M≥4 → bmm才比sequential快(1.19-1.21x) → 收益小
+  → → → → **MoE: 不要用torch.bmm → sequential faster → 或FusedMoE专用kernel**
+```
+
+### 8.3 MoE-like Shapes: 大权重 → bmm≈sequential
+
+```
+MoE-like shapes (d_model=4096, hidden=14336):
+
+    | N active | M | bmm vs seq | Peak% |
+    |----------|---|------------|-------|
+    | 2        | 1 | 1.03x      | 0.5%  |
+    | 4        | 1 | 0.85x      | 0.4%  |
+    | 8        | 32| 1.04x      | 17.2% |
+    | 16       | 8 | 1.07x      | 4.4%  |
+
+  → 大权重 → bmm≈sequential → 因为权重读占主导 → bmm overhead微不足道
+  → → 小M → bmm略慢(0.85x) → 大M → bmm略快(1.04-1.07x)
+  → → → 所有MoE配置: 0.4-17.5% peak → 极低GEMM利用率!
+```
+
+### 8.4 综合结论 (两轮合并)
+
+```
+1. **torch.bmm不适合MoE**: 比sequential慢0.38-0.77x → 需FusedMoE专用kernel
+2. **MoE GEMM 3-17% peak**: per-expert小batch → 极低利用率 → vs dense 31-92%
+3. **大权重MoE**: bmm≈sequential → 但仍有scatter/gather Python overhead → FusedMoE必需
+4. **A2A是真正瓶颈**: PCIe 2.8ms >> GEMM 0.1-1ms → RTX 4090 MoE不推荐
+5. **Dense model > MoE on RTX 4090**: GQA-8+FlashInfer → 31%peak+54x attn → 最优
+6. **FusedMoE是必需品**: vLLM segmented matmul → 消除Python overhead → 生产唯一路径
+```
