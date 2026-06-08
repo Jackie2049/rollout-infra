@@ -400,7 +400,38 @@ SGLang → FlashInfer作为primary attention backend:
 2. **per-request**: 每个请求单独处理 → 无batching
 3. **is_causal=False**: 正确但expand开销巨大
 
-### 7.3 FlashInfer的关键优化总结
+### 7.3 Sequence Length Sweep实测 (RTX 4090, GQA-5, B=16)
+
+**FlashInfer vs SDPA在不同序列长度下的对比**:
+
+| S | SDPA(ms) | SDPA(tok/s) | FlashInfer(ms) | FlashInfer(tok/s) | Speedup |
+|---|----------|-------------|----------------|-------------------|---------|
+| 128 | 0.433 | 36,978 | 0.219 | 72,980 | **1.97x** |
+| 256 | 0.883 | 18,117 | 0.221 | 72,275 | **3.99x** |
+| 512 | 1.814 | 8,821 | 0.220 | 72,741 | **8.25x** |
+| 1024 | 3.439 | 4,652 | 0.222 | 72,196 | **15.52x** |
+| 2048 | 7.002 | 2,285 | 0.285 | 56,169 | **24.58x** |
+
+**关键发现**: FlashInfer几乎恒定~0.22ms直到S=1024! S=2048时微增到0.285ms → 但仍比SDPA快24.58x!
+- SDPA延迟∝S(线性增长): 0.43→7.0ms
+- FlashInfer延迟≈恒定(0.22ms): GQA native → KV读取量不随S线性增长(因为KV只有5个head)
+
+### 7.4 GQA Sweep实测 (RTX 4090, S=512, B=16)
+
+**不同num_kv_heads下的FlashInfer vs SDPA对比**:
+
+| num_kv | SDPA(ms) | SDPA(tok/s) | FlashInfer(ms) | FlashInfer(tok/s) | Speedup | KV(MB) |
+|--------|----------|-------------|----------------|-------------------|---------|--------|
+| 5 | 1.732 | 9,239 | 0.208 | 76,769 | **8.31x** | 10.49 |
+| 10 | 1.757 | 9,108 | 0.219 | 73,133 | **8.03x** | 20.97 |
+| 20 | 1.634 | 9,791 | 0.268 | 59,653 | **6.09x** | 41.94 |
+
+**关键发现**: FlashInfer在所有GQA配置下都更快! MHA(kv=20)时FlashInfer仍有6.09x加速!
+- FlashInfer GQA-5最快(76,769 tok/s) → GQA节省75%KV带宽
+- MHA(kv=20) FlashInfer 59,653 tok/s → 仍然比SDPA快6x
+- SDPA几乎不受kv数量影响(9-10K tok/s plateaued) → 因为expand后KV量相同
+
+### 7.5 FlashInfer的关键优化总结
 
 ```
 FlashInfer decode kernel优化栈:
