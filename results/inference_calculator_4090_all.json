@@ -23,8 +23,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.56,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6301.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6345.0,
       "inter_token_latency_ms": 24.56
     },
     "throughput": {
@@ -67,8 +67,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.45,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6274.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6318.0,
       "inter_token_latency_ms": 24.45
     },
     "throughput": {
@@ -111,8 +111,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.56,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6301.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6345.0,
       "inter_token_latency_ms": 24.56
     },
     "throughput": {
@@ -155,8 +155,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.63,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6319.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6364.0,
       "inter_token_latency_ms": 24.63
     },
     "throughput": {
@@ -199,8 +199,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.03,
-      "ttft_ms": 88.73,
-      "ttl_256tok_ms": 6241.0,
+      "ttft_ms": 446.22,
+      "ttl_256tok_ms": 6598.0,
       "inter_token_latency_ms": 24.03
     },
     "throughput": {
@@ -248,8 +248,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.58,
-      "ttft_ms": 15.05,
-      "ttl_256tok_ms": 6307.0,
+      "ttft_ms": 53.26,
+      "ttl_256tok_ms": 6345.0,
       "inter_token_latency_ms": 24.58
     },
     "throughput": {
@@ -296,8 +296,8 @@
     },
     "latency": {
       "decode_per_token_ms": 23.89,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6130.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6174.0,
       "inter_token_latency_ms": 23.89
     },
     "throughput": {
@@ -340,8 +340,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.67,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6330.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6375.0,
       "inter_token_latency_ms": 24.67
     },
     "throughput": {
@@ -384,8 +384,8 @@
     },
     "latency": {
       "decode_per_token_ms": 24.64,
-      "ttft_ms": 13.96,
-      "ttl_256tok_ms": 6321.0,
+      "ttft_ms": 58.18,
+      "ttl_256tok_ms": 6365.0,
       "inter_token_latency_ms": 24.64
     },
     "throughput": {

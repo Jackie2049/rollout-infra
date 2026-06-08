@@ -235,13 +235,22 @@ def throughput_tok_per_s(model, kv_config, quant_config, batch_size, seq_len, sp
 
 
 def prefill_time_ms(seq_len, model_params=None):
-    """Estimate prefill time (ms) — O(N^1.5) with FlashAttention"""
-    if seq_len <= 512:
-        return 0.5 + seq_len * 0.001
-    elif seq_len <= 4096:
-        return 5.0 + (seq_len - 512) * 0.0025
+    """Estimate prefill time (ms) — compute-bound O(N^1.5) with FlashAttention
+    Based on RTX 4090实测: 7B model S=4096 ≈ 65ms × 8 layers = ~520ms
+    Simplified model: prefill scales as model_size × seq_len"""
+    # Model scale factor (7B reference)
+    if model_params is None:
+        # Default: 7B model
+        model_factor = 1.0
     else:
-        return 15.0 + (seq_len - 4096) * 0.006
+        model_factor = model_params / 7e9
+
+    if seq_len <= 512:
+        return 2.0 * model_factor + seq_len * 0.008 * model_factor
+    elif seq_len <= 4096:
+        return 8.0 * model_factor + (seq_len - 512) * 0.014 * model_factor
+    else:
+        return 53.0 * model_factor + (seq_len - 4096) * 0.032 * model_factor
 
 
 def ttft_ms(seq_len):
