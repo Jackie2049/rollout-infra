@@ -1,0 +1,311 @@
+{
+  "exp1_rmsnorm": {
+    "B=1": {
+      "triton_ms": 0.0364,
+      "pytorch_ms": 0.1004,
+      "compiled_ms": 0.106,
+      "speedup_triton": 2.75,
+      "speedup_compile": 0.95,
+      "cos_sim": 1.0
+    },
+    "B=4": {
+      "triton_ms": 0.0345,
+      "pytorch_ms": 0.1083,
+      "compiled_ms": 0.1249,
+      "speedup_triton": 3.14,
+      "speedup_compile": 0.87,
+      "cos_sim": 1.0
+    },
+    "B=8": {
+      "triton_ms": 0.037,
+      "pytorch_ms": 0.1099,
+      "compiled_ms": 0.1234,
+      "speedup_triton": 2.97,
+      "speedup_compile": 0.89,
+      "cos_sim": 1.0
+    },
+    "B=16": {
+      "triton_ms": 0.0349,
+      "pytorch_ms": 0.1005,
+      "compiled_ms": 0.1199,
+      "speedup_triton": 2.88,
+      "speedup_compile": 0.84,
+      "cos_sim": 1.0
+    },
+    "B=32": {
+      "triton_ms": 0.0349,
+      "pytorch_ms": 0.1061,
+      "compiled_ms": 0.117,
+      "speedup_triton": 3.04,
+      "speedup_compile": 0.91,
+      "cos_sim": 1.0
+    },
+    "B=64": {
+      "triton_ms": 0.0347,
+      "pytorch_ms": 0.1049,
+      "compiled_ms": 0.1114,
+      "speedup_triton": 3.02,
+      "speedup_compile": 0.94,
+      "cos_sim": 1.0
+    },
+    "B=128": {
+      "triton_ms": 0.0332,
+      "pytorch_ms": 0.1071,
+      "compiled_ms": 0.12,
+      "speedup_triton": 3.23,
+      "speedup_compile": 0.89,
+      "cos_sim": 1.0
+    },
+    "B=256": {
+      "triton_ms": 0.0355,
+      "pytorch_ms": 0.1071,
+      "compiled_ms": 0.1193,
+      "speedup_triton": 3.02,
+      "speedup_compile": 0.9,
+      "cos_sim": 1.0
+    }
+  },
+  "exp2_swiglu": {
+    "B=1": {
+      "separate_ms": 0.4081,
+      "compiled_ms": 0.479,
+      "speedup": 0.85
+    },
+    "B=4": {
+      "separate_ms": 0.4138,
+      "compiled_ms": 0.4882,
+      "speedup": 0.85
+    },
+    "B=8": {
+      "separate_ms": 0.415,
+      "compiled_ms": 5.3989,
+      "speedup": 0.08
+    },
+    "B=16": {
+      "separate_ms": 0.4195,
+      "compiled_ms": 0.4903,
+      "speedup": 0.86
+    },
+    "B=32": {
+      "separate_ms": 0.4248,
+      "compiled_ms": 0.4919,
+      "speedup": 0.86
+    }
+  },
+  "exp3_softmax": {
+    "B=1_T=0.6": {
+      "triton_ms": 0.0414,
+      "pytorch_ms": 0.0393,
+      "speedup": 0.95
+    },
+    "B=1_T=1.0": {
+      "triton_ms": 0.0427,
+      "pytorch_ms": 0.0402,
+      "speedup": 0.94
+    },
+    "B=1_T=2.0": {
+      "triton_ms": 0.0403,
+      "pytorch_ms": 0.0398,
+      "speedup": 0.99
+    },
+    "B=4_T=0.6": {
+      "triton_ms": 0.0402,
+      "pytorch_ms": 0.039,
+      "speedup": 0.97
+    },
+    "B=4_T=1.0": {
+      "triton_ms": 0.0398,
+      "pytorch_ms": 0.0385,
+      "speedup": 0.97
+    },
+    "B=4_T=2.0": {
+      "triton_ms": 0.0396,
+      "pytorch_ms": 0.0396,
+      "speedup": 1.0
+    },
+    "B=8_T=0.6": {
+      "triton_ms": 0.0412,
+      "pytorch_ms": 0.0397,
+      "speedup": 0.96
+    },
+    "B=8_T=1.0": {
+      "triton_ms": 0.0408,
+      "pytorch_ms": 0.0388,
+      "speedup": 0.95
+    },
+    "B=8_T=2.0": {
+      "triton_ms": 0.0399,
+      "pytorch_ms": 0.0393,
+      "speedup": 0.98
+    },
+    "B=16_T=0.6": {
+      "triton_ms": 0.0404,
+      "pytorch_ms": 0.0398,
+      "speedup": 0.98
+    },
+    "B=16_T=1.0": {
+      "triton_ms": 0.0396,
+      "pytorch_ms": 0.0399,
+      "speedup": 1.01
+    },
+    "B=16_T=2.0": {
+      "triton_ms": 0.0406,
+      "pytorch_ms": 0.0394,
+      "speedup": 0.97
+    },
+    "B=32_T=0.6": {
+      "triton_ms": 0.0394,
+      "pytorch_ms": 0.0392,
+      "speedup": 0.99
+    },
+    "B=32_T=1.0": {
+      "triton_ms": 0.0398,
+      "pytorch_ms": 0.0388,
+      "speedup": 0.98
+    },
+    "B=32_T=2.0": {
+      "triton_ms": 0.0392,
+      "pytorch_ms": 0.0386,
+      "speedup": 0.98
+    },
+    "B=55_T=0.6": {
+      "triton_ms": 0.0404,
+      "pytorch_ms": 0.0395,
+      "speedup": 0.98
+    },
+    "B=55_T=1.0": {
+      "triton_ms": 0.0406,
+      "pytorch_ms": 0.0397,
+      "speedup": 0.98
+    },
+    "B=55_T=2.0": {
+      "triton_ms": 0.0395,
+      "pytorch_ms": 0.0395,
+      "speedup": 1.0
+    },
+    "B=128_T=0.6": {
+      "triton_ms": 0.0482,
+      "pytorch_ms": 0.0491,
+      "speedup": 1.02
+    },
+    "B=128_T=1.0": {
+      "triton_ms": 0.0485,
+      "pytorch_ms": 0.049,
+      "speedup": 1.01
+    },
+    "B=128_T=2.0": {
+      "triton_ms": 0.049,
+      "pytorch_ms": 0.0492,
+      "speedup": 1.01
+    }
+  },
+  "exp4_silu": {
+    "B=1": {
+      "triton_ms": 0.0383,
+      "pytorch_ms": 0.0159,
+      "speedup": 0.42,
+      "cos_sim": 1.0
+    },
+    "B=4": {
+      "triton_ms": 0.0371,
+      "pytorch_ms": 0.0166,
+      "speedup": 0.45,
+      "cos_sim": 1.0
+    },
+    "B=8": {
+      "triton_ms": 0.0353,
+      "pytorch_ms": 0.0165,
+      "speedup": 0.47,
+      "cos_sim": 1.0
+    },
+    "B=16": {
+      "triton_ms": 0.0371,
+      "pytorch_ms": 0.0161,
+      "speedup": 0.43,
+      "cos_sim": 1.0
+    },
+    "B=32": {
+      "triton_ms": 0.0362,
+      "pytorch_ms": 0.0166,
+      "speedup": 0.46,
+      "cos_sim": 1.0
+    },
+    "B=64": {
+      "triton_ms": 0.0364,
+      "pytorch_ms": 0.0166,
+      "speedup": 0.46,
+      "cos_sim": 1.0
+    },
+    "B=128": {
+      "triton_ms": 0.0344,
+      "pytorch_ms": 0.0163,
+      "speedup": 0.47,
+      "cos_sim": 1.0
+    }
+  },
+  "exp5_elementwise": {
+    "B=1": {
+      "silu_ms": 0.0168,
+      "gelu_ms": 0.017,
+      "relu_ms": 0.0181,
+      "exp_ms": 0.0271,
+      "sigmoid_ms": 0.0154,
+      "add_ms": 0.0161,
+      "mul_ms": 0.0159
+    },
+    "B=4": {
+      "silu_ms": 0.0164,
+      "gelu_ms": 0.0156,
+      "relu_ms": 0.0165,
+      "exp_ms": 0.0252,
+      "sigmoid_ms": 0.0153,
+      "add_ms": 0.0159,
+      "mul_ms": 0.0159
+    },
+    "B=8": {
+      "silu_ms": 0.0158,
+      "gelu_ms": 0.0157,
+      "relu_ms": 0.0173,
+      "exp_ms": 0.0268,
+      "sigmoid_ms": 0.017,
+      "add_ms": 0.0176,
+      "mul_ms": 0.0175
+    },
+    "B=16": {
+      "silu_ms": 0.0169,
+      "gelu_ms": 0.016,
+      "relu_ms": 0.0169,
+      "exp_ms": 0.026,
+      "sigmoid_ms": 0.0164,
+      "add_ms": 0.0174,
+      "mul_ms": 0.0173
+    },
+    "B=32": {
+      "silu_ms": 0.0176,
+      "gelu_ms": 0.0171,
+      "relu_ms": 0.0175,
+      "exp_ms": 0.0263,
+      "sigmoid_ms": 0.0162,
+      "add_ms": 0.0163,
+      "mul_ms": 0.0164
+    },
+    "B=64": {
+      "silu_ms": 0.0165,
+      "gelu_ms": 0.0162,
+      "relu_ms": 0.0171,
+      "exp_ms": 0.0262,
+      "sigmoid_ms": 0.0164,
+      "add_ms": 0.0163,
+      "mul_ms": 0.016
+    },
+    "B=128": {
+      "silu_ms": 0.0162,
+      "gelu_ms": 0.0161,
+      "relu_ms": 0.0175,
+      "exp_ms": 0.0256,
+      "sigmoid_ms": 0.0162,
+      "add_ms": 0.0176,
+      "mul_ms": 0.0171
+    }
+  }
+}
