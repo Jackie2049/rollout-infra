@@ -1,0 +1,10 @@
+{
+  "input_filter_demo": 5,
+  "output_filter_demo": 4,
+  "fsm_sequences": 3,
+  "red_team_accuracy": 0.5652173913043478,
+  "red_team_recall": 0.5,
+  "red_team_precision": 1.0,
+  "false_negatives": 10,
+  "false_positives": 0
+}
