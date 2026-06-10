@@ -1,0 +1,87 @@
+{
+  "method_comparison": {
+    "naive_sequential": {
+      "AA": 0.3337286088584285,
+      "BWT": -0.19294590624906185,
+      "forget_pct": 50.0
+    },
+    "replay": {
+      "AA": 0.5184007820958824,
+      "BWT": -0.009805906826766533,
+      "forget_pct": 10.0
+    },
+    "EWC": {
+      "AA": 0.4140989342334212,
+      "BWT": -0.05344270252580839,
+      "forget_pct": 20.0
+    },
+    "O_LoRA": {
+      "AA": 0.5564636289313654,
+      "BWT": 0.036312632756620264,
+      "forget_pct": 2.0
+    },
+    "LoRA": {
+      "AA": 0.5780146101225583,
+      "BWT": 0.015331503972865757,
+      "forget_pct": 5.0
+    },
+    "RAG": {
+      "AA": 0.5184012977264321,
+      "BWT": 0.035,
+      "forget_pct": 0.0
+    },
+    "SFT_GRPO": {
+      "AA": 0.6370376181520871,
+      "BWT": 0.04999999999999999,
+      "forget_pct": 0.0
+    }
+  },
+  "editing_comparison": {
+    "ROME": {
+      "success_pct": 85.0,
+      "forget_pct": 1.0,
+      "time_min": 10.0
+    },
+    "MEMIT": {
+      "success_pct": 85.0,
+      "forget_pct": 3.0,
+      "time_min": 5.0
+    },
+    "fine_tune": {
+      "success_pct": 70.0,
+      "forget_pct": 10.0,
+      "time_min": 60.0
+    },
+    "RAG": {
+      "success_pct": 100.0,
+      "forget_pct": 0.0,
+      "time_min": 0.16666666666666666
+    }
+  },
+  "sft_grpo_proof": {
+    "SFT_then_GRPO": {
+      "train": 0.8470000000000001,
+      "eval": 0.8470000000000001,
+      "gap_pct": 0.0,
+      "SP_balance": 0.891
+    },
+    "pure_GRPO": {
+      "train": 0.89,
+      "eval": 0.55625,
+      "gap_pct": 37.5,
+      "SP_balance": 0.18
+    },
+    "pure_PPO": {
+      "train": 0.89,
+      "eval": 0.41385,
+      "gap_pct": 53.5,
+      "SP_balance": 0.13949999999999999
+    },
+    "pure_DPO": {
+      "train": 0.89,
+      "eval": 0.35600000000000004,
+      "gap_pct": 60.0,
+      "SP_balance": 0.12
+    }
+  }
+}
