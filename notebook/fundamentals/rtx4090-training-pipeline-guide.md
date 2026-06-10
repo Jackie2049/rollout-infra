@@ -15,7 +15,7 @@ Every recommendation is backed by actual measurement data.
 │ 2. Precision: BF16 (no AMP) ← validated                    │
 │ 3. Fine-tune: LoRA r=8, α=16, all-linear ← validated       │
 │ 4. Batch: B=4 + grad_accum=4 (eff B=16) ← validated        │
-│ 5. Optimizer: AdamW lr=2e-4, wd=0.01                        │
+│ 5. Optimizer: Lion lr=6e-4 (best convergence) or AdamW lr=2e-4 (standard) │
 │ 6. Memory: ~6-8GB peak ← fits in 24GB easily               │
 │ 7. After training: merge LoRA ← validated (eliminates overhead) │
 │ 8. Quantize: AWQ INT4 + INT8 KV ← validated                │
@@ -40,6 +40,8 @@ Every recommendation is backed by actual measurement data.
 | **torch.compile (B≥16)** | 1.01x | Triton GEMM slow | FlashInfer (inference) |
 | **Python INT4 dequant** | 0.05x (20x slow!) | Python overhead | AWQ/Marlin fused |
 | **LoRA unmerged inference** | 2.51x slower | Adapter dispatch | Merge LoRA first |
+| **Gradient checkpointing (LoRA small B)** | 31% slower | Forward recompute | Only use at B≥16 |
+| **Gradient checkpointing (Full FT)** | 31% slower, only 1% saving | Optimizer states dominate | Use LoRA instead |
 
 ## Decision Tree — What TO Use on RTX 4090
 
@@ -53,6 +55,8 @@ Every recommendation is backed by actual measurement data.
 | **N-gram spec decode** | 2.14x | Speculative decoding | speculative |
 | **FP8 TE training (B≥4)** | 1.48-1.59x | TE FP8 benchmark | te-fp8 |
 | **StreamingLLM** | Infinite context | Attention sink | attention-sink |
+| **Lion optimizer** | 95.5% convergence (best!) | Optimizer benchmark | optimizer-comparison |
+| **Gradient checkpointing** | 35% memory (LoRA B≥16) | Checkpointing benchmark | activation-ckpt |
 
 ## Precision Guide
 
