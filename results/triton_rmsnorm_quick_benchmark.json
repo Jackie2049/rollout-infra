@@ -1,0 +1,32 @@
+{
+  "N=256": {
+    "triton_us": 16.71,
+    "pytorch_us": 40.1,
+    "speedup": 2.4
+  },
+  "N=512": {
+    "triton_us": 16.43,
+    "pytorch_us": 40.02,
+    "speedup": 2.44
+  },
+  "N=1024": {
+    "triton_us": 16.09,
+    "pytorch_us": 39.94,
+    "speedup": 2.48
+  },
+  "N=2048": {
+    "triton_us": 16.05,
+    "pytorch_us": 39.95,
+    "speedup": 2.49
+  },
+  "N=4096": {
+    "triton_us": 16.37,
+    "pytorch_us": 39.87,
+    "speedup": 2.44
+  },
+  "N=8192": {
+    "triton_us": 15.8,
+    "pytorch_us": 39.94,
+    "speedup": 2.53
+  }
+}

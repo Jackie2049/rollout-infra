@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "model": "OPT-125M",
+    "params": 125239296,
+    "model_mem_mb": 238.9,
+    "mem_loaded_mb": 247.9,
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "pytorch": "2.5.1+cu124"
+  },
+  "decode": {
+    "B1": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.183,
+      "itl_ms": 5.73,
+      "throughput_tok_s": 174.4,
+      "mem_peak_mb": 250.7
+    },
+    "B4": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.203,
+      "itl_ms": 1.59,
+      "throughput_tok_s": 629.6,
+      "mem_peak_mb": 256.5
+    },
+    "B8": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.191,
+      "itl_ms": 0.75,
+      "throughput_tok_s": 1336.9,
+      "mem_peak_mb": 265.7
+    },
+    "B16": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.19,
+      "itl_ms": 0.37,
+      "throughput_tok_s": 2698.7,
+      "mem_peak_mb": 288.0
+    },
+    "B32": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.196,
+      "itl_ms": 0.19,
+      "throughput_tok_s": 5214.5,
+      "mem_peak_mb": 318.8
+    },
+    "B64": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.191,
+      "itl_ms": 0.09,
+      "throughput_tok_s": 10728.3,
+      "mem_peak_mb": 386.2
+    },
+    "B128": {
+      "input_len": 15,
+      "new_tokens": 32,
+      "total_time_s": 0.19,
+      "itl_ms": 0.05,
+      "throughput_tok_s": 21527.9,
+      "mem_peak_mb": 524.9
+    }
+  },
+  "prefill": {
+    "S32": {
+      "actual_len": 32,
+      "time_ms": 8.4,
+      "tflops": 0.16,
+      "peak_pct": 0.1
+    },
+    "S62": {
+      "actual_len": 62,
+      "time_ms": 6.1,
+      "tflops": 0.43,
+      "peak_pct": 0.3
+    },
+    "S122": {
+      "actual_len": 122,
+      "time_ms": 6.0,
+      "tflops": 0.87,
+      "peak_pct": 0.5
+    },
+    "S252": {
+      "actual_len": 252,
+      "time_ms": 6.2,
+      "tflops": 1.73,
+      "peak_pct": 1.0
+    },
+    "S512": {
+      "actual_len": 512,
+      "time_ms": 16.6,
+      "tflops": 1.31,
+      "peak_pct": 0.8
+    },
+    "S1022": {
+      "actual_len": 1022,
+      "time_ms": 7.0,
+      "tflops": 6.2,
+      "peak_pct": 3.7
+    },
+    "S2042": {
+      "actual_len": 2042,
+      "time_ms": 7.0,
+      "tflops": 12.31,
+      "peak_pct": 7.3
+    }
+  },
+  "kv_per_token_bytes": 3072,
+  "kv_per_token_kb": 3.0
+}
