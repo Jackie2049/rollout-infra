@@ -1,0 +1,161 @@
+{
+  "gpu": "NVIDIA GeForce RTX 4090",
+  "gpu_mem_gb": 25.250627584,
+  "triton_available": true,
+  "exp1_softmax_temperature": [
+    {
+      "batch": 1,
+      "vocab": 32000,
+      "pytorch_ms": 0.0163,
+      "triton_ms": 0.0188,
+      "speedup": 0.87,
+      "cos_sim": 1.0,
+      "max_diff": 4.1e-05
+    },
+    {
+      "batch": 8,
+      "vocab": 32000,
+      "pytorch_ms": 0.0166,
+      "triton_ms": 0.017,
+      "speedup": 0.97,
+      "cos_sim": 1.0,
+      "max_diff": 0.000127
+    },
+    {
+      "batch": 32,
+      "vocab": 32000,
+      "pytorch_ms": 0.0163,
+      "triton_ms": 0.0178,
+      "speedup": 0.91,
+      "cos_sim": 1.0,
+      "max_diff": 0.000125
+    },
+    {
+      "batch": 128,
+      "vocab": 32000,
+      "pytorch_ms": 0.0263,
+      "triton_ms": 0.0187,
+      "speedup": 1.4,
+      "cos_sim": 1.0,
+      "max_diff": 0.000153
+    }
+  ],
+  "exp2_layernorm_residual": [
+    {
+      "batch": 4,
+      "hidden": 4096,
+      "pytorch_ms": 0.0313,
+      "triton_ms": 0.0231,
+      "speedup": 1.35,
+      "cos_sim": 1.0
+    },
+    {
+      "batch": 32,
+      "hidden": 4096,
+      "pytorch_ms": 0.0351,
+      "triton_ms": 0.0229,
+      "speedup": 1.53,
+      "cos_sim": 1.0
+    },
+    {
+      "batch": 128,
+      "hidden": 4096,
+      "pytorch_ms": 0.0355,
+      "triton_ms": 0.0228,
+      "speedup": 1.55,
+      "cos_sim": 1.0
+    },
+    {
+      "batch": 512,
+      "hidden": 4096,
+      "pytorch_ms": 0.0353,
+      "triton_ms": 0.0226,
+      "speedup": 1.56,
+      "cos_sim": 1.0
+    }
+  ],
+  "exp3_gqa_expand": [
+    {
+      "batch": 1,
+      "n_heads": 32,
+      "n_kv_heads": 8,
+      "seq_len": 2048,
+      "head_dim": 128,
+      "python_expand_ms": 0.0179,
+      "repeat_interleave_ms": 0.0172,
+      "index_copy_ms": 0.5004,
+      "expand_vs_repeat": 1.04,
+      "correct": true
+    },
+    {
+      "batch": 8,
+      "n_heads": 32,
+      "n_kv_heads": 8,
+      "seq_len": 2048,
+      "head_dim": 128,
+      "python_expand_ms": 0.1929,
+      "repeat_interleave_ms": 0.1927,
+      "index_copy_ms": 0.497,
+      "expand_vs_repeat": 1.0,
+      "correct": true
+    },
+    {
+      "batch": 32,
+      "n_heads": 32,
+      "n_kv_heads": 8,
+      "seq_len": 2048,
+      "head_dim": 128,
+      "python_expand_ms": 0.7623,
+      "repeat_interleave_ms": 0.7544,
+      "index_copy_ms": 0.8159,
+      "expand_vs_repeat": 1.01,
+      "correct": true
+    },
+    {
+      "batch": 128,
+      "n_heads": 32,
+      "n_kv_heads": 8,
+      "seq_len": 2048,
+      "head_dim": 128,
+      "python_expand_ms": 3.009,
+      "repeat_interleave_ms": 3.0093,
+      "index_copy_ms": 4.7557,
+      "expand_vs_repeat": 1.0,
+      "correct": true
+    }
+  ],
+  "exp4_dequant_gemm": [
+    {
+      "M": 1,
+      "K": 4096,
+      "N": 4096,
+      "separate_ms": 0.1022,
+      "direct_ms": 0.0316,
+      "dequant_overhead_pct": 223.2
+    },
+    {
+      "M": 32,
+      "K": 4096,
+      "N": 4096,
+      "separate_ms": 0.1109,
+      "direct_ms": 0.0201,
+      "dequant_overhead_pct": 452.1
+    },
+    {
+      "M": 128,
+      "K": 4096,
+      "N": 4096,
+      "separate_ms": 0.1238,
+      "direct_ms": 0.0316,
+      "dequant_overhead_pct": 291.2
+    },
+    {
+      "M": 512,
+      "K": 4096,
+      "N": 4096,
+      "separate_ms": 0.2008,
+      "direct_ms": 0.109,
+      "dequant_overhead_pct": 84.2
+    }
+  ]
+}
