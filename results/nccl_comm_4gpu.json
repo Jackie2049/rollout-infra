@@ -1,0 +1,267 @@
+{
+  "metadata": {
+    "pytorch": "2.5.1+cu124",
+    "cuda": "12.4",
+    "n_gpu": 4,
+    "gpu_name": "NVIDIA GeForce RTX 4090",
+    "is_p2p_enabled": false
+  },
+  "gpu_specs": {
+    "name": "NVIDIA GeForce RTX 4090",
+    "memory_gb": 25.3,
+    "sm": "8.9",
+    "mp_count": 128
+  },
+  "p2p_matrix": {
+    "0->1": false,
+    "0->2": false,
+    "0->3": false,
+    "1->0": false,
+    "1->2": false,
+    "1->3": false,
+    "2->0": false,
+    "2->1": false,
+    "2->3": false,
+    "3->0": false,
+    "3->1": false,
+    "3->2": false
+  },
+  "transfer_rates_gbps": {
+    "0->1": "PCIe",
+    "0->2": "PCIe",
+    "0->3": "PCIe",
+    "1->0": "PCIe",
+    "1->2": "PCIe",
+    "1->3": "PCIe",
+    "2->0": "PCIe",
+    "2->1": "PCIe",
+    "2->3": "PCIe",
+    "3->0": "PCIe",
+    "3->1": "PCIe",
+    "3->2": "PCIe"
+  },
+  "hbm_1MB": {
+    "size_mb": 1,
+    "latency_ms": 0.01,
+    "bw_gbps": 108.28
+  },
+  "hbm_4MB": {
+    "size_mb": 4,
+    "latency_ms": 0.009,
+    "bw_gbps": 455.46
+  },
+  "hbm_16MB": {
+    "size_mb": 16,
+    "latency_ms": 0.011,
+    "bw_gbps": 1516.82
+  },
+  "hbm_64MB": {
+    "size_mb": 64,
+    "latency_ms": 0.147,
+    "bw_gbps": 456.66
+  },
+  "hbm_256MB": {
+    "size_mb": 256,
+    "latency_ms": 0.584,
+    "bw_gbps": 459.91
+  },
+  "gemm_M1": {
+    "M": 1,
+    "tflops": 0.98,
+    "peak_pct": 0.6,
+    "latency_us": 34.3
+  },
+  "gemm_M4": {
+    "M": 4,
+    "tflops": 5.98,
+    "peak_pct": 3.5,
+    "latency_us": 22.4
+  },
+  "gemm_M8": {
+    "M": 8,
+    "tflops": 11.18,
+    "peak_pct": 6.6,
+    "latency_us": 24.0
+  },
+  "gemm_M16": {
+    "M": 16,
+    "tflops": 9.42,
+    "peak_pct": 5.6,
+    "latency_us": 57.0
+  },
+  "gemm_M32": {
+    "M": 32,
+    "tflops": 52.5,
+    "peak_pct": 31.0,
+    "latency_us": 20.5
+  },
+  "gemm_M64": {
+    "M": 64,
+    "tflops": 99.28,
+    "peak_pct": 58.5,
+    "latency_us": 21.6
+  },
+  "gemm_M128": {
+    "M": 128,
+    "tflops": 118.78,
+    "peak_pct": 70.0,
+    "latency_us": 36.2
+  },
+  "gemm_M256": {
+    "M": 256,
+    "tflops": 148.2,
+    "peak_pct": 87.4,
+    "latency_us": 58.0
+  },
+  "gemm_M512": {
+    "M": 512,
+    "tflops": 154.66,
+    "peak_pct": 91.2,
+    "latency_us": 111.1
+  },
+  "gemm_M1024": {
+    "M": 1024,
+    "tflops": 159.19,
+    "peak_pct": 93.9,
+    "latency_us": 215.8
+  },
+  "gemm_M2048": {
+    "M": 2048,
+    "tflops": 145.01,
+    "peak_pct": 85.5,
+    "latency_us": 473.9
+  },
+  "gemm_M4096": {
+    "M": 4096,
+    "tflops": 146.14,
+    "peak_pct": 86.2,
+    "latency_us": 940.5
+  },
+  "allreduce": {
+    "4KB": {
+      "latency_ms": 0.057,
+      "per_gpu_bw_gbps": 0.072,
+      "aggregate_bw_gbps": 0.289,
+      "algo_bw_gbps": 0.108
+    },
+    "64KB": {
+      "latency_ms": 0.055,
+      "per_gpu_bw_gbps": 1.187,
+      "aggregate_bw_gbps": 4.747,
+      "algo_bw_gbps": 1.78
+    },
+    "256KB": {
+      "latency_ms": 0.129,
+      "per_gpu_bw_gbps": 2.026,
+      "aggregate_bw_gbps": 8.105,
+      "algo_bw_gbps": 3.039
+    },
+    "1024KB": {
+      "latency_ms": 0.362,
+      "per_gpu_bw_gbps": 2.898,
+      "aggregate_bw_gbps": 11.592,
+      "algo_bw_gbps": 4.347
+    },
+    "4096KB": {
+      "latency_ms": 1.326,
+      "per_gpu_bw_gbps": 3.163,
+      "aggregate_bw_gbps": 12.654,
+      "algo_bw_gbps": 4.745
+    },
+    "16384KB": {
+      "latency_ms": 5.131,
+      "per_gpu_bw_gbps": 3.27,
+      "aggregate_bw_gbps": 13.078,
+      "algo_bw_gbps": 4.904
+    },
+    "65536KB": {
+      "latency_ms": 20.312,
+      "per_gpu_bw_gbps": 3.304,
+      "aggregate_bw_gbps": 13.216,
+      "algo_bw_gbps": 4.956
+    },
+    "262144KB": {
+      "latency_ms": 81.329,
+      "per_gpu_bw_gbps": 3.301,
+      "aggregate_bw_gbps": 13.202,
+      "algo_bw_gbps": 4.951
+    }
+  },
+  "allgather": {
+    "4KB": {
+      "latency_ms": 0.158,
+      "bw_gbps": 0.026
+    },
+    "64KB": {
+      "latency_ms": 0.15,
+      "bw_gbps": 0.436
+    },
+    "256KB": {
+      "latency_ms": 0.152,
+      "bw_gbps": 1.725
+    },
+    "1024KB": {
+      "latency_ms": 0.205,
+      "bw_gbps": 5.105
+    },
+    "4096KB": {
+      "latency_ms": 0.715,
+      "bw_gbps": 5.863
+    },
+    "16384KB": {
+      "latency_ms": 2.781,
+      "bw_gbps": 6.032
+    },
+    "65536KB": {
+      "latency_ms": 11.105,
+      "bw_gbps": 6.043
+    }
+  },
+  "reducescatter": {
+    "4KB": {
+      "latency_ms": 0.186,
+      "bw_gbps": 0.022
+    },
+    "64KB": {
+      "latency_ms": 0.159,
+      "bw_gbps": 0.412
+    },
+    "256KB": {
+      "latency_ms": 0.158,
+      "bw_gbps": 1.66
+    },
+    "1024KB": {
+      "latency_ms": 0.201,
+      "bw_gbps": 5.214
+    },
+    "4096KB": {
+      "latency_ms": 0.729,
+      "bw_gbps": 5.753
+    },
+    "16384KB": {
+      "latency_ms": 2.776,
+      "bw_gbps": 6.044
+    },
+    "65536KB": {
+      "latency_ms": 11.375,
+      "bw_gbps": 5.9
+    }
+  },
+  "fsdp_overhead": {
+    "25M": {
+      "n_params": 25000000,
+      "param_size_gb": 0.05,
+      "estimated_step_comm_ms": 0.1
+    },
+    "125M": {
+      "n_params": 125000000,
+      "param_size_gb": 0.25,
+      "estimated_step_comm_ms": 0.2
+    },
+    "7B": {
+      "n_params": 7000000000,
+      "param_size_gb": 14.0,
+      "estimated_step_comm_ms": 1438.7
+    }
+  }
+}
