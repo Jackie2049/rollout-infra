@@ -1,0 +1,150 @@
+{
+  "metadata": {
+    "model": "OPT-125M",
+    "gpu": "RTX 4090 24GB",
+    "dtype": "BF16",
+    "batch_size": 256,
+    "seq_len": 23
+  },
+  "exp1_full": {
+    "step_time_s": 0.0605,
+    "avg_loss": 0.4043,
+    "throughput_tok_s": 97331.9,
+    "mem_peak_mb": 6075.8,
+    "n_params": 125239296,
+    "n_trainable": 125239296,
+    "trainable_pct": 100.0
+  },
+  "exp2_r2": {
+    "rank": 2,
+    "alpha": 4,
+    "step_time_s": 0.0831,
+    "avg_loss": 3.7506,
+    "throughput_tok_s": 70888.8,
+    "mem_peak_mb": 7739.9,
+    "n_trainable": 331776,
+    "trainable_pct": 0.26
+  },
+  "exp2_r4": {
+    "rank": 4,
+    "alpha": 8,
+    "step_time_s": 0.0829,
+    "avg_loss": 3.3775,
+    "throughput_tok_s": 71060.1,
+    "mem_peak_mb": 7747.0,
+    "n_trainable": 663552,
+    "trainable_pct": 0.53
+  },
+  "exp2_r8": {
+    "rank": 8,
+    "alpha": 16,
+    "step_time_s": 0.0818,
+    "avg_loss": 2.6497,
+    "throughput_tok_s": 71959.1,
+    "mem_peak_mb": 7761.0,
+    "n_trainable": 1327104,
+    "trainable_pct": 1.05
+  },
+  "exp2_r16": {
+    "rank": 16,
+    "alpha": 32,
+    "step_time_s": 0.0826,
+    "avg_loss": 1.85,
+    "throughput_tok_s": 71324.6,
+    "mem_peak_mb": 7789.2,
+    "n_trainable": 2654208,
+    "trainable_pct": 2.08
+  },
+  "exp2_r32": {
+    "rank": 32,
+    "alpha": 64,
+    "step_time_s": 0.0835,
+    "avg_loss": 1.1661,
+    "throughput_tok_s": 70487.8,
+    "mem_peak_mb": 7845.4,
+    "n_trainable": 5308416,
+    "trainable_pct": 4.07
+  },
+  "exp3_attn_only": {
+    "target_modules": [
+      "q_proj",
+      "v_proj",
+      "k_proj",
+      "out_proj"
+    ],
+    "step_time_s": 0.0568,
+    "avg_loss": 3.078,
+    "mem_peak_mb": 6447.7,
+    "n_trainable": 589824,
+    "trainable_pct": 0.47
+  },
+  "exp3_ffn_only": {
+    "target_modules": [
+      "fc1",
+      "fc2"
+    ],
+    "step_time_s": 0.0669,
+    "avg_loss": 3.5484,
+    "mem_peak_mb": 6663.3,
+    "n_trainable": 737280,
+    "trainable_pct": 0.59
+  },
+  "exp3_all_linear": {
+    "target_modules": [
+      "q_proj",
+      "v_proj",
+      "k_proj",
+      "out_proj",
+      "fc1",
+      "fc2"
+    ],
+    "step_time_s": 0.0818,
+    "avg_loss": 2.6702,
+    "mem_peak_mb": 7761.0,
+    "n_trainable": 1327104,
+    "trainable_pct": 1.05
+  },
+  "exp4": {
+    "base_ms": 5.71,
+    "unmerged_ms": 14.36,
+    "merged_ms": 5.62,
+    "merge_speedup": 2.55,
+    "lora_overhead_vs_base": 2.51
+  },
+  "exp5_b4": {
+    "batch_size": 4,
+    "step_time_s": 0.0414,
+    "throughput_tok_s": 2223.4,
+    "mem_peak_mb": 623.0
+  },
+  "exp5_b8": {
+    "batch_size": 8,
+    "step_time_s": 0.0416,
+    "throughput_tok_s": 4423.4,
+    "mem_peak_mb": 730.1
+  },
+  "exp5_b16": {
+    "batch_size": 16,
+    "step_time_s": 0.0416,
+    "throughput_tok_s": 8847.1,
+    "mem_peak_mb": 946.3
+  },
+  "exp5_b32": {
+    "batch_size": 32,
+    "step_time_s": 0.0426,
+    "throughput_tok_s": 17278.7,
+    "mem_peak_mb": 1384.1
+  },
+  "exp5_b64": {
+    "batch_size": 64,
+    "step_time_s": 0.0414,
+    "throughput_tok_s": 35594.2,
+    "mem_peak_mb": 2259.3
+  },
+  "exp6": {
+    "full_mem_mb": 892.1,
+    "lora_mem_mb": 720.0,
+    "saving_pct": 19.29,
+    "saving_mb": 172.1
+  }
+}
