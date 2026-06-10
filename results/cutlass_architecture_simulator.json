@@ -1,0 +1,132 @@
+{
+  "sm_comparison": {
+    "SM89_Ada": {
+      "name": "RTX 4090 (Ada Lovelace)",
+      "peak_bf16_tflops": 165.2,
+      "hbm_bw_gbs": 890.8,
+      "ridge_point": 185.45127974854066,
+      "smem_per_sm_kb": 100,
+      "mma_type": "HMMA.16816",
+      "pipeline": "cp.async 2-stage (manual)",
+      "tma": false,
+      "wgmma": false,
+      "cluster": false,
+      "fp4": false
+    },
+    "SM90_Hopper": {
+      "name": "H100 (Hopper)",
+      "peak_bf16_tflops": 990,
+      "hbm_bw_gbs": 3352,
+      "ridge_point": 295.34606205250594,
+      "smem_per_sm_kb": 228,
+      "mma_type": "WGMMA.64x64x16",
+      "pipeline": "TMA 3-stage (hardware)",
+      "tma": true,
+      "wgmma": true,
+      "cluster": true,
+      "fp4": false
+    },
+    "SM100_Blackwell": {
+      "name": "B200 (Blackwell)",
+      "peak_bf16_tflops": 2250,
+      "hbm_bw_gbs": 8000,
+      "ridge_point": 281.25,
+      "smem_per_sm_kb": 256,
+      "mma_type": "Enhanced WGMMA",
+      "pipeline": "TMA+Cluster+FP4 (hardware)",
+      "tma": true,
+      "wgmma": true,
+      "cluster": true,
+      "fp4": true
+    }
+  },
+  "decode_perf": {
+    "SM89_Ada": {
+      "decode_time_bf16_ms": 0.15067100134710373,
+      "decode_time_fp8_ms": 0.07533550067355187,
+      "compute_time_bf16_ms": 0.0008124559806295399,
+      "ai_bf16": 1.0,
+      "ai_fp8": 2.0,
+      "ridge_point": 185.45127974854066,
+      "is_compute_bound": false,
+      "bf16_throughput_tok_s": 6636.977195739746,
+      "fp8_throughput_tok_s": 13273.954391479492
+    },
+    "SM90_Hopper": {
+      "decode_time_bf16_ms": 0.04004108830548926,
+      "decode_time_fp8_ms": 0.02002054415274463,
+      "compute_time_bf16_ms": 0.00013557346262626263,
+      "ai_bf16": 1.0,
+      "ai_fp8": 2.0,
+      "ridge_point": 295.34606205250594,
+      "is_compute_bound": false,
+      "bf16_throughput_tok_s": 24974.346160888672,
+      "fp8_throughput_tok_s": 49948.692321777344
+    },
+    "SM100_Blackwell": {
+      "decode_time_bf16_ms": 0.016777216,
+      "decode_time_fp8_ms": 0.008388608,
+      "compute_time_bf16_ms": 5.965232355555556e-05,
+      "ai_bf16": 1.0,
+      "ai_fp8": 2.0,
+      "ridge_point": 281.25,
+      "is_compute_bound": false,
+      "bf16_throughput_tok_s": 59604.64477539062,
+      "fp8_throughput_tok_s": 119209.28955078124
+    }
+  },
+  "pipeline_efficiency_sm89": {
+    "sm_name": "SM89_Ada",
+    "tile_size_kb": 16,
+    "num_tiles": 64,
+    "no_pipeline_total_ms": 19.206297117198023,
+    "2stage_total_ms": 19.20117711719802,
+    "2stage_efficiency": 1.000266650318819,
+    "3stage_available": false,
+    "3stage_total_ms": null,
+    "3stage_efficiency": null,
+    "compute_bound": false
+  },
+  "pipeline_efficiency_sm90": {
+    "sm_name": "SM90_Hopper",
+    "tile_size_kb": 16,
+    "num_tiles": 64,
+    "no_pipeline_total_ms": 19.200952821002385,
+    "2stage_total_ms": 19.200312821002385,
+    "2stage_efficiency": 1.0000333327902502,
+    "3stage_available": true,
+    "3stage_total_ms": 0.0006297756563245824,
+    "3stage_efficiency": 30488.55989934666,
+    "compute_bound": false
+  },
+  "epilogue_fusion_b1_silu": {
+    "activation": "silu",
+    "batch_size": 1,
+    "gemm_time_ms": 0.123,
+    "launch_savings_us": 8,
+    "intermediate_bytes": 28672,
+    "write_read_time_us": 0.06437359676695106,
+    "total_theoretical_savings_us": 8.06437359676695,
+    "internal_overhead_pct": 5.8,
+    "separate_time_ms": 0.13106437359676695,
+    "fused_time_ms": 0.130134,
+    "net_savings_ms": 0.0009303735967669535,
+    "net_savings_pct": 0.7098600262107412,
+    "fusion_beneficial": true
+  },
+  "epilogue_fusion_b32_silu": {
+    "activation": "silu",
+    "batch_size": 32,
+    "gemm_time_ms": 0.03,
+    "launch_savings_us": 8,
+    "intermediate_bytes": 917504,
+    "write_read_time_us": 2.059955096542434,
+    "total_theoretical_savings_us": 10.059955096542435,
+    "internal_overhead_pct": 5.8,
+    "separate_time_ms": 0.040059955096542435,
+    "fused_time_ms": 0.03174,
+    "net_savings_ms": 0.008319955096542438,
+    "net_savings_pct": 20.76875791920329,
+    "fusion_beneficial": true
+  }
+}
