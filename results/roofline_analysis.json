@@ -1,0 +1,108 @@
+{
+  "model": {
+    "name": "7B",
+    "hidden_dim": 4096,
+    "num_heads": 32,
+    "gqa_groups": 8,
+    "intermediate_dim": 14336,
+    "vocab_size": 32000,
+    "S": 2048
+  },
+  "batch_size": 32,
+  "seq_len": 2048,
+  "quantization": "int4",
+  "kv_quant": "int8",
+  "ridge_point": 185.45127974854066,
+  "ops": {
+    "qkv_proj": {
+      "flops": 805306368,
+      "bytes": 6750208.0,
+      "ai": 119.30097087378641,
+      "classification": "memory_bound",
+      "expected_tflops": 106273.30485436894,
+      "quantization": "int4"
+    },
+    "attn_score": {
+      "flops": 16777216,
+      "bytes": 67112960.0,
+      "ai": 0.24998474214220323,
+      "classification": "severe_memory_bound",
+      "expected_tflops": 222.68640830027462,
+      "quantization": "int4"
+    },
+    "attn_v": {
+      "flops": 16777216,
+      "bytes": 67112960.0,
+      "ai": 0.24998474214220323,
+      "classification": "severe_memory_bound",
+      "expected_tflops": 222.68640830027462,
+      "quantization": "int4"
+    },
+    "out_proj": {
+      "flops": 1073741824,
+      "bytes": 8912896.0,
+      "ai": 120.47058823529412,
+      "classification": "memory_bound",
+      "expected_tflops": 107315.2,
+      "quantization": "int4"
+    },
+    "gate_proj": {
+      "flops": 3758096384,
+      "bytes": 30539776.0,
+      "ai": 123.05579399141631,
+      "classification": "memory_bound",
+      "expected_tflops": 109618.10128755364,
+      "quantization": "int4"
+    },
+    "up_proj": {
+      "flops": 3758096384,
+      "bytes": 30539776.0,
+      "ai": 123.05579399141631,
+      "classification": "memory_bound",
+      "expected_tflops": 109618.10128755364,
+      "quantization": "int4"
+    },
+    "down_proj": {
+      "flops": 3758096384,
+      "bytes": 30539776.0,
+      "ai": 123.05579399141631,
+      "classification": "memory_bound",
+      "expected_tflops": 109618.10128755364,
+      "quantization": "int4"
+    },
+    "lm_head": {
+      "flops": 8388608000,
+      "bytes": 8390918144,
+      "ai": 0.9997246851941165,
+      "classification": "severe_memory_bound",
+      "expected_tflops": 890.554749570919,
+      "quantization": "int4"
+    },
+    "rms_norm": {
+      "flops": 786432,
+      "bytes": 262144,
+      "ai": 3.0,
+      "classification": "severe_memory_bound",
+      "expected_tflops": 2672.3999999999996,
+      "quantization": "int4"
+    }
+  },
+  "total_flops": 21576286208,
+  "total_bytes": 8632688640.0,
+  "total_ai": 2.4993703708975654,
+  "total_classification": "severe_memory_bound",
+  "latency_ms": 9.690939200718455,
+  "throughput_tok_s": 103.18917282298739,
+  "hw": {
+    "peak_bf16_tflops": 165.2,
+    "peak_fp16_tflops": 82.6,
+    "peak_fp32_tflops": 82.6,
+    "hbm_bw_gbs": 890.8,
+    "hbm_bw_theory_gbs": 1008.0,
+    "l2_size_mb": 72,
+    "sm_count": 128,
+    "cuda_cores": 16384,
+    "mem_capacity_gb": 24,
+    "pcie_bw_gbs": 12
+  }
+}
