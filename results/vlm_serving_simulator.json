@@ -1,0 +1,65 @@
+{
+  "vit_224_patches": {
+    "image_size": 224,
+    "patches": 256,
+    "time_ms": 5.30157894736842,
+    "flops": 77309411328,
+    "arithmetic_intensity": 125.69643170428216,
+    "compute_bound": false
+  },
+  "vit_336_patches": {
+    "image_size": 336,
+    "patches": 576,
+    "time_ms": 5.47,
+    "flops": 173946175488,
+    "arithmetic_intensity": 282.2155463815703,
+    "compute_bound": true
+  },
+  "pixelshuffle_4x": {
+    "image_size": 336,
+    "original_patches": 576,
+    "projection_type": "linear",
+    "projection_time_ms": 0.169,
+    "projection_flops": 4831838208,
+    "compression_method": "pixelshuffle_4x",
+    "compression_time_ms": 0.5760000000000001,
+    "compressed_tokens": 144,
+    "compression_ratio": 0.25,
+    "total_overhead_ms": 0.7450000000000001
+  },
+  "prefix_sharing_50": {
+    "visual_tokens": 144,
+    "text_tokens": 400,
+    "num_users_per_image": 50,
+    "visual_kv_mb": 9.0,
+    "text_kv_mb": 25.0,
+    "total_kv_no_sharing_mb": 1700.0,
+    "total_kv_with_sharing_mb": 818.0,
+    "savings_pct": 84.2,
+    "max_concurrent_groups": 24,
+    "total_concurrent_users": 1200
+  },
+  "vlm_serving_best": {
+    "vit_encoding_ms": 5.47,
+    "projection_overhead_ms": 0.7450000000000001,
+    "prefill_total_ms": 6.215,
+    "compressed_visual_tokens": 144,
+    "decode_throughput_tok_s": 4791,
+    "vlm_overhead_pct": 14.888032499999998,
+    "effective_throughput_tok_s": 4170.147138693493,
+    "max_concurrent_users": 1200,
+    "prefix_sharing_savings_pct": 84.2,
+    "kv_config": {
+      "visual_tokens": 144,
+      "text_tokens": 400,
+      "num_users_per_image": 50,
+      "visual_kv_mb": 9.0,
+      "text_kv_mb": 25.0,
+      "total_kv_no_sharing_mb": 1700.0,
+      "total_kv_with_sharing_mb": 818.0,
+      "savings_pct": 84.2,
+      "max_concurrent_groups": 24,
+      "total_concurrent_users": 1200
+    }
+  }
+}
