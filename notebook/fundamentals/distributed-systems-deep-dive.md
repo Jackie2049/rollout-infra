@@ -219,6 +219,228 @@ RTX 4090容错:
    → → → → → H100 NVLink → PD分离 → 最大收益 → 未来方向!
 ```
 
+## 7. Failure Detection — 从Timeout到φ Accrual
+
+```
+故障检测是分布式系统第一关 → 检测到故障才能触发恢复!
+
+Timeout-based(简单但问题多):
+  → 固定超时(如5s) → 超过→判定故障 → 简单!
+  → → → 问题: 太短→误判(网络延迟→误认为故障) → 太长→慢响应!
+  → → → → RTX 4090: NCCL default timeout=30min → 太长! → 生产应设5-10min!
+  → → → → → 网络延迟vs故障 → 无法区分! → 超时可能是网络慢而非crash!
+
+φ Accrual Failure Detector(自适应):
+  → Cassandra/Uber用 → 不用固定timeout → 用概率模型!
+  → → → 监听heartbeat到达时间 → 建立分布 → 计算φ值 → φ=概率故障程度!
+  → → → → φ = -log10(P(next_heartbeat_will_arrive)) → φ↑→故障概率↑!
+  → → → → → φ=1 → 10%概率误判 → φ=3 → 0.1%概率误判 → φ=8 → 0.000001% → 几乎确定!
+  → → → → → → 生产通常设φ threshold=8 → 极低误判率!
+  → → → → → → 自适应: heartbeat正常→φ低→继续 → 网络变慢→φ渐升→警告 → 最终故障→φ超高→判定!
+
+  → vs Timeout:
+    → Timeout: 固定阈值 → 网络波动→误判 → 保守(设长)→慢响应!
+    → φ Accrual: 自适应 → 网络波动→φ渐升→不误判 → 快响应(φ≥threshold→立刻判定)!
+    → → → 生产系统更推荐φ Accrual → 但实现更复杂 → 需维护arrival时间窗口!
+
+  → AI Infra应用:
+    → → NCCL: timeout-based → 固定30min → 太保守! → 可设更短但可能误判!
+    → → → Ray GCS: heartbeat-based → 1s心跳 → timeout=10s → 简单但有效!
+    → → → → → verl Ray: worker故障→10s检测→GCS触发→重新调度 → 实际足够!
+    → → → → → → 但大规模集群 → φ Accrual更好 → 避免误判导致不必要的重启!
+
+  → RTX 4090: 8GPU → 1故障 → 30min timeout太长 → 应设5min!
+  → → → → → 5min检测+2min恢复=7min总 → 可接受 → 但损失7min训练时间!
+  → → → → → → → 实际: 人工修复+checkpoint恢复 → 检测不是主要瓶颈!
+```
+
+## 8. Clock & Ordering — 分布式时间的本质
+
+```
+物理时钟不可靠:
+  → NTP同步 → 但误差±10ms → 分布式系统需要±0 → 不可能!
+  → → → GPS时钟 → ±1μs → 但需要GPS硬件 → Google Spanner用!
+  → → → → → TrueTime API: [earliest, latest] → 区间 → 事件在这个区间内!
+  → → → → → → Spanner用TrueTime → 保证外部一致性 → 但需要GPS+原子钟 → 成本高!
+
+Lamport Timestamps (1978):
+  → 逻辑时钟 → 不用物理时间 → 用计数器!
+  → → → 规则: 发送前+1 → 接收max(local, received)+1 → 单调递增!
+  → → → → → 如果a→b(a happened-before b) → L(a)<L(b) → 因果关系!
+  → → → → → → 但! L(a)<L(b) 不意味着a→b! → 只能部分排序!
+  → → → → → → → → 并发事件可能相同timestamp → 无法区分!
+
+Vector Clocks (Fidge 1988, Mattern 1989):
+  → Lamport的扩展 → 每个进程维护向量 → [P1,P2,P3,...]!
+  → → → 发送: 本进程+1 → 接收: max(各分量)+本进程+1!
+  → → → → → V(a)<V(b) iff 所有分量≤且至少一个< → 完全因果排序!
+  → → → → → → 并发检测: V(a)和V(b)有分量互超 → 并发 → 无因果关系!
+  → → → → → → → → DynamoDB用 → 版本冲突→vector clock检测→merge → 最终一致!
+
+  → AI Infra应用:
+    → → Checkpoint版本: vector clock → 标记各GPU训练进度 → 检测一致性!
+    → → → → → GPU[0]=step100, GPU[1]=step99 → 不一致 → 需同步!
+    → → → → → → → → 实际用: step number(更简单) → 但本质=Lamport timestamp!
+
+    → → PD分离 KV cache版本: prefill GPU→decode GPU → 版本一致?
+    → → → → → KV cache有request_id → request_id=逻辑时钟 → 确保正确顺序!
+    → → → → → → → → NixlConnector: request_id匹配 → KV cache版本一致 → 正确!
+
+    → → Ray actor状态: actor有version → version=逻辑时钟 → 确保方法调用顺序!
+    → → → → → verl RL: actor_version → 保证PPO step→rollout→update→repeat 顺序!
+
+  → RTX 4090: 实际不需要复杂时钟 → 8GPU训练→step number够了!
+  → → → → → 真正需要vector clock → 大规模分布式推理集群 → 数百GPU → 版本冲突!
+```
+
+## 9. Replication & Leader Election — 复制与领导
+
+```
+复制策略:
+  → Primary-Backup: 1主+N备 → 主处理请求 → 备份待命 → 主故障→备升级!
+  → → → 优点: 简单 → 主决定所有顺序 → 一致性保证!
+  → → → → → 缺点: 主是瓶颈 → 所有请求经过主 → 主故障→切换延迟!
+  → → → → → → → vLLM scheduler → 1主(NOT distributed!) → 如果主故障→整个服务中断!
+  → → → → → → → → → verl Ray → 1个controller → 如果controller故障→Ray GCS选举新!
+
+  → Chain Replication: 请求沿链传递 → Head→Middle→Tail → Tail返回结果!
+  → → → 优点: 写分散 → 每节点只与前后通信 → 带宽省!
+  → → → → → 缺点: 尾节点读瓶颈 → 链越长延迟越高!
+  → → → → → → → vLLM PD分离: prefill→decode → 类似chain → 但只有2节点!
+  → → → → → → → → → KV cache从prefill→decode → chain replication → 但KV是单向!
+
+  → Quorum系统: N节点 → 写需W个同意 → 读需R个同意 → W+R>N → 保证读看到最新写!
+  → → → W=(N+1)/2, R=(N+1)/2 → majority quorum → DynamoDB用!
+  → → → → → W=1,R=N → 写快但读慢 → 适合写多读少!
+  → → → → → → → W=N,R=1 → 读快但写慢 → 适合读多写少!
+  → → → → → → → → → AI Infra: checkpoint写入 → W=N → 所有GPU写入 → R=1 → 读快!
+  → → → → → → → → → → → 推理请求 → W=1,R=1 → 单GPU处理 → 不需要quorum!
+
+Leader Election算法:
+  → Bully Algorithm: 最大ID节点当选 → 简单但需要所有节点ID!
+  → → → → 故障→广播→最大ID→当选 → 但需要所有节点可达!
+  → → → → → → → → RTX 4090: 8GPU → GPU[7]故障 → GPU[6]当选 → 简单!
+
+  → Ring Algorithm: 蒙罗算法 → 沿ring传递选票 → 最大ID当选!
+  → → → → 比Bully省带宽 → 只传ring → 不广播 → 但ring断=选举失败!
+  → → → → → → → → NCCL ring → 但NCCL不做选举 → 只做数据传输!
+
+  → Raft Election:
+    → → Follower超时(150-300ms随机) → 变Candidate → 请求投票 → 多数=Leader!
+    → → → → 随机超时 → 避免split vote → 简单有效!
+    → → → → → → → → etcd用 → Kubernetes用 → Ray GCS用 → 生产标配!
+
+  → Split Brain Prevention:
+    → → 2个节点同时认为自己Leader → 危险! → 2Leader→2决策→不一致→灾难!
+    → → → → 防止: majority quorum → 只有获得多数投票才是Leader → 不可能2Leader!
+    → → → → → → → → Raft保证: 任何term最多1Leader → 因为需要多数投票 → 不会split brain!
+    → → → → → → → → → → etcd: 3节点 → 1故障 → 2节点选举 → 2>3/2 → 有效 → 不会split brain!
+    → → → → → → → → → → → → 但2故障 → 1节点 → 1<3/2 → 无法选举 → 系统暂停 → CP!
+
+  → AI Infra Leader:
+    → → vLLM: 1 scheduler leader → 不做选举 → 固定leader → 故障=服务中断!
+    → → → → → → → vLLM不是分布式scheduler → 是单进程 → 不需要选举!
+    → → → → → → → → → Ray: 1 controller → 但Ray有GCS → GCS用Raft选举 → controller故障→选举新!
+
+    → → verl: 1 coordinator → Ray actor → actor故障→Ray重建 → 重建<1s → 快!
+    → → → → → → → → → 但actor重建 → 状态丢失 → 需checkpoint恢复 → 几秒!
+
+RTX 4090 Leader Election:
+  → 不需要Raft → 8GPU训练 → NCCL不是共识 → 是同步!
+  → → → → → 需要: 1GPU做coordinator → 人指定 → 不做选举 → 简单!
+  → → → → → → → → Ray: 自动选举 → 但RTX 4090 small cluster → 不需要复杂选举!
+```
+
+## 10. Distributed Storage — etcd/Redis for AI Infra
+
+```
+etcd (Raft-based KV Store):
+  → Kubernetes元数据存储 → Ray GCS底层 → AI Infra核心协调组件!
+  → → → 特性: 强一致(CP) → Raft保证 → 所有节点看到相同数据!
+  → → → → → 3-5节点集群 → 读写~几ms → 足够快 → 但不适合高频写入!
+  → → → → → → → etcd用场景: Kubernetes调度→Pod分配→资源管理 → 不是数据存储!
+  → → → → → → → → → AI Infra: Ray GCS → worker注册→task调度→actor metadata → etcd类功能!
+
+  → → etcd Watch机制: 监听key变化 → 变化→触发 → 事件驱动!
+  → → → → → verl: watch GPU资源变化 → GPU新增→扩展训练 → GPU移除→缩减!
+  → → → → → → → Ray autoscaler: watch资源 → 动态扩缩 → GPU集群管理!
+
+Redis Cluster:
+  → AP系统 → 主从复制 → 最终一致 → 写快但可能短暂不一致!
+  → → → 16384 hash slots → 分片 → 每节点负责一部分 → 分布式!
+  → → → → → AI Infra: feature store → 模型缓存 → 快速读取 → 但不保证强一致!
+  → → → → → → → 推理: 模型权重缓存 → Redis存储 → 快速加载 → 但模型更新需手动同步!
+  → → → → → → → → → 不适合: 训练checkpoint → 需要强一致 → 用etcd或分布式文件系统!
+
+  → → Redis vs etcd:
+    → → → Redis: AP → 快 → 但不一致 → feature store/model cache!
+    → → → etcd: CP → 慢 → 但一致 → 调度/协调/checkpoint版本!
+
+  → AI Infra存储选择:
+    → → Coordination: etcd(Raft) → 强一致 → Ray GCS → Kubernetes!
+    → → → Feature Store: Redis → 快 → 但不一致 → 可接受(推理feature)!
+    → → → → → Checkpoint: 分布式文件系统(HDFS/S3) → 大文件 → 不用etcd/Redis!
+    → → → → → → → Model Weights: S3/本地SSD → 大文件 → 推理时load到GPU!
+
+RTX 4090存储:
+  → 本地SSD → 7TB(仅44GB剩余!) → 不适合存大量checkpoint!
+  → → → → → → → checkpoint大小: 7B BF16=14GB → 只能存2-3个 → 需清理!
+  → → → → → → → → → → → 模型权重: INT4=3.5GB → 可存多个 → 推理可行!
+```
+
+## 11. PACELC Theorem — CAP的扩展
+
+```
+PACELC (Abadi, 2010):
+  → 扩展CAP → 加入正常操作维度!
+  → → → Partition时: P(A or C) → 同CAP → 分区时选可用或一致!
+  → → → → → 正常时: E(L or C) → 没分区 → 选延迟或一致!
+  → → → → → → → → → 完整: Partition→Availability/Consistency, Else→Latency/Consistency!
+
+  → AI Infra PACELC分析:
+    → → 训练(正常时): EC → 选Consistency → AllReduce保证一致 → 延迟高但必须!
+    → → → → → 训练(分区时): PC → 选Consistency → 训练不能不一致 → 等分区恢复!
+    → → → → → → → → → → → 训练=PACELC→PC/EC → 两边都选Consistency → 训练需要强一致!
+
+    → → 推理(正常时): EL → 选Latency → 快响应 → 不等所有GPU一致!
+    → → → → → 推理(分区时): PA → 选Availability → 继续推理 → 用local model!
+    → → → → → → → → → → → 推理=PACELC→PA/EL → 两边都选latency/availability → 推理更弹性!
+
+    → → PD分离(正常时): EL → 选Latency → KV快速传输 → 不等所有prefill一致!
+    → → → → → PD分离(分区时): PA → 继续decode → prefill partition→decode自服务!
+
+  → vs CAP:
+    → → CAP只考虑分区时 → PACELC加入正常时 → 更全面!
+    → → → → → → → → → → 实际系统中 → 分区是少数 → 正常是多数 → PACELC更重要!
+    → → → → → → → → → → → → → → 推理99%时间正常 → 选EL → 延迟优先 → 快推理!
+    → → → → → → → → → → → → → → → → → 训练99%时间正常 → 选EC → 一致优先 → 强训练!
+```
+
+## 12. Core Laws Update — 扩展定律
+
+```
+7. Detection Law: φ accrual > timeout → 自适应检测优于固定超时!
+   → → → 生产系统应使用φ accrual → 避免误判 → 但实现更复杂!
+   → → → → → AI Infra当前: 大多数用timeout → 简单 → 但误判风险!
+   → → → → → → → Ray用heartbeat timeout → 简单有效 → 8GPU足够!
+
+8. Ordering Law: 因果关系需要vector clocks → Lamport不够!
+   → → → 单一因果关系 → Lamport → 简单 → 但无法检测并发!
+   → → → → → 多因果关系 → vector clocks → 完全 → 但O(N)存储!
+   → → → → → → → AI Infra: step number(=Lamport) → 简单 → 通常够用!
+   → → → → → → → → → 大规模→需要vector clocks → 但目前AI训练规模还不够大!
+
+9. Replication-Choice Law: Primary-Backup(一致性) vs Quorum(弹性)!
+   → → → 强一致→Primary-Backup → 但主瓶颈 → 训练用!
+   → → → → → 高可用→Quorum → 写快+读快 → 推理用!
+   → → → → → → → AI Infra: 训练=Primary-Backup(1coordinator) → 推理=Quorum不是需要!
+
+10. PACELC Law: 分区时选P(A/C) → 正常时选E(L/C) → 更细粒度!
+    → → → 训练=PC/EC → 两边一致 → 强一致优先!
+    → → → → → 推理=PA/EL → 两边弹性 → 延迟优先!
+    → → → → → → → → → → → → → → → 设计AI Infra→先问PACELC→才能选正确架构!
+```
+
 ## 关键论文与参考
 
 ```
