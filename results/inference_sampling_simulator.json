@@ -1,0 +1,158 @@
+{
+  "temperature_analysis": {
+    "T=0.1": {
+      "entropy": 2.8937768380113454e-07,
+      "kl": 0.323961476968533
+    },
+    "T=0.3": {
+      "entropy": 0.018429470403247473,
+      "kl": 0.3102885230472738
+    },
+    "T=0.5": {
+      "entropy": 0.1709446145515852,
+      "kl": 0.2217655711397465
+    },
+    "T=0.7": {
+      "entropy": 0.494640759393912,
+      "kl": 0.09477311736210906
+    },
+    "T=1.0": {
+      "entropy": 1.1342986290670178,
+      "kl": 0.0
+    },
+    "T=1.5": {
+      "entropy": 1.9797616980941632,
+      "kl": 0.1917895922641786
+    },
+    "T=2.0": {
+      "entropy": 2.415584518013542,
+      "kl": 0.5057197626054247
+    },
+    "T=3.0": {
+      "entropy": 2.751144328101637,
+      "kl": 0.975434055928333
+    },
+    "T=5.0": {
+      "entropy": 2.9145876369258548,
+      "kl": 1.4225282393074323
+    }
+  },
+  "truncation_comparison": {
+    "peaked": {
+      "top_k": {
+        "K=5": {
+          "kept_tokens": 5,
+          "kept_mass": 0.9741340295868341
+        },
+        "K=10": {
+          "kept_tokens": 10,
+          "kept_mass": 0.9983951741280164
+        },
+        "K=50": {
+          "kept_tokens": 15,
+          "kept_mass": 1.0000000000000004
+        }
+      },
+      "top_p": {
+        "P=0.5": {
+          "kept_tokens": 1,
+          "kept_mass": 0.7543931218469287
+        },
+        "P=0.9": {
+          "kept_tokens": 3,
+          "kept_mass": 0.9206026049226615
+        },
+        "P=0.95": {
+          "kept_tokens": 4,
+          "kept_mass": 0.9513533312352626
+        }
+      },
+      "min_p": {
+        "min_p=0.05": {
+          "kept_tokens": 3,
+          "kept_mass": 0.9206026049226615
+        },
+        "min_p=0.1": {
+          "kept_tokens": 2,
+          "kept_mass": 0.879093466170238
+        },
+        "min_p=0.2": {
+          "kept_tokens": 1,
+          "kept_mass": 0.7543931218469287
+        }
+      },
+      "entropy": 0.9322354670834276,
+      "top_prob": 0.7543931218469287
+    },
+    "flat": {
+      "top_k": {
+        "K=5": {
+          "kept_tokens": 5,
+          "kept_mass": 0.6652409557748219
+        },
+        "K=10": {
+          "kept_tokens": 10,
+          "kept_mass": 0.9099694268296196
+        },
+        "K=50": {
+          "kept_tokens": 15,
+          "kept_mass": 1.0
+        }
+      },
+      "top_p": {
+        "P=0.5": {
+          "kept_tokens": 4,
+          "kept_mass": 0.579523828345418
+        },
+        "P=0.9": {
+          "kept_tokens": 10,
+          "kept_mass": 0.9099694268296196
+        },
+        "P=0.95": {
+          "kept_tokens": 12,
+          "kept_mass": 0.9569245128549835
+        }
+      },
+      "min_p": {
+        "min_p=0.05": {
+          "kept_tokens": 15,
+          "kept_mass": 1.0
+        },
+        "min_p=0.1": {
+          "kept_tokens": 12,
+          "kept_mass": 0.9569245128549835
+        },
+        "min_p=0.2": {
+          "kept_tokens": 9,
+          "kept_mass": 0.8784358578920691
+        }
+      },
+      "entropy": 2.40284664377945,
+      "top_prob": 0.19076697536694273
+    }
+  },
+  "spec_decoding_comparison": {
+    "untrained_same_size": {
+      "speedup": 0.9702788274946379,
+      "alpha": 0.18
+    },
+    "untrained_0.5b": {
+      "speedup": 1.569294762715069,
+      "alpha": 0.22
+    },
+    "ngram": {
+      "speedup": 2.1868787276341948,
+      "alpha": 0.4
+    },
+    "eagle_trained": {
+      "speedup": 5.089675230247212,
+      "alpha": 0.85
+    },
+    "medusa_multihead": {
+      "speedup": 3.795066413662239,
+      "alpha": 0.6
+    }
+  },
+  "sampling_overhead_pct": 8.108108108108109,
+  "spec_speedup_eagle": 4.72512770615422
+}
