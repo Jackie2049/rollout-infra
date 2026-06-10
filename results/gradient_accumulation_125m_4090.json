@@ -1,0 +1,117 @@
+{
+  "metadata": {
+    "model": "OPT-125M",
+    "gpu": "RTX 4090",
+    "dtype": "BF16",
+    "seq_len": 64
+  },
+  "exp1_b4": {
+    "batch_size": 4,
+    "accum_steps": 1,
+    "effective_batch": 4,
+    "step_time_s": 0.0421,
+    "throughput_tok_s": 6081.5,
+    "mem_peak_mb": 345.8,
+    "avg_loss": 5.1795
+  },
+  "exp1_b8": {
+    "batch_size": 8,
+    "accum_steps": 1,
+    "effective_batch": 8,
+    "step_time_s": 0.042,
+    "throughput_tok_s": 12188.3,
+    "mem_peak_mb": 421.4,
+    "avg_loss": 5.39
+  },
+  "exp1_b16": {
+    "batch_size": 16,
+    "accum_steps": 1,
+    "effective_batch": 16,
+    "step_time_s": 0.0425,
+    "throughput_tok_s": 24073.9,
+    "mem_peak_mb": 571.9,
+    "avg_loss": 5.4662
+  },
+  "exp1_b32": {
+    "batch_size": 32,
+    "accum_steps": 1,
+    "effective_batch": 32,
+    "step_time_s": 0.043,
+    "throughput_tok_s": 47591.1,
+    "mem_peak_mb": 871.8,
+    "avg_loss": 5.5322
+  },
+  "exp1_b64": {
+    "batch_size": 64,
+    "accum_steps": 1,
+    "effective_batch": 64,
+    "step_time_s": 0.043,
+    "throughput_tok_s": 95243.8,
+    "mem_peak_mb": 1470.7,
+    "avg_loss": 5.4912
+  },
+  "exp2_accum2": {
+    "batch_size": 4,
+    "accum_steps": 2,
+    "effective_batch": 8,
+    "opt_step_time_s": 0.0832,
+    "throughput_tok_s": 6153.5,
+    "mem_peak_mb": 351.9,
+    "avg_loss": 5.7639,
+    "n_forward_backward": 2
+  },
+  "exp2_accum4": {
+    "batch_size": 4,
+    "accum_steps": 4,
+    "effective_batch": 16,
+    "opt_step_time_s": 0.1641,
+    "throughput_tok_s": 6238.6,
+    "mem_peak_mb": 352.9,
+    "avg_loss": 6.0315,
+    "n_forward_backward": 4
+  },
+  "exp2_accum8": {
+    "batch_size": 4,
+    "accum_steps": 8,
+    "effective_batch": 32,
+    "opt_step_time_s": 0.327,
+    "throughput_tok_s": 6262.3,
+    "mem_peak_mb": 352.9,
+    "avg_loss": 5.975,
+    "n_forward_backward": 8
+  },
+  "exp2_accum16": {
+    "batch_size": 4,
+    "accum_steps": 16,
+    "effective_batch": 64,
+    "opt_step_time_s": 0.654,
+    "throughput_tok_s": 6263.1,
+    "mem_peak_mb": 351.9,
+    "avg_loss": 6.1054,
+    "n_forward_backward": 16
+  },
+  "exp4_eff8": {
+    "effective_batch": 8,
+    "full_ft_mem_mb": 1249.3,
+    "lora_real_mem_mb": 421.8,
+    "lora_accum_mem_mb": 351.9,
+    "full_vs_lora_saving": 66.2,
+    "lora_real_vs_accum_saving": 16.6
+  },
+  "exp4_eff16": {
+    "effective_batch": 16,
+    "full_ft_mem_mb": 1261.3,
+    "lora_real_mem_mb": 572.8,
+    "lora_accum_mem_mb": 351.9,
+    "full_vs_lora_saving": 54.6,
+    "lora_real_vs_accum_saving": 38.6
+  },
+  "exp4_eff32": {
+    "effective_batch": 32,
+    "full_ft_mem_mb": 1257.9,
+    "lora_real_mem_mb": 870.8,
+    "lora_accum_mem_mb": 351.9,
+    "full_vs_lora_saving": 30.8,
+    "lora_real_vs_accum_saving": 59.6
+  }
+}
