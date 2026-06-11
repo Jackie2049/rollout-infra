@@ -1,0 +1,407 @@
+{
+  "125m_lora0_b32x1_adamw_bf16": {
+    "config": {
+      "model": "125m",
+      "n_params": 125000000.0,
+      "lora_r": 0,
+      "batch": 32,
+      "accum": 1,
+      "effective_batch": 32,
+      "optimizer": "adamw",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 0.25,
+      "optimizer_mem_gb": 1.0,
+      "gradient_mem_gb": 0.25,
+      "activation_mem_gb": 0.08,
+      "total_mem_gb": 1.58,
+      "fits_24gb": true,
+      "memory_headroom_gb": 22.42
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 17629.6,
+      "precision_factor": 1.23,
+      "lora_factor": 1.0,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 1.0,
+      "accum_factor": 1.0,
+      "size_factor": 1.0
+    },
+    "training_time": {
+      "total_tokens": 4096000,
+      "training_time_hours": 0.06,
+      "training_time_minutes": 3.9
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 92.9,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": []
+  },
+  "125m_lora8_b32x1_lion_bf16": {
+    "config": {
+      "model": "125m",
+      "n_params": 125000000.0,
+      "lora_r": 8,
+      "batch": 32,
+      "accum": 1,
+      "effective_batch": 32,
+      "optimizer": "lion",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 0.25,
+      "optimizer_mem_gb": 0.004,
+      "gradient_mem_gb": 0.0,
+      "activation_mem_gb": 0.08,
+      "total_mem_gb": 0.33,
+      "fits_24gb": true,
+      "memory_headroom_gb": 23.67
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 11219.5,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 0.86,
+      "accum_factor": 1.0,
+      "size_factor": 1.0
+    },
+    "training_time": {
+      "total_tokens": 4096000,
+      "training_time_hours": 0.1,
+      "training_time_minutes": 6.1
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 95.5,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": []
+  },
+  "7b_lora8_b4x4_adamw_bf16": {
+    "config": {
+      "model": "7b",
+      "n_params": 7000000000.0,
+      "lora_r": 8,
+      "batch": 4,
+      "accum": 4,
+      "effective_batch": 16,
+      "optimizer": "adamw",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 14.0,
+      "optimizer_mem_gb": 0.101,
+      "gradient_mem_gb": 0.03,
+      "activation_mem_gb": 0.13,
+      "total_mem_gb": 14.26,
+      "fits_24gb": true,
+      "memory_headroom_gb": 9.74
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 435.8,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 1.0,
+      "accum_factor": 0.25,
+      "size_factor": 0.1336
+    },
+    "training_time": {
+      "total_tokens": 2048000,
+      "training_time_hours": 1.31,
+      "training_time_minutes": 78.3
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 92.9,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": [
+      "Consider Lion optimizer (95.5% convergence vs AdamW 92.9%)"
+    ]
+  },
+  "7b_lora8_b4x4_lion_bf16": {
+    "config": {
+      "model": "7b",
+      "n_params": 7000000000.0,
+      "lora_r": 8,
+      "batch": 4,
+      "accum": 4,
+      "effective_batch": 16,
+      "optimizer": "lion",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 14.0,
+      "optimizer_mem_gb": 0.05,
+      "gradient_mem_gb": 0.03,
+      "activation_mem_gb": 0.13,
+      "total_mem_gb": 14.21,
+      "fits_24gb": true,
+      "memory_headroom_gb": 9.79
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 374.8,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 0.86,
+      "accum_factor": 0.25,
+      "size_factor": 0.1336
+    },
+    "training_time": {
+      "total_tokens": 2048000,
+      "training_time_hours": 1.52,
+      "training_time_minutes": 91.1
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 95.5,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": []
+  },
+  "7b_lora8_b4x4_adamw_bf16_ckpt": {
+    "config": {
+      "model": "7b",
+      "n_params": 7000000000.0,
+      "lora_r": 8,
+      "batch": 4,
+      "accum": 4,
+      "effective_batch": 16,
+      "optimizer": "adamw",
+      "precision": "bf16",
+      "checkpoint": true,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 14.0,
+      "optimizer_mem_gb": 0.101,
+      "gradient_mem_gb": 0.03,
+      "activation_mem_gb": 0.13,
+      "total_mem_gb": 14.25,
+      "fits_24gb": true,
+      "memory_headroom_gb": 9.75
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 300.7,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 0.69,
+      "optimizer_factor": 1.0,
+      "accum_factor": 0.25,
+      "size_factor": 0.1336
+    },
+    "training_time": {
+      "total_tokens": 2048000,
+      "training_time_hours": 1.89,
+      "training_time_minutes": 113.5
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 92.9,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": [
+      "Consider Lion optimizer (95.5% convergence vs AdamW 92.9%)"
+    ]
+  },
+  "7b_lora8_b1x8_adamw_bf16": {
+    "config": {
+      "model": "7b",
+      "n_params": 7000000000.0,
+      "lora_r": 8,
+      "batch": 1,
+      "accum": 8,
+      "effective_batch": 8,
+      "optimizer": "adamw",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 14.0,
+      "optimizer_mem_gb": 0.101,
+      "gradient_mem_gb": 0.03,
+      "activation_mem_gb": 0.03,
+      "total_mem_gb": 14.16,
+      "fits_24gb": true,
+      "memory_headroom_gb": 9.84
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 217.9,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 1.0,
+      "accum_factor": 0.125,
+      "size_factor": 0.1336
+    },
+    "training_time": {
+      "total_tokens": 1024000,
+      "training_time_hours": 1.31,
+      "training_time_minutes": 78.3
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 92.9,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": [
+      "Consider Lion optimizer (95.5% convergence vs AdamW 92.9%)"
+    ]
+  },
+  "7b_lora0_b1x1_lion_bf16": {
+    "config": {
+      "model": "7b",
+      "n_params": 7000000000.0,
+      "lora_r": 0,
+      "batch": 1,
+      "accum": 1,
+      "effective_batch": 1,
+      "optimizer": "lion",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 14.0,
+      "optimizer_mem_gb": 28.0,
+      "gradient_mem_gb": 14.0,
+      "activation_mem_gb": 0.03,
+      "total_mem_gb": 56.03,
+      "fits_24gb": false,
+      "memory_headroom_gb": 0
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 2026.0,
+      "precision_factor": 1.23,
+      "lora_factor": 1.0,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 0.86,
+      "accum_factor": 1.0,
+      "size_factor": 0.1336
+    },
+    "training_time": {
+      "total_tokens": 128000,
+      "training_time_hours": 0.02,
+      "training_time_minutes": 1.1
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 95.5,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": [
+      "OOM! 56.0GB > 24GB. Use LoRA (reduces optimizer states from 28.00GB to near-zero)",
+      "Full FT for 7b OOMs on 24GB. Use LoRA r=8.",
+      "Memory tight (56.0GB/24GB). Consider gradient checkpointing or smaller batch."
+    ]
+  },
+  "13b_lora8_b1x8_adamw_bf16": {
+    "config": {
+      "model": "13b",
+      "n_params": 13000000000.0,
+      "lora_r": 8,
+      "batch": 1,
+      "accum": 8,
+      "effective_batch": 8,
+      "optimizer": "adamw",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 26.0,
+      "optimizer_mem_gb": 0.157,
+      "gradient_mem_gb": 0.04,
+      "activation_mem_gb": 0.05,
+      "total_mem_gb": 26.25,
+      "fits_24gb": false,
+      "memory_headroom_gb": 0
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 159.9,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 1.0,
+      "accum_factor": 0.125,
+      "size_factor": 0.0981
+    },
+    "training_time": {
+      "total_tokens": 1024000,
+      "training_time_hours": 1.78,
+      "training_time_minutes": 106.7
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 92.9,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": [
+      "OOM! 26.2GB > 24GB. Use LoRA (reduces optimizer states from 0.16GB to near-zero)",
+      "Consider Lion optimizer (95.5% convergence vs AdamW 92.9%)",
+      "Memory tight (26.2GB/24GB). Consider gradient checkpointing or smaller batch."
+    ]
+  },
+  "70b_lora8_b1x16_adamw_bf16": {
+    "config": {
+      "model": "70b",
+      "n_params": 70000000000.0,
+      "lora_r": 8,
+      "batch": 1,
+      "accum": 16,
+      "effective_batch": 16,
+      "optimizer": "adamw",
+      "precision": "bf16",
+      "checkpoint": false,
+      "seq_len": 128,
+      "n_steps": 1000
+    },
+    "memory_estimate": {
+      "model_mem_gb": 140.0,
+      "optimizer_mem_gb": 0.503,
+      "gradient_mem_gb": 0.13,
+      "activation_mem_gb": 0.17,
+      "total_mem_gb": 140.8,
+      "fits_24gb": false,
+      "memory_headroom_gb": 0
+    },
+    "throughput_estimate": {
+      "effective_throughput_tok_s": 34.5,
+      "precision_factor": 1.23,
+      "lora_factor": 0.74,
+      "checkpoint_factor": 1.0,
+      "optimizer_factor": 1.0,
+      "accum_factor": 0.0625,
+      "size_factor": 0.0423
+    },
+    "training_time": {
+      "total_tokens": 2048000,
+      "training_time_hours": 16.51,
+      "training_time_minutes": 990.6
+    },
+    "quality_estimate": {
+      "optimizer_convergence_pct": 92.9,
+      "precision_accuracy_effect": "+9%"
+    },
+    "recommendations": [
+      "OOM! 140.8GB > 24GB. Use LoRA (reduces optimizer states from 0.50GB to near-zero)",
+      "Consider Lion optimizer (95.5% convergence vs AdamW 92.9%)",
+      "Memory tight (140.8GB/24GB). Consider gradient checkpointing or smaller batch."
+    ]
+  }
+}
