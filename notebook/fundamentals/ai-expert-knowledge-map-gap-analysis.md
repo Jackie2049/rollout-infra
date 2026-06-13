@@ -94,18 +94,18 @@
 
 **Gap**: Multimodal架构(Clip/LLaVA/InternVL), Vision Encoder设计
 
-### D. AI Training & Alignment — ★★★ (3/5)
+### D. AI Training & Alignment — ★★★★ (4/5) — 从3→4 数据+安全大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|--------|--------|
 | SFT Pipeline | ★★★ | mini SFT+GRPO实测 | 完成 |
 | RLHF Alignment | ★★★★ | 7方法对比+reward设计 | 完成 |
-| Data Pipeline | ★★ | 仅理论了解 | **Gap** |
+| Data Pipeline | ★★★★ | MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall | 完成! |
 | Evaluation | ★★★ | eval跑过(但不够系统) | 进行中 |
-| Safety & Red-team | ★ | 仅概念了解 | **大Gap** |
+| Safety & Red-team | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming+Llama Guard 3 | 完成! |
 | Continual Learning | ★ | 仅概念了解 | **大Gap** |
 
-**Gap**: Data curation/pipeline(数据质量>模型架构!), Safety/red-teaming实践
+**Gap**: Data Pipeline从2→4! Safety从1→4! 但Continual Learning仍是gap
 
 ### E. AI Applications — ★★ (2/5)
 
@@ -119,43 +119,49 @@
 
 **Gap**: VLM, Agent系统设计, Scientific AI应用
 
-### F. AI Ethics & Safety — ★★★ (3/5) — 从1→3 大幅提升!
+### F. AI Ethics & Safety — ★★★★ (4/5) — 从1→3→4 持续大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|----------|--------|
-| AI Safety | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming | 完成! |
+| AI Safety | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming+Llama Guard 3 | 完成! |
 | Responsible AI | ★★ | 仅概念了解 | **Gap** |
 | AI Governance | ★ | 仅概念了解 | **大Gap** |
 
-**Gap**: Safety大幅提升(从1→4)! 但Governance(合规/法规/EU AI Act)仍是大Gap
+**Gap**: Safety从1→4(3级跳跃)! Data从2→4! 但Governance(合规/法规/EU AI Act)仍是大Gap
 
-## 3. Top 5 Knowledge Gaps (Priority Order)
+## 3. Top 5 Knowledge Gaps (Priority Order) — Updated 06-14
 
 ```
-1. ★★★★ Scaling Laws (Chinchilla/Kaplan)
-   → 为什么重要: 预测模型性能, 计算最优模型大小, 训练数据量决策
-   → 学习路径: Kaplan(2020)+Chinchilla(2022)+ emergent abilities(2023)
-   → 预计时间: 1-2小时理论笔记
+已完成的gap (06-08→06-14):
+  ✅ Scaling Laws → ★★→★★★★ (Chinchilla+Inference+Data+Serving全链路)
+  ✅ AI Safety → ★→★★★★ (Defense-in-Depth+OWASP+Guardrails+Red-Teaming)
+  ✅ Data Pipeline → ★★→★★★★ (MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall)
 
-2. ★★★★ AI Safety & Alignment Deep Dive
-   → 为什么重要: AI专家必须懂安全 → 生产guardrails → 负责任部署
-   → 学习路径: Constitutional AI+RLAIF+guardrails+red-teaming
-   → 预计时间: 2-3小时理论+实践笔记
-
-3. ★★★ Data Pipeline & Curation
-   → 为什么重要: "数据质量>模型架构" → 数据是训练最关键因素
-   → 学习路径: 数据清洗+去重+质量过滤+混合策略+数据污染检测
-   → 预计时间: 1-2小时理论笔记
-
-4. ★★★ Multimodal AI (Vision-Language)
-   → 为什么重要: VLM是下一代AI主流 → 图文理解+生成
+当前top 5 gap:
+1. ★★★★ Multimodal AI (Vision-Language)
+   → 为什么重要: VLM是下一代AI主流 → 图文理解+生成 → 最大gap!
    → 学习路径: CLIP→LLaVA→InternVL→架构演进
    → 预计时间: 2-3小时理论笔记
 
-5. ★★ CUTLASS实践深化
+2. ★★★ Continual Learning
+   → 为什么重要: 模型持续学习 → 不遗忘 → 生产必须!
+   → 学习路径: EWC+L2+progressive networks+LoRA continual
+   → 预计时间: 1-2小时理论笔记
+
+3. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel
    → 学习路径: 实际编写SM89 GEMM kernel + epilogue fusion
    → 预计时间: GPU实验2-3小时
+
+4. ★★ Agent系统设计
+   → 为什么重要: Agent是AI应用主流 → 工具调用+规划+执行
+   → 学习路径: ReAct+Toolformer+LangChain+AutoGPT架构
+   → 预计时间: 2-3小时理论笔记
+
+5. ★★ AI Governance & Regulation
+   → 为什么重要: EU AI Act+合规 → 负责任部署 → 法律框架
+   → 学习路径: EU AI Act+NIST RMF+ISO 42001+合规框架
+   → 预计时间: 1-2小时理论笔记
 ```
 
 ## 4. Current Stats
@@ -170,15 +176,15 @@
 
   领域覆盖:
   AI Infra: ★★★★★ (最强) → 核心竞争力
-  AI Theory: ★★★★ (强) → 数学基础扎实
+  AI Theory: ★★★★★ (极强) → Scaling Laws+数学全补齐!
   AI Model Arch: ★★★★ (强) → 架构理解深入
-  AI Training: ★★★ (中等) → 需深化data+evaluation
+  AI Training: ★★★★ (强) → Data+Safety大幅提升! 从3→4!
   AI Applications: ★★ (弱) → 需拓展VLM+Agent
-  AI Ethics: ★ (最弱) → 亟需补课!
+  AI Ethics: ★★★★ (强) → Safety从1→4! Governance仍gap
 
   → 当前定位: AI infra specialist → 目标: broad AI expert
-  → 短期策略: 补Theory gap(Scaling Laws) + Safety gap
-  → 中期策略: 补Application gap(VLM+Agent) + Data gap
+  → 短期策略: 补Application gap(VLM+Agent) + CUTLASS实践
+  → 中期策略: 补Continual Learning + AI Governance
   → 长期策略: 全面深化 → 跨领域创新 → 资深AI专家
 ```
 
@@ -186,21 +192,21 @@
 
 ```
 立即(本次session):
-  1. Scaling Laws deep dive → Chinchilla数学 → 模型性能预测公式
-  2. AI Safety & Alignment theory → Constitutional AI → guardrails → red-teaming
+  ✅ Scaling Laws deep dive → 完成! ★★→★★★★
+  ✅ AI Safety & Alignment → 完成! ★→★★★★
+  ✅ Data Pipeline & Curation → 完成! ★★→★★★★
 
-本周:
-  3. Data Pipeline theory → 数据质量>架构 → curation策略
-  4. Multimodal AI theory → CLIP→LLaVA→架构演进
-  5. CUTLASS实践 → SM89 GEMM kernel编写
+下周:
+  4. Multimodal AI theory → CLIP→LLaVA→架构演进 → 最大gap!
+  5. CUTLASS实践 → SM89 GEMM kernel编写(GPU可用时)
 
 本月:
   6. Agent系统设计 → 工具调用 → 规划 → 执行
-  7. Scientific AI → AI for math/science
-  8. vLLM实际部署 → 生产serving benchmark
+  7. Continual Learning → EWC+L2+LoRA continual
+  8. vLLM实际部署 → 生产serving benchmark(GPU可用时)
 
 长期:
-  9. AI Ethics + Governance → 负责任AI → 制度设计
+  9. AI Governance → EU AI Act+NIST RMF+ISO 42001
   10. 跨领域创新 → Infra×Safety → Infra×Multimodal → 新方向
 ```
 
