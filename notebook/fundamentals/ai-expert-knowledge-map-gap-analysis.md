@@ -107,17 +107,17 @@
 
 **Gap**: Evaluation从3→4! 但CUTLASS实践+Governance仍需深化
 
-### E. AI Applications — ★★★★ (4/5) — 从2→3→4 Scientific AI大幅提升!
+### E. AI Applications — ★★★★★ (5/5) — 从2→3→4→5 NLP大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|----------|--------|
-| NLP | ★★ | 通过benchmark间接了解 | 基础 |
+| NLP | ★★★★ | 4架构(GPT/BERT/T5/BART)+Tokenization(BPE/SentencePiece)+Autoregressive vs Masked+任务+评估+RTX 4090 | 完成! |
 | Vision-Language | ★★★★ | CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini | 完成! |
 | Code Gen & Agent | ★★★★ | ReAct+Toolformer+Function Calling+MCP+Multi-Agent+Serving+RTX 4090+Cascade | 完成! |
 | Scientific AI | ★★★★ | AlphaFold 2/3+GNoME+MatterGen+AlphaProof+AlphaGeometry+FunSearch+Drug Discovery+Self-driving labs | 完成! |
 | AI for Systems | ★★★★ | MLSys=当前核心 | 完成 |
 
-**Gap**: Agent从2→4! VLM从1→4! Scientific AI从1→4! 但NLP仍需系统化
+**Gap**: Agent从2→4! VLM从1→4! Scientific AI从1→4! NLP从2→4! 全部大幅提升!
 
 ### F. AI Ethics & Safety — ★★★★★ (5/5) — 从1→3→4→5 持续大幅提升!
 
@@ -143,16 +143,15 @@
 
   ✅ AI Governance → ★→★★★★ (EU AI Act+NIST RMF+ISO 42001+China法规+全球比较+合规Pipeline)
   ✅ Scientific AI → ★→★★★★ (AlphaFold 2/3+GNoME+MatterGen+AlphaProof+AlphaGeometry+FunSearch+Drug Discovery)
+  ✅ NLP → ★★→★★★★ (4架构+Tokenization+Autoregressive vs Masked+任务+评估+RTX 4090)
 
-当前top 3 gap:
+当前top 2 gap:
 1. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel → GPU可用时做!
 
-2. ★★ NLP深度理解
-   → 为什么重要: NLP是AI应用基础 → 生成+理解+推理
-   → 学习路径: NLP基础+注意力+Transformer理论 → 系统化
-
-3. ★★ Emerging Architecture
+2. ★★ Emerging Architecture
+   → 为什么重要: DeltaNet/SSM是未来架构 → prefix-sharing项目正在用!
+   → 学习路径: DeltaNet理论+SSM原理+线性注意力 → 与PS项目结合
    → 为什么重要: DeltaNet/SSM是未来架构 → prefix-sharing项目正在用!
    → 学习路径: DeltaNet理论+SSM原理+线性注意力 → 与PS项目结合
    → 学习路径: EU AI Act+NIST RMF+ISO 42001+合规框架
@@ -174,7 +173,7 @@
   AI Theory: ★★★★★ (极强) → Scaling Laws+数学全补齐!
   AI Model Arch: ★★★★★ (极强) → VLM大幅提升! 从4→5!
   AI Training: ★★★★★ (极强) → Data+Safety+Evaluation大幅提升! 从4→5!
-  AI Applications: ★★★★ (强) → Agent+VLM+Scientific AI大幅提升! Scientific AI从1→4! 从3→4!
+  AI Applications: ★★★★★ (极强) → Agent+VLM+Scientific AI+NLP全补齐! 从4→5!
   AI Ethics: ★★★★★ (极强) → Safety从1→4→Governance从1→4→Responsible从2→4! 从4→5!
 
   → 当前定位: AI infra specialist → 目标: broad AI expert
