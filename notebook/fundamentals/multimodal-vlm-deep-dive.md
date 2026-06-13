@@ -1,267 +1,616 @@
-# Multimodal AI (Vision-Language) — From CLIP to LLaVA to InternVL
+# Multimodal AI (Vision-Language) Deep Dive — VLM架构演进(CLIP双编码器对比损失→LLaVA投影层+指令微调→InternVL InternViT-6B+动态分辨率→Qwen2-VL原生动态分辨率→CogVLM视觉专家模块→Gemini原生多模态) + Vision Encoder设计(patch=14+多分辨率+位置嵌入) + Projection策略(Linear/MLP/Q-Former/Visual Expert/对比) + 三阶段训练(预训练→SFT→DPO) + RTX 4090 VLM推理(7B INT4+INT8 ViT→24GB可行+ViT 15-30ms+FlashAttention-2必须) + 2026趋势(原生多模态+Agent VLM+Token压缩+Video理解)
 
-> 2026-06-08 | VLM是下一代AI主流, Infra工程师必须懂视觉编码器+跨模态注意力
-> 关键: CLIP→对齐空间 → LLaVA→投影到LLM → InternVL→原生多模态
+> 2026-06-14 | VLM架构演进深度分析: 从CLIP(2021)双编码器对比学习→LLaVA(2023)MLP投影+指令微调→InternVL(2024)InternViT-6B+动态分辨率448px→Qwen2-VL(2025)动态分辨率+多语言→CogVLM视觉专家模块→Gemini(2023-2025)原生多模态MoE → 4代架构演进! Vision Encoder从ViT-B/32→ViT-L/14→InternViT-6B→SigLIP-2→原生 → Patch=14标准+多分辨率+动态分辨率 → Projection从linear→MLP→Q-Former→Visual Expert → MLP主流Q-Former over-engineered! → 三阶段训练pretrain→SFT→DPO → RTX 4090 7B INT4+INT8 ViT→7-8GB→24GB可行 → FlashAttention-2必须 → 2026趋势: 原生多模态+Agent VLM+Token压缩+Video
+> 关联: ai-expert-knowledge-map-gap-analysis.md(VLM gap★→★★★★), scaling-laws-deep-dive.md(inference scaling), ai-safety-guardrails-production-deep-dive.md(VLM安全部署), data-pipeline-curation-deep-dive.md(VLM训练数据)
+> 参考: CLIP(Radford et al. 2021), BLIP-2/Li et al. 2023, LLaVA(Liu et al. 2023-2024), InternVL(Shanghai AI Lab 2024-2025), Qwen2-VL(Alibaba 2024-2025), CogVLM(Tsinghua 2023-2024), Gemini(Google DeepMind 2023-2025), SigLIP(Zhai et al. 2023-2025), NaViT(Dehghani et al. 2024)
 
-## 1. CLIP (2021) — Contrastive Language-Image Pre-training
+## 0. 核心定律: VLM=4代架构演进 → CLIP→LLaVA→InternVL→Gemini → 趋势=原生多模态!
 
 ```
-CLIP核心: 图像和文本在同一向量空间 → 对齐!
+VLM架构演进(4代):
+
+Gen 1 — CLIP(2021): 双编码器+对比损失 → 图文对齐 → zero-shot!
+  → → ViT+Text Transformer → cosine similarity → 分开编码 → 不生成!
+
+Gen 2 — LLaVA(2023): ViT编码器+投影+LLM解码器 → 图文生成 → 指令微调!
+  → → → Linear/MLP projection → 视觉token注入LLM → 生成式!
+
+Gen 3 — InternVL/Qwen2-VL(2024-2025): ViT-6B+动态分辨率+原生多模态 → 高分辨率理解!
+  → → → → → 动态分辨率 → 448px tiles → 高分辨率任务(OCR/图表)→突破!
+
+Gen 4 — Gemini(2023-2025): 原生多模态 → 从头训练 → 无投影层 → 端到端!
+  → → → → → → → Interleaved训练 → text+image+video+audio → 全模态原生!
+
+→ → → → → → → → 趋势: projection→native → 固定分辨率→动态 → 单模态→全模态 → 2026原生多模态!
+```
+
+## 1. CLIP — 对比学习双编码器(Gen 1)
+
+```
+### 1.1 CLIP架构
+
+CLIP = Contrastive Language-Image Pre-training → 图文对齐 → zero-shot分类!
 
 架构:
-  Image Encoder: ViT(Visual Transformer) → 图像→embedding
-  Text Encoder: Transformer → 文本→embedding
-  → 两者映射到同一空间 → cosine similarity衡量相似度
+  → Image Encoder: ViT-B/32(151M) / ViT-B/16(151M) / ViT-L/14(428M)
+  → → → patch_size=32→7×7=49tokens / 16→14×14=196 / 14→16×16=256
+  → → → → → ViT-L/14最优 → 256 tokens → 14×14 patch → 最细粒度!
+  → → Text Encoder: Transformer(12层, 77 token max) → 文本编码!
 
-训练:
-  对比学习(Contrastive Learning):
-    → N个(图像,文本)对 → 正确配对应该相似 → 错误配对应该不相似
-    → Loss = -log(sim(I_i, T_i)/Σsim(I_i, T_j))
-    → = InfoNCE loss → 与NCE(噪声对比估计)一致!
+对比损失:
+  → N个图文pair → 正pair=N → 负pair=N²-N → 最大化正pair cosine similarity!
+  → → L = -log(exp(sim(I_i,T_i)/τ)/Σexp(sim(I_i,T_j)/τ)) → InfoNCE!
+  → → → → τ=learnable temperature → 控制分布锐度 → 训练稳定!
 
-CLIP关键发现:
-  → Zero-shot分类: 不需要训练 → 直接用文本描述 → "这是一只猫的照片"
-  → 迁移能力: CLIP → 可以对任何新类别分类 → 不需要fine-tune!
-  → 图像-文本对齐: 相同概念→相似向量 → "猫"的文本≈猫的图像向量
+训练数据:
+  → 400M image-text pairs → 从网络收集 → 规模决定性能!
 
-与已知知识连接:
-  → InfoNCE = NCE的扩展 → 我们已经懂信息论!
-  → Contrastive = 与RLHF的对比类似 → 正确配对vs错误配对
-  → ViT = Transformer处理图像 → patch token化 → 与LLM token化一致!
+### 1.2 CLIP zero-shot分类
+
+Zero-shot = 不训练 → 直接分类 → 通用性!
+
+流程:
+  → 给类别名 → "a photo of [class]" → text encoder → text embedding!
+  → → 给图片 → image encoder → image embedding!
+  → → → → → cosine similarity → 最高=预测类别 → 分类!
+
+效果:
+  → ImageNet zero-shot → 76.2% → 接近ResNet-50监督训练(76.6%) → 无训练!
+  → → → → → 关键: 对比学习 → 图文对齐 → 通用性 → 不需下游训练!
+
+### 1.3 CLIP局限与2025扩展
 
 CLIP局限:
-  → 不是生成模型 → 只能分类/检索 → 不能生成图像描述
-  → 对齐空间有限 → 复杂推理(如"这个图像里有多少个红色的球?")不够
-  → → 需要LLM增强 → LLaVA = CLIP + LLM!
+  → 双编码器 → 只能检索/分类 → 不能生成 → 无对话能力!
+  → → 固定分辨率 → 224px → 高分辨率任务差 → OCR/图表弱!
+  → → → → → 对比损失 → 只对齐语义 → 不对齐细粒度 → 理解不深!
+
+2025扩展:
+  → SigLIP(2023-2025): sigmoid loss → 替代softmax → batch独立 → 更高效!
+  → → → → → → → 关键: sigmoid(I,T) → 不需同步全局 → 支持更大batch!
+  → → EVA-CLIP: 更强ViT → 更好预训练 → 更高质量!
+  → → → LongCLIP: 长文本支持 → 扩展到77→248 tokens → 更详细描述!
+  → → → → MobileCLIP: 轻量ViT → 移动部署 → hybrid架构!
+  → → → → → UniCL: 统一对比+生成 → 检索+生成 → 双重能力!
+
+→ → → → → → → → 结论: CLIP=对齐基础 → 但不能生成 → 需LLM组合(LLaVA)!
 ```
 
-## 2. Vision Encoder设计 — ViT到SigLIP
+## 2. LLaVA — 投影层+指令微调(Gen 2)
 
 ```
-ViT (Vision Transformer, 2020):
-  → 图像→patch → 每个patch=16×16像素 → 196个patch(224×224图像)
-  → Patch embedding = 线性投影 → 类似LLM token embedding
-  → Position embedding → 2D位置 → 告诉patch的位置
-  → Transformer layers → 与LLM完全相同的架构!
+### 2.1 LLaVA架构
 
-ViT变体:
-  ViT-B/16: 86M参数, 12层, 768dim → 小但有效
-  ViT-L/14: 307M参数, 24层, 1024dim → CLIP默认
-  ViT-H/14: 632M参数, 32层, 1280dim → 大但慢
-  ViT-bigG/14: 1.8B参数 → InternVL用!
+LLaVA = Large Language-and-Vision Assistant → ViT+Projection+LLM → 生成式VLM!
 
-SigLIP (2024, Google):
-  → Sigmoid loss替代softmax → 更高效
-  → → sigmoid(I_i,T_i) → 不需要全局normalize → batch内独立
-  → → 支持更大batch → 更好对齐 → InternVL用SigLIP!
+架构:
+  → Vision Encoder: CLIP ViT-L/14 → 256 visual tokens → 固定!
+  → → Projection Layer: Linear→MLP(LLaVA-1.5) → 视觉→语言空间!
+  → → → → → → → → → → → → → MLP: W1→ReLU→W2 → 2层 → 更丰富 → ~8M参数!
+  → → → → → → → → → → → → → → → → → Linear: 单层W → 最简 → ~2M → 但不够好!
+  → → → → → → → → → → → → → → → → → → → → LLM Decoder: Vicuna-7B/13B → 生成文本 → 自回归!
 
-关键: Vision Encoder决定VLM的视觉理解质量
-  → 大encoder(ViT-bigG) → 更细粒度理解 → 但推理成本高!
-  → 小encoder(ViT-B) → 粗粒度 → 但推理成本低
-  → 投影策略决定信息传递 → 下节详述
+Visual Token注入:
+  → ViT → 256 visual tokens → projection → 256 language tokens → 前缀注入!
+  → → → → → 替换: <image> → 256 projected tokens → LLM处理 → 生成!
+
+### 2.2 LLaVA演进
+
+| 版本 | ViT | Projection | Visual Tokens | LLM | Resolution |
+|------|-----|------------|---------------|-----|------------|
+| LLaVA(v1) | CLIP ViT-L/14 | Linear | 256 | Vicuna-7B/13B | 224px |
+| LLaVA-1.5 | CLIP ViT-L/14 | 2-layer MLP | 576(multi-crop) | Vicuna-7B/13B | 336px |
+| LLaVA-NeXT | CLIP ViT-L/14 | 2-layer MLP | dynamic | Mistral/Qwen | AnyRes |
+| LLaVA-OneVision | SigLIP ViT | 2-layer MLP | dynamic(AnyRes) | Qwen2-7B/72B | AnyRes+video |
+
+关键改进:
+  → Linear→MLP: 2层MLP投影 → 更丰富 → 性能提升5-10%!
+  → → 224→336px: 更高分辨率 → 更多visual tokens → 更精细!
+  → → → → → AnyRes: 动态分辨率 → 根据图片大小自适应 → 2025标准!
+  → → → → → → → Video: 扩展到视频 → 多帧 → temporal understanding!
+
+### 2.3 指令微调数据
+
+LLaVA指令微调:
+  → GPT-4生成 → 基于图片描述 → instruction-following → 80K→1M+!
+  → → → → → 类型: 对话/描述/推理/编码 → 多任务 → 通用!
+  → → → → → → → 2025改进: 多模态CoT → 推理指令 → chain-of-thought → 更深理解!
+  → → → → → → → → → 数据质量>数量 → curated→精选 → 1M→精选→更优!
+
+### 2.4 LLaVA核心洞察
+
+核心洞察:
+  → 简单投影层足够! → 不需Q-Former → MLP就够了 → 令人惊讶!
+  → → → 原因: LLM本身就强 → 只需要把视觉信息"翻译"到语言空间 → MLP就够!
+  → → → → → 关键: 投影层简单 → 但LLM强 → 组合=强VLM → 不需复杂adapter!
+  → → → → → → → → → 但: 高分辨率 → 千tokens → 需压缩策略 → 下一问题!
+
+→ → → → → → → → → → → → → → → → → 结论: MLP=2025主流 → 简单+有效 → ViT足够强时MLP够了!
 ```
 
-## 3. LLaVA (2023-2024) — Large Language-and-Vision Assistant
+## 3. InternVL — InternViT-6B+动态分辨率(Gen 3)
 
 ```
-LLaVA核心: CLIP vision encoder + LLM = 视觉语言模型!
+### 3.1 InternVL架构
 
-架构(LLaVA-1.5):
-  Vision Encoder: CLIP ViT-L/14 → 图像→196个patch embedding
-  Projection: MLP → 196×1024 → 196×4096 → 投射到LLM空间
-  LLM: LLaMA-7B/13B → 处理视觉token+文本token
+InternVL = InternViT-6B + InternLM2 + dynamic resolution → 高分辨率VLM!
+
+架构:
+  → Vision Encoder: InternViT-6B → 6B参数ViT → 比CLIP ViT-L(428M)大14x!
+  → → → → → → → → → 6B=更理解 → 更细粒度 → OCR/图表→突破!
+  → → → → → → → → → → → MLP Projection → 视觉→语言 → 简单但有效!
+  → → → → → → → → → → → → → LLM Decoder: InternLM2-8B/20B → 强语言 → 生成!
+
+### 3.2 动态分辨率机制
+
+InternVL动态分辨率 → 最重要的创新 → 高分辨率任务突破!
+
+机制:
+  → 图片 → 按aspect ratio → 分成N个tiles → 每tile 448×448 → 处理!
+  → → → → → 例: 1024×512 → 2 tiles → 448×448 each → 再拼接!
+  → → → → → → → 例: 2048×1024 → 4-6 tiles → 更多细节 → OCR/图表!
+  → → → → → → → → → 每tile → InternViT-6B → token → 拼接 → 全图representation!
+
+  → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 关键: thumbnail view → 1个全局+ N个局部 → 全局+局部 → 全图理解!
+
+vs 固定分辨率:
+  → CLIP/LLaVA → 224/336px → 下采样 → 丢细节 → OCR差!
+  → → → → → InternVL → 448px×N tiles → 保留细节 → OCR/图表→突破!
+
+InternVL 2.5成绩:
+  → MMMU: 84.3% → 开源最优 → 动态分辨率关键!
+  → → → OCRBench: 领先 → 高分辨率→OCR→突破!
+  → → → → → MathVista: 领先 → 图表理解→突破!
+
+### 3.3 InternViT-6B设计
+
+InternViT-6B vs CLIP ViT-L/14:
+  → 参数: 6B vs 428M → 14x更大 → 更理解!
+  → → → Patch: 14×14 → 标准现代 → 精细!
+  → → → → → Resolution: 448px dynamic → vs 224px fixed → 2x+!
+  → → → → → → → 训练: 原生多模态 → vs 对比学习 → 更丰富!
+
+→ → → → → → → → 结论: InternViT-6B=更大+动态+原生 → 高分辨率任务突破!
+
+### 3.4 InternVL版本演进
+
+| 版本 | ViT | LLM | 分辨率 | 特色 | MMMU |
+|------|-----|-----|--------|------|------|
+| InternVL1 | InternViT-6B | InternLM2-7B/20B | 448px | 原生对齐 | ~58% |
+| InternVL1.5 | InternViT-6B | InternLM2-8B/20B | 448px动态 | progressive训练 | ~70% |
+| InternVL2 | InternViT-6B | 多LLM(2B→76B) | 448px动态 | 多尺寸 | ~78% |
+| InternVL2.5 | InternViT-6B-448px-V2 | 多LLM | 448px动态 | 改进ViT | 84.3% |
+| InternVL3(2025) | InternViT-6B | 多LLM | 448px动态 | 原生多模态训练 | ~85%+ |
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 关键: 动态分辨率+大ViT=持续改进 → OCR/图表领先 → 2025开源最优!
+```
+
+## 4. 其他VLM架构 — Qwen2-VL / CogVLM / Gemini
+
+```
+### 4.1 Qwen2-VL
+
+Qwen2-VL = ViT-L/14 + Adapter + Qwen2-LLM + 动态分辨率 → 多语言!
+
+架构:
+  → Vision Encoder: ViT-L/14 → 动态分辨率 → 多语言支持!
+  → → → → → Adapter: ViT→LLM → 连接 → 简单!
+  → → → → → → → LLM: Qwen2-7B/72B → 强语言 → 多语言!
+
+特点:
+  → Naive动态分辨率 → 不需要固定 → 自适应 → 类InternVL!
+  → → → 多语言OCR → 中文+英文+多语言 → 全球化!
+  → → → → → Video理解 → temporal encoding → 视频 → 多帧!
+
+### 4.2 CogVLM — 视觉专家模块
+
+CogVLM = Visual Expert Module → 在LLM内部加视觉attention → 不是简单投影!
+
+架构:
+  → Vision Encoder: ViT → 视觉特征 → 标准!
+  → → → → → Visual Expert: 在LLM每层加dedicated attention → 视觉专用参数!
+  → → → → → → → → → 共享: FFN+其他attention → 与LLM共享 → 但视觉attention独立!
+
+设计哲学:
+  → 避免"modality alignment gap" → 简单投影→信息丢失 → 视觉需要自己的attention!
+  → → → → → 视觉专家 → 独立attention → 不丢失 → 更好理解!
+
+vs LLaVA:
+  → LLaVA: MLP projection → 简单 → 但视觉信息压缩 → 可能丢失!
+  → → → CogVLM: Visual expert → 独立attention → 不压缩 → 但参数更多!
+
+### 4.3 Gemini — 原生多模态(Gen 4)
+
+Gemini = Natively Multimodal → 从头训练 → 无投影层 → 端到端 → 最先进!
+
+架构:
+  → 无单独ViT → 无投影 → 原生 → 从头设计 → 全模态共享!
+  → → → MoE(Mixture-of-Experts) → 不同模态→不同expert → 专业化!
+  → → → → → Long context → 1M tokens → 图片+视频+文本 → 超长!
 
 训练:
-  Stage 1: 预训练(Pretrain)
-    → CC3M数据 → 图像描述对 → 只训练projection MLP → LLM冻结
-    → 目标: 让projection学会将视觉信息映射到LLM空间
-    → 快! 几小时完成 → projection很小(2层MLP)
+  → Interleaved → text+image+video+audio+code → 混合 → 全模态!
+  → → → → → 不需要单独align → 原生对齐 → 最自然!
 
-  Stage 2: 指令微调(Instruction Tuning)
-    → LLaVA-Instruct-150K → 对话格式 → 训练projection+LLM
-    → 目标: 让LLM学会理解视觉信息并回答问题
-    → 更慢 → 但关键 → 才能对话!
+Gemini 1.5/2.0(2025):
+  → 1.5 Pro: MoE+1M context → 超长 → 全模态理解!
+  → → → 2.0 Flash: 更快+agentic → GUI agent → 视觉行动!
+  → → → → → → → 关键: 原生多模态 → 不需投影 → 端到端 → 2026趋势!
 
-LLaVA-NeXT (2024):
-  → AnyRes: 动态分辨率 → 大图像→多个patch → 更细粒度
-  → 高分辨率图像 → 分成多个子图 → 每个子图独立编码 → 合并
-  → → 但token数增加 → 推理成本↑ → KV cache压力!
+### 4.4 VLM架构对比
 
-关键数学:
-  视觉token数 = (image_size / patch_size)² × num_patches
-  → 224×224 / 16×16 = 14×14 = 196 tokens (CLIP ViT-L/14)
-  → 336×336 / 14×14 = 24×24 = 576 tokens (LLaVA-1.5高分辨率)
-  → 高分辨率: 多个子图 → 总token可达1000+!
+| 模型 | ViT | 投影 | 分辨率 | 原生多模态 | 特色 |
+|------|-----|------|--------|------------|------|
+| CLIP | ViT-L/14(428M) | 对比损失 | 224px固定 | ❌ | zero-shot检索 |
+| LLaVA-1.5 | CLIP ViT-L/14 | MLP(2层) | 336px固定 | ❌ | 简单投影够用 |
+| LLaVA-OV | SigLIP ViT | MLP | AnyRes动态 | 部分 | video+anyres |
+| InternVL2.5 | InternViT-6B | MLP | 448px动态 | 部分 | OCR/图表突破 |
+| Qwen2-VL | ViT-L/14 | Adapter | 动态 | 部分 | 多语言+视频 |
+| CogVLM | ViT | Visual Expert | 固定 | 混合 | 视觉独立attention |
+| Gemini | 原生 | 无需 | 原生 | ✅ | 端到端多模态 |
 
-推理影响(RTX 4090):
-  → 7B LLM + 576视觉token → KV cache增加576×81.92KB = 47.3MB → 可管理
-  → 高分辨率: 1000+视觉token → KV 82MB → 仍可管理(INT8 KV省50%)
-  → 但: 视觉token是一次性的 → 不像文本每步增加 → prefix caching有效!
-  → → vLLM/SGLang prefix caching → 视觉token共享 → 多用户同一图像省KV!
-
-与已知Infra连接:
-  → LLM推理我们已经深读 → VLM = LLM + 视觉encoder + projection
-  → 视觉encoder推理 → 独立计算 → 与LLM可以流水线
-  → KV cache → 视觉token固定 → prefix sharing → 复用!
-  → INT8 KV → 视觉token也省50% → RTX 4090可行!
-  → FlashInfer → 视觉token GQA → 同样加速!
+→ → → → → → → 趋势: 固定→动态→原生 → 投影→adapter→expert→无投影 → 2026原生多模态!
 ```
 
-## 4. InternVL (2024-2025) — 原生多模态架构
+## 5. Vision Encoder设计 — ViT选择与优化
 
 ```
-InternVL = 不用projection → vision encoder直接输出LLM空间!
+### 5.1 Patch Size选择
 
-架构(InternVL-2):
-  Vision Encoder: InternViT-6B → 6B参数ViT → 极细粒度理解
-  → SigLIP训练 → sigmoid loss → 更好对齐
-  → 6B = 比CLIP ViT-L(307M)大20x → 更强大!
+Patch size决定visual token数量 → 影响精度和计算:
 
-  LLM: InternLM2-7B/20B → 中文+英文多语言
-  → 与InternViT同公司 → 更好配合
+  ps=32: 224px→7×7=49tokens → 太粗 → 信息不足 → CLIP-B/32最差!
+  → ps=16: 224px→14×14=196tokens → 标准 → 足够 → legacy ViT!
+  → → ps=14: 224px→16×16=256tokens → 现代 → 更精细 → 2025标准!
+  → → → → → ps=14+384px: 27×27=729tokens → 精细+多 → SigLIP-2!
+  → → → → → → → ps=14+896px: 64×64=4096tokens → 太多 → 需压缩!
 
-  连接: 不用MLP projection!
-  → InternViT-6B输出 → 直接与InternLM2输入对齐 → native multimodal!
-  → 需要特殊训练 → 但不需要projection → 更简单!
+→ → → → → → → → 结论: ps=14是2025标准 → 但高分辨率需token压缩!
 
-关键创新:
-  1. 动态分辨率 → 与LLaVA-NeXT类似 → 但InternVL更灵活
-  2. 原生对齐 → vision encoder输出=LLM输入 → 不需要projection
-  3. 大encoder → 6B ViT → 细粒度理解 → OCR/图表/文档更强!
-  4. 中文优化 → InternLM2中文能力强 → 多语言VLM
+### 5.2 分辨率策略
 
-InternVL性能:
-  → OCR: 93.2%(比LLaVA-1.5 75%高18pt!)
-  → 图表理解: 88.5%(比LLaVA-1.5 65%高23pt!)
-  → 中文VQA: 90.1%(比LLaVA-1.5 72%高18pt!)
-  → → 大encoder+原生对齐 = 细粒度任务更强!
+分辨率策略演进:
+  → 2021(CLIP): 224px固定 → 太低 → OCR/图表差!
+  → → 2023(LLaVA-1.5): 336px → 稍好 → 但仍固定!
+  → → → 2024(InternVL): 448px动态 → tile-based → OCR突破!
+  → → → → → 2025(SigLIP-2/NaViT): 多分辨率训练 → 224+384+512+896 → 灵活!
 
-推理影响(RTX 4090):
-  → InternViT-6B推理: 6B参数 → INT4量化 → ~3GB → RTX 4090可行!
-  → InternLM2-7B推理: 与7B LLM相同 → INT4+INT8KV → 4,791 tok/s
-  → 两者流水线: ViT→prefill→LLM→decode → 与PD分离类似!
-  → 视觉prefill → compute-bound → 快(~10ms)
-  → LLM decode → memory-bound → FlashInfer加速
-  → 总推理成本 ≈ 7B LLM × 1.5 → 视觉encoder额外50%
+动态分辨率(InternVL):
+  → 图片→按aspect ratio→N tiles→448×448→处理→拼接→全图!
+  → → → → → 关键: thumbnail view → 1个全局+ N个局部 → 全局+局部!
+  → → → → → → → 保留细节 → OCR/图表 → 高分辨率任务 → 突破!
+
+多分辨率训练(SigLIP-2):
+  → 训练时随机选分辨率 → 224/384/512/896 → 模型适应任意分辨率!
+  → → → → → 位置嵌入: learned+bicubic interpolation → 不同分辨率→插值→适应!
+
+### 5.3 位置嵌入设计
+
+位置嵌入 → ViT如何知道patch位置 → 影响分辨率灵活性:
+
+1. Learned position embedding(原始ViT):
+   → 每个位置一个learned vector → 固定grid → 改分辨率→插值!
+   → → → 插值: bicubic → 224→336 → 196→576 → 近似 → 不完美!
+
+2. 2D Sinusoidal embedding:
+   → sin/cos → 数学公式 → 自然扩展 → 任意grid → 无插值!
+   → → → → → 优势: 自然适应 → 但性能略低于learned → trade-off!
+
+3. Factorized 2D learned(NaViT):
+   → 分解为x+y → 分别learned → 插值更自然 → 灵活!
+   → → → → → → → 优势: 分解 → 自然插值 → 多分辨率 → InternVL用类似!
+
+4. No explicit PE(探索):
+   → 靠patch grid顺序 → 无位置 → 最灵活 → 但性能略低!
+
+→ → → → → → → → 结论: Learned+interpolation→2025主流 → Factorized→未来 → Sinusoidal→备选!
 ```
 
-## 5. 跨模态注意力机制
+## 6. Projection策略 — 视觉→语言的连接方式
 
 ```
-VLM如何处理视觉+文本信息:
+### 6.1 四种Projection策略
 
-方法1: Early Fusion (LLaVA方式)
-  → 视觉token + 文本token → 合并 → 拼成一个sequence → 送入LLM
-  → LLM看到: [视觉token_1...视觉token_N] + [文本token_1...文本token_M]
-  → → LLM自然处理 → 注意力同时看视觉和文本 → 最简单!
+Projection = 把视觉信息翻译到语言空间 → 4种策略 → 从简到复杂!
 
-  问题:
-  → 视觉token占位置 → LLM context更长 → KV更大
-  → 576视觉token → 576×81.92KB=47.3MB额外KV → 可管理但非零
-  → → INT8 KV + prefix caching → 大幅缓解!
+1. Linear Adapter(LLaVA v1):
+   → 单层linear → W×visual_tokens → 直接映射 → 最简单!
+   → → → 参数: ~2M → 最少 → 但信息保留最差 → 压缩!
+   → → → → → 效果: 足用但不够好 → LLaVA-1.5改用MLP!
 
-方法2: Cross-Attention Fusion (Flamingo方式)
-  → 视觉token → 经过cross-attention → 与文本token交互
-  → → 每隔几层插入cross-attention → 视觉信息"注入"到LLM
-  → → 视觉token不占LLM context → KV更少!
+2. MLP(LLaVA-1.5/InternVL):
+   → 2层MLP → W1→ReLU→W2 → 更丰富 → 2025主流!
+   → → → 参数: ~8M → 少 → 但信息保留好 → 不压缩token数!
+   → → → → → 效果: 简单+有效 → 2025主流 → 大多数VLM用MLP!
+   → → → → → → → 关键: 不压缩 → 保留所有visual tokens → spatial info完整!
 
-  问题:
-  → 需要新架构设计 → cross-attention层 → 复杂
-  → 推理时 → cross-attention额外计算 → 成本↑
-  → 但: 视觉KV独立管理 → 不污染文本KV → 可能更高效!
+3. Q-Former(BLIP-2):
+   → 32个learnable queries → cross-attention → 与image features交互!
+   → → → → → 输出: 固定32 tokens → 不管图片多大 → 压缩!
+   → → → → → → → 参数: ~188M → 多 → 但压缩到固定 → 灵活!
+   → → → → → → → → → 优势: 固定输出 → 不受分辨率影响 → video友好!
+   → → → → → → → → → → → 劣势: 压缩 → 丢失空间信息 → OCR/图表差!
 
-方法3: Native Multimodal (InternVL方式)
-  → 视觉encoder输出 = LLM输入维度 → 直接concat → early fusion
-  → → 与LLaVA类似但不需要projection → 更简洁
-  → → 视觉token仍然是LLM context的一部分
+4. Visual Expert(CogVLM):
+   → 在LLM内部加dedicated visual attention → 视觉专用参数!
+   → → → → → → → → → 不压缩 → 但视觉有独立attention → 不丢失!
+   → → → → → → → → → → → → → 参数: 更多 → 但理解最好!
 
-RTX 4090最优策略:
-  → Early Fusion (LLaVA方式) → 最简单 → 推理成本可控
-  → INT8 KV → 视觉+文本KV都省50%
-  → Prefix caching → 视觉token共享 → 同一图像多用户省KV!
-  → FlashInfer → 视觉token GQA → 同样加速
-  → 视觉encoder: ViT-L INT4 → 150MB → 与LLM并行推理
+### 6.2 策略对比
+
+| 策略 | 参数 | Token数 | 空间信息 | 训练成本 | 适用场景 |
+|------|------|---------|----------|----------|----------|
+| Linear | ~2M | 全部256+ | ✅保留 | 最低 | 简单场景 |
+| MLP | ~8M | 全部256+ | ✅保留 | 低 | 2025主流 |
+| Q-Former | ~188M | 固定32 | ❌压缩 | 中 | video/长序列 |
+| Visual Expert | ~100M+ | 全部 | ✅保留 | 高 | 精细理解 |
+
+### 6.3 2025趋势: MLP主流 → Q-Former被认为over-engineered
+
+关键发现:
+  → MLP性能≥Q-Former → 当ViT足够强(SigLIP/InternViT-6B) → MLP就够了!
+  → → → 原因: ViT已经理解视觉 → MLP只需翻译到语言空间 → 不需复杂交互!
+  → → → → → Q-Former优势只在: video → 多帧 → 需压缩 → token budget紧!
+  → → → → → → → → → 结论: 大多数VLM用MLP → video才用Q-Former → 2025简单化!
 ```
 
-## 6. 图像Token化与分辨率
+## 7. VLM三阶段训练Pipeline
 
 ```
-图像→视觉token的数学:
+### 7.1 Stage 1: Pretraining(图文对齐)
 
-基本公式:
-  num_patches = (H / patch_size) × (W / patch_size)
-  num_tokens = num_patches (每个patch=1个token)
+目标: 视觉→语言空间对齐 → 投影层学习 → 基础!
 
-CLIP ViT-L/14 (224×224):
-  → (224/14)² = 16² = 256 tokens → 但实际196(去掉一些padding)
-  → patch_size=14 → 比16更细 → 1.3x更多token
+训练配置:
+  → Frozen LLM + Frozen ViT → 只训练Projection → 参数最少!
+  → → → → → 数据: 100M-1B image-text pairs → caption-style → 大规模!
+  → → → → → → → 损失: autoregressive → predict text from image → 语言生成!
 
-高分辨率(LLaVA-NeXT, InternVL):
-  → 336×336 → (336/14)² = 24² = 576 tokens → 3x更多!
-  → 448×448 → (448/14)² = 32² = 1024 tokens → 5x更多!
-  → → AnyRes: 动态切分子图 → 每个子图独立编码 → 合并token
+关键:
+  → VILA论文证明 → Pretraining质量比想象的更重要!
+  → → → Interleaved image-text → 不只用caption → 交错数据 → 更好!
 
-Token压缩策略:
-  1. PixelShuffle: 重排像素 → 4个patch合并为1 → 4x压缩 → LLaVA用!
-     → (H/2, W/2, 4×C) → reshape → (H/2, W/2, C×4) → 空间4x压缩
-  2. Q-Former (BLIP-2): 查询向量 → 从视觉特征提取固定数量token
-     → 32个query → 固定32个视觉token → 不随图像大小变化!
-     → → KV cache友好! → 但信息损失!
-  3. Average Pooling: patch平均 → 简单压缩 → 质量差
-  4. Learned Compression: 训练压缩模块 → 质量好 → 但需要额外训练
+### 7.2 Stage 2: Instruction Tuning(SFT)
 
-KV Cache影响:
-  → 196 tokens → 196×81.92KB = 16.1MB → 小 → 可管理
-  → 576 tokens → 47.3MB → 中 → INT8→23.65MB → OK
-  → 1000+ tokens → 82MB → 大 → INT8→41MB + prefix caching → OK!
-  → → RTX 4090 24GB → 7B INT4+INT8KV+GQA-8 → 有足够空间放视觉KV!
+目标: 指令跟随+推理 → 多任务 → 通用!
 
-RTX 4090最优VLM配置:
-  → ViT-L/14 INT4 → 150MB → 推理快
-  → PixelShuffle → 4x压缩 → 576→144 tokens → KV更小!
-  → INT8 KV → 视觉+文本都省50%
-  → Prefix caching → 视觉token共享 → 多用户同一图像零额外KV!
-  → FlashInfer → 整体1.06-3.20x加速(包括视觉token)
+训练配置:
+  → Unfreeze LLM(partial/full) → ViT frozen或LoRA → Projection训练!
+  → → → → → 数据: 10K-100K高质量指令 → GPT-4V生成 → 多任务!
+  → → → → → → → 类型: 对话+描述+推理+编码+数学 → 多任务 → 通用!
+
+2025改进:
+  → 多模态CoT → 推理指令 → 逐步 → chain-of-thought → 更深理解!
+  → → → → → 数据质量>数量 → curated→精选 → 1M→精选→更优!
+
+### 7.3 Stage 3: Preference Alignment(RLHF/DPO)
+
+目标: 减少幻觉 → 提高有用性 → 安全 → 对齐!
+
+2025主流: DPO > PPO → 更简单→更稳定 → 不需reward model!
+
+训练配置:
+  → Full model fine-tuning → preference pairs → 人类/AI偏好!
+  → → → → → 数据: VLFeedback/Silkie → 偏好对比 → 减少幻觉!
+  → → → → → → → 目标: 减少hallucination → 视觉groundedness → 安全!
+
+关键:
+  → VLM幻觉特别严重 → "看到"不存在的东西 → 需对齐!
+  → → → → → RLHF-V: 专门VLM RLHF → 减少幻觉 → 视觉约束!
+
+### 7.4 RTX 4090训练策略
+
+RTX 4090 VLM训练(24GB HBM):
+  → 7B LLM + ViT-L/14 → bf16 → ~18GB → 太紧 → 需量化/LoRA!
+  → → → → → → 最优: LLM INT4/LoRA + ViT frozen → 7-8GB → 可训练!
+  → → → → → → → → → Stage 1: 只训练MLP projection → ViT+LLM frozen → 最少内存!
+  → → → → → → → → → → → Stage 2: LLM LoRA + ViT frozen → 8GB → 可行!
+  → → → → → → → → → → → → → Stage 3: DPO → 全模型LoRA → 8-10GB → 紧但可行!
 ```
 
-## 7. 核心规律
+## 8. RTX 4090 VLM推理 — 内存与延迟分析
 
 ```
-VLM核心:
+### 8.1 内存预算
 
-1. CLIP=对齐 → 图像+文本同一空间 → zero-shot能力
-   → InfoNCE loss → 与信息论一致(我们已经懂!)
-   → 但不是生成模型 → 需要LLM增强
+RTX 4090 24GB → VLM推理内存分析:
 
-2. LLaVA=投影 → CLIP→MLP→LLM → 最简单最有效!
-   → 2层MLP projection → 几小时预训练 → 最小成本
-   → 视觉token = LLM context的一部分 → Early Fusion
+| 模型 | LLM | ViT | 总计(bf16) | INT4 LLM+INT8 ViT | 24GB可行? |
+|------|-----|-----|-----------|-------------------|-----------|
+| LLaVA-1.6-Mistral-7B | 7B | ViT-L/14(300M) | ~18GB | ~7GB+KV | ✅ 可行 |
+| InternVL2-8B | 8B | InternViT-6B | ~28GB | ~10GB+KV | ⚠️ 紧 |
+| Qwen2-VL-7B | 7B | ViT-L/14 | ~16GB | ~7GB+KV | ✅ 可行 |
+| Phi-3.5-Vision-4B | 4B | ViT-L/14 | ~10GB | ~5GB+KV | ✅ 舒适 |
 
-3. InternVL=原生 → 大encoder+原生对齐 → 细粒度更强!
-   → 6B ViT → 20x CLIP → OCR/图表/文档更好
-   → 不需要projection → 但需要特殊训练
+关键:
+  → INT4 LLM+INT8 ViT → 7B VLM → ~7-8GB → 24GB可行 → KV cache剩余16GB!
+  → → → → → InternViT-6B → INT8→3GB → 总计~10GB → 紧 → 需INT4 ViT或offload!
+  → → → → → → → Phi-3.5-Vision-4B → 最舒适 → INT4→5GB → 大量KV空间!
 
-4. 视觉token = 推理成本增加器 → 但可控!
-   → 576 tokens → 47.3MB KV → INT8→23.65MB → 可管理
-   → Prefix caching → 视觉token共享 → 多用户同一图像免费!
-   → FlashInfer → 视觉token也加速 → 与文本token相同
+### 8.2 Vision Encoder推理延迟
 
-5. 分辨率 = token数 = KV大小 = 推理成本
-   → 224×224 → 196 tokens → 小
-   → 336×336 → 576 tokens → 中
-   → 448×448 → 1024 tokens → 大 → PixelShuffle压缩!
+ViT推理延迟(RTX 4090):
+  → ViT-L/14 + 336px单图 → 15-30ms → 快 → 不成瓶颈!
+  → → → ViT-L/14 + 896px高分辨率 → 50-150ms → 慢 → 可能瓶颈!
+  → → → → → InternViT-6B + 448px → 30-50ms → 6B更大 → 但448px可控!
+  → → → → → → → 批量 → N图片 → N×ViT → encoder成为瓶颈 → 需分离!
 
-6. RTX 4090 VLM最优配置:
-   → 7B LLM(Vicuna/InternLM) INT4+INT8KV+FlashInfer → 4,791 tok/s
-   → ViT-L INT4 → 150MB → 与LLM并行推理 → ~10ms prefill
-   → PixelShuffle → 576→144 tokens → KV更小 → 更多并发
-   → Prefix caching → 同一图像多用户 → 零额外KV成本
-   → 安全guardrails → 视觉输出也要过滤 → xgrammar扩展!
-   → → VLM推理成本 ≈ 1.5× LLM推理 → RTX 4090完全可行!
+### 8.3 VLM推理优化
 
-VLM发展趋势 (2025):
-  → 视频理解 → 视觉token更多 → 需要更强KV管理
-  → 多图像理解 → 多个图像 → prefix sharing更重要
-  → 原生多模态 → 不再需要projection → InternVL方向
-  → 细粒度 → 大encoder → OCR/图表/文档 → 实用!
-  → → VLM = 2025-2026 AI主流方向 → Infra必须支持!
+优化策略(RTX 4090):
+  1. FlashAttention-2 → 必须! → 不用→activation溢出24GB!
+  → → → → → ViT+LLM都需要 → 减少activation 40-60%!
+
+  2. INT4 LLM + INT8 ViT → 量化 → 内存减半+ → 可行!
+  → → → → → → → INT4 ViT → 性能下降明显 → 不推荐 → INT8即可!
+
+  3. Token pruning/merging → 减少visual tokens → 40-70% → 计算减!
+  → → → → → → → → → ToP/ToMe → 剪枝不重要token → 减少LLM输入!
+
+  4. Encoder-Decoder分离 → ViT单独GPU → LLM单独GPU → 2×4090!
+  → → → → → → → → → → → ViT GPU1 → LLM GPU2 → 各自优化 → 最好!
+  → → → → → → → → → → → → → → 但: 2GPU成本 → 单GPU也可行(量化)
+
+  5. vLLM/SGLang → PagedAttention+RadixAttention → KV cache优化!
+  → → → → → → → → → → → → → → → → → vLLM multimodal支持 → vision offload → 生产!
+
+  6. Pixel shuffle/downsampling → Qwen2-VL/InternVL → 视觉token压缩!
+  → → → → → → → → → → → → → → → → → → → → → → 高分辨率→千tokens→压缩→百tokens→LLM友好!
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → RTX 4090最优: 7B INT4+INT8 ViT+FlashAttention-2+vLLM → 单GPU可行!
+```
+
+## 9. VLM vs Text-only LLM — 关键差异
+
+```
+### 9.1 架构差异
+
+VLM vs LLM关键差异:
+
+  1. 双模型 → ViT+LLM → 两个独立模型 → 内存2x → 管理2x!
+     → → → → → LLM: 单模型 → 更简单 → 更容易优化!
+
+  2. Visual tokens → 多模态输入 → 非文本 → 需翻译(projection)!
+     → → → → → → → LLM: 只文本 → BPE tokenizer → 标准 → 简单!
+
+  3. 分辨率影响 → 图片大小→token数 → 不固定 → 需动态!
+     → → → → → → → → → LLM: 固定vocab → token数确定 → 简单!
+
+  4. 预处理开销 → ViT推理 → 15-30ms → 增加延迟 → 需优化!
+     → → → → → → → → → → → LLM: 无预处理 → 直接 → 无额外延迟!
+
+### 9.2 训练差异
+
+  1. 三阶段 → pretrain→SFT→DPO → 比LLM多一阶段(alignment)!
+     → → → → → → → LLM: 2阶段 → SFT→RLHF → 简单!
+
+  2. 数据混合 → image+text → 需要多模态数据 → 更复杂!
+     → → → → → → → → → LLM: 只text → 简单 → 数据易获取!
+
+  3. 幻觉更严重 → VLM "看到"不存在的东西 → 视觉groundedness!
+     → → → → → → → → → → → LLM: 文本幻觉 → 但VLM更严重!
+
+### 9.3 Serving差异
+
+  1. 两阶段推理 → ViT first → LLM second → pipeline!
+     → → → → → → → LLM: 单阶段 → tokenizer→model→输出 → 简单!
+
+  2. KV cache管理 → visual tokens+text tokens → 混合 → 更复杂!
+     → → → → → → → → → LLM: 只text KV → 简单 → PagedAttention!
+
+  3. 批量挑战 → 不同图片→不同visual token数 → 不固定 → 困难!
+     → → → → → → → → → → → LLM: 固定text → batching容易 → 标准!
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → 结论: VLM比LLM复杂2x → 但趋势=简化→原生多模态→消除差异!
+```
+
+## 10. 2025-2026 VLM趋势
+
+```
+### 10.1 关键趋势
+
+1. 原生多模态(Gemini方向):
+   → 无投影层 → 从头训练 → text+image+video+audio → 端到端!
+   → → → → → → → → → 2026: 更多模型走原生路线 → Gemini→GPT-5→开源!
+   → → → → → → → → → → → → → → → 关键: 原生=最自然 → 不需翻译 → 最强!
+
+2. Agent VLM(视觉行动):
+   → VLM+行动 → GUI导航 → 机器人 → 视觉+行动 → 2025大方向!
+   → → → → → → → → → → → Gemini 2.0 → agentic → GUI agent → 视觉行动!
+   → → → → → → → → → → → → → → → → → → CogVLM2 → GUI agent → 屏幕理解→行动!
+
+3. Token压缩(高分辨率必需):
+   → 动态分辨率→千tokens → 需压缩 → pruning/merging/shuffle → 2025!
+   → → → → → → → → → → → → → → → → → → → → → → ToP/ToMe → 40-70%压缩 → 计算减!
+   → → → → → → → → → → → → → → → → → → → → → → → → Pixel shuffle → 学习压缩 → 更智能!
+
+4. Video理解(时间维度):
+   → 图片→视频 → 多帧 → temporal → 2025扩展 → LLaVA-OneVision!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → 长视频 → 百帧 → 需压缩 → Q-Former/Token pruning!
+
+5. 小型高效VLM:
+   → InternVL2-2B/MiniCPM-V → 小模型 → 边缘部署 → 移动!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → RTX 4090友好 → Phi-3.5-Vision-4B → 5GB INT4 → 舒适!
+
+6. DPO替代RLHF:
+   → 简单 → 稳定 → 不需reward model → 2025主流 → VLM对齐!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 关联: rl-experiments.md(DPO=PPO等价但更简单)
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 结论: 2026→原生多模态+Agent VLM+Token压缩+Video → Gemini方向!
+```
+
+## 11. 核心规律
+
+```
+VLM核心规律:
+
+  4代架构演进 → CLIP→LLaVA→InternVL→Gemini → 趋势=原生多模态!
+  → → Gen1 CLIP: 双编码器+对比 → 检索 → zero-shot → 但不生成!
+  → → → Gen2 LLaVA: ViT+MLP+LLM → 生成 → 指令微调 → 简单投影够用!
+  → → → → → Gen3 InternVL: ViT-6B+动态分辨率 → OCR/图表突破!
+  → → → → → → → Gen4 Gemini: 原生多模态 → 无投影 → 端到端 → 2026趋势!
+
+  Projection策略 → MLP主流 → Q-Former被认为over-engineered → 2025简单化!
+  → → MLP: ~8M参数 → 保留所有token → 简单+有效 → 大多数VLM!
+  → → → Q-Former: ~188M → 压缩到32token → video友好 → 但空间信息丢失!
+  → → → → → 结论: ViT足够强时 → MLP就够了 → 不需Q-Former → 简单化!
+
+  Vision Encoder → patch=14+多分辨率+动态 → 2025标准!
+  → → → ps=14 → 256 tokens → 精细 → 比16(196)更好!
+  → → → → → 动态分辨率 → 448px tiles → OCR/图表 → 高分辨率突破!
+  → → → → → → → 位置嵌入 → learned+interpolation → 2025主流 → factorized→未来!
+
+  三阶段训练 → pretrain(projection only)→SFT(LLM LoRA)→DPO(全模型) → 标准!
+  → → → → → VILA: pretraining质量比想象更重要 → interleaved数据→更好!
+  → → → → → → → DPO > PPO → 2025主流 → 简单+稳定 → 不需reward model!
+
+  RTX 4090 VLM推理:
+    → 7B INT4 + INT8 ViT + FlashAttention-2 → ~7-8GB → 24GB可行!
+    → → ViT 15-30ms → 不成瓶颈 → 但高分辨率+批量→可能瓶颈!
+    → → → → → Phi-3.5-Vision-4B → INT4→5GB → 最舒适 → 大量KV空间!
+    → → → → → → → vLLM multimodal → PagedAttention → vision offload → 生产!
+
+  VLM比LLM复杂2x → 双模型+visual tokens+动态分辨率+幻觉更严重 → 但趋势=简化!
+  → → → → → → → → → → → → → → → 原生多模态 → 消除投影 → 端到端 → 简化!
+
+  知识Gap修复:
+    → Multimodal从★(1/5) → ★★★★(4/5) → CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini+ViT设计+Projection+Training+RTX 4090 → 全面!
+    → → → → → 但仍需实践 → GPU可用时 → LLaVA部署+Phi-3.5-Vision推理 → 实测!
+```
+
+## 参考文献
+
+```
+1. 基础VLM:
+   - CLIP: Radford et al. 2021, "Learning Transferable Visual Models"
+   - BLIP-2: Li et al. 2023, "BLIP-2: Bootstrapping with Frozen Models"
+   - LLaVA: Liu et al. 2023-2024, "Visual Instruction Tuning"
+   - LLaVA-OneVision: Liu et al. 2024, "LLaVA-OneVision"
+
+ (arxiv.org/abs/2408.06564)
+
+   - SigLIP: Zhai et al. 2023, "Sigmoid Loss for Language-Image Pre-Training"
+   - SigLIP 2: Google Research 2025
+   - NaViT: Dehghani et al. 2024, "Native Resolution ViT"
+
+2. 高级VLM:
+   - InternVL: arxiv.org/abs/2312.14237
+   - InternVL 2.5: arxiv.org/abs/2412.07713
+   - Qwen2-VL: Alibaba 2024-2025
+   - CogVLM: Tsinghua 2023-2024
+   - Gemini: Google DeepMind 2023-2025
+
+3. 训练与对齐:
+   - VILA: arxiv.org/abs/2401.01670 "Pretraining Matters"
+   - RLHF-V: arxiv.org/abs/2312.03749
+   - VLFeedback: VLM preference dataset
+   - Silkie: DPO for VLMs
+
+4. ViT基础:
+   - ViT: Dosovitskiy et al. 2020, "An Image is Worth 16x16 Words"
+
+5. 我们的笔记:
+   - ai-expert-knowledge-map-gap-analysis.md → VLM gap评估
+   - scaling-laws-deep-dive.md → inference scaling
+   - ai-safety-guardrails-production-deep-dive.md → VLM安全部署
+   - data-pipeline-curation-deep-dive.md → VLM训练数据

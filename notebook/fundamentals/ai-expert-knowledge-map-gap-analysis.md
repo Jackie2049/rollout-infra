@@ -82,17 +82,17 @@
 
 **Gap**: Scaling Laws精确数学(Kaplan/Chinchilla), 幂律预测模型性能
 
-### C. AI Model Architecture — ★★★★ (4/5)
+### C. AI Model Architecture — ★★★★★ (5/5) — 从4→5 Multimodal大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|----------|--------|
 | Transformer Variants | ★★★★★ | GQA/MLA/MoE全部deep dive | 完成 |
 | Model Compression | ★★★★ | Distillation T=4-8最优 | 完成 |
 | Model Merging | ★★★ | Task Arithmetic+DARE实测 | 完成 |
-| Multimodal | ★ | 仅概念了解 | **大Gap** |
+| Multimodal | ★★★★ | CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini+ViT+Projection+Training+RTX4090 | 完成! |
 | Emerging Arch | ★★ | DeltaNet(PS项目中) | 进行中 |
 
-**Gap**: Multimodal架构(Clip/LLaVA/InternVL), Vision Encoder设计
+**Gap**: Multimodal从1→4! Emerging Arch(DeltaNet/SSM)仍需深化
 
 ### D. AI Training & Alignment — ★★★★ (4/5) — 从3→4 数据+安全大幅提升!
 
@@ -138,25 +138,25 @@
   ✅ Data Pipeline → ★★→★★★★ (MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall)
 
 当前top 5 gap:
-1. ★★★★ Multimodal AI (Vision-Language)
-   → 为什么重要: VLM是下一代AI主流 → 图文理解+生成 → 最大gap!
-   → 学习路径: CLIP→LLaVA→InternVL→架构演进
-   → 预计时间: 2-3小时理论笔记
-
-2. ★★★ Continual Learning
+1. ★★★★ Continual Learning
    → 为什么重要: 模型持续学习 → 不遗忘 → 生产必须!
    → 学习路径: EWC+L2+progressive networks+LoRA continual
    → 预计时间: 1-2小时理论笔记
 
-3. ★★★ CUTLASS实践深化
+2. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel
    → 学习路径: 实际编写SM89 GEMM kernel + epilogue fusion
    → 预计时间: GPU实验2-3小时
 
-4. ★★ Agent系统设计
+3. ★★★ Agent系统设计
    → 为什么重要: Agent是AI应用主流 → 工具调用+规划+执行
    → 学习路径: ReAct+Toolformer+LangChain+AutoGPT架构
    → 预计时间: 2-3小时理论笔记
+
+4. ★★★ Multimodal实践(GPU实测)
+   → 为什么重要: 理论完成(4/5) → 但需GPU实测 → LLaVA部署+Phi-3.5-Vision推理
+   → 学习路径: vLLM multimodal部署 + Phi-3.5-Vision推理benchmark
+   → 预计时间: GPU实验2-3小时
 
 5. ★★ AI Governance & Regulation
    → 为什么重要: EU AI Act+合规 → 负责任部署 → 法律框架
@@ -177,7 +177,7 @@
   领域覆盖:
   AI Infra: ★★★★★ (最强) → 核心竞争力
   AI Theory: ★★★★★ (极强) → Scaling Laws+数学全补齐!
-  AI Model Arch: ★★★★ (强) → 架构理解深入
+  AI Model Arch: ★★★★★ (极强) → VLM大幅提升! 从4→5!
   AI Training: ★★★★ (强) → Data+Safety大幅提升! 从3→4!
   AI Applications: ★★ (弱) → 需拓展VLM+Agent
   AI Ethics: ★★★★ (强) → Safety从1→4! Governance仍gap
