@@ -94,18 +94,18 @@
 
 **Gap**: Multimodal从1→4! Emerging Arch(DeltaNet/SSM)仍需深化
 
-### D. AI Training & Alignment — ★★★★ (4/5) — 从3→4 数据+安全大幅提升!
+### D. AI Training & Alignment — ★★★★★ (5/5) — 从3→4→5 Evaluation大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|--------|--------|
 | SFT Pipeline | ★★★ | mini SFT+GRPO实测 | 完成 |
 | RLHF Alignment | ★★★★ | 7方法对比+reward设计 | 完成 |
 | Data Pipeline | ★★★★ | MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall | 完成! |
-| Evaluation | ★★★ | eval跑过(但不够系统) | 进行中 |
+| Evaluation | ★★★★ | MMLU/MMLU-Pro+GPQA/SWE-bench+IFEval/LiveBench+ARC-AGI+TruthfulQA+HELM+lm-eval+Chatbot Arena+Calibration+Robustness+Fairness+Toxicity+Contamination+Pipeline | 完成! |
 | Safety & Red-team | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming+Llama Guard 3 | 完成! |
 | Continual Learning | ★★★★ | EWC+O-LoRA+InfLoRA+Replay+Knowledge Editing+Data Replay+Self-Distillation+LoRA Routing | 完成! |
 
-**Gap**: Continual Learning从1→4! Safety从1→4! Data从2→4! 但Evaluation系统性仍需深化
+**Gap**: Evaluation从3→4! 但CUTLASS实践+Governance仍需深化
 
 ### E. AI Applications — ★★★ (3/5) — 从2→3 Agent+VLM大幅提升!
 
@@ -138,21 +138,14 @@
   ✅ Data Pipeline → ★★→★★★★ (MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall)
   ✅ Multimodal VLM → ★→★★★★ (CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini)
   ✅ Continual Learning → ★→★★★★ (EWC+O-LoRA+InfLoRA+Replay+Data Replay+Self-Distillation)
+  ✅ Agent Systems → ★★→★★★★ (ReAct+Toolformer+MCP+Multi-Agent+Serving+Cascade+RTX 4090)
+  ✅ Evaluation → ★★★→★★★★ (MMLU-Pro+GPQA+SWE-bench+IFEval+LiveBench+ARC-AGI+HELM+lm-eval+Arena+Calibration+Robustness+Fairness+Contamination)
 
 当前top 5 gap:
 1. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel → GPU可用时做!
 
-2. ★★★ Agent系统设计
-   → 为什么重要: Agent是AI应用主流 → 工具调用+规划+执行
-
-3. ★★★ Evaluation系统性深化
-   → 为什么重要: 评估是训练最重要环节 → 需benchmark设计+自动化
-
-4. ★★★ Multimodal实践(GPU实测)
-   → 为什么重要: 理论完成 → 但需GPU实测 → LLaVA部署
-
-5. ★★ AI Governance & Regulation
+2. ★★ AI Governance & Regulation
    → 为什么重要: EU AI Act+合规 → 负责任部署 → 法律框架
    → 学习路径: EU AI Act+NIST RMF+ISO 42001+合规框架
    → 预计时间: 1-2小时理论笔记
@@ -172,7 +165,7 @@
   AI Infra: ★★★★★ (最强) → 核心竞争力
   AI Theory: ★★★★★ (极强) → Scaling Laws+数学全补齐!
   AI Model Arch: ★★★★★ (极强) → VLM大幅提升! 从4→5!
-  AI Training: ★★★★ (强) → Data+Safety大幅提升! 从3→4!
+  AI Training: ★★★★★ (极强) → Data+Safety+Evaluation大幅提升! 从4→5!
   AI Applications: ★★★ (中等) → Agent+VLM大幅提升! Scientific AI仍gap
   AI Ethics: ★★★★ (强) → Safety从1→4! Governance仍gap
 
