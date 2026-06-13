@@ -119,15 +119,15 @@
 
 **Gap**: VLM, Agent系统设计, Scientific AI应用
 
-### F. AI Ethics & Safety — ★ (1/5)
+### F. AI Ethics & Safety — ★★★ (3/5) — 从1→3 大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|----------|--------|
-| AI Safety | ★ | 仅概念了解 | **大Gap** |
-| Responsible AI | ★ | 仅概念了解 | **大Gap** |
+| AI Safety | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming | 完成! |
+| Responsible AI | ★★ | 仅概念了解 | **Gap** |
 | AI Governance | ★ | 仅概念了解 | **大Gap** |
 
-**Gap**: 这是最大的知识盲区! AI专家必须了解安全、伦理、治理
+**Gap**: Safety大幅提升(从1→4)! 但Governance(合规/法规/EU AI Act)仍是大Gap
 
 ## 3. Top 5 Knowledge Gaps (Priority Order)
 
