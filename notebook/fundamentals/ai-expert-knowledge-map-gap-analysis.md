@@ -107,17 +107,17 @@
 
 **Gap**: Continual Learning从1→4! Safety从1→4! Data从2→4! 但Evaluation系统性仍需深化
 
-### E. AI Applications — ★★ (2/5)
+### E. AI Applications — ★★★ (3/5) — 从2→3 Agent+VLM大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|----------|--------|
 | NLP | ★★ | 通过benchmark间接了解 | 基础 |
-| Vision-Language | ★ | 仅概念了解 | **大Gap** |
-| Code Gen & Agent | ★★ | Claude Code使用经验 | 基础 |
+| Vision-Language | ★★★★ | CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini | 完成! |
+| Code Gen & Agent | ★★★★ | ReAct+Toolformer+Function Calling+MCP+Multi-Agent+Serving+RTX 4090+Cascade | 完成! |
 | Scientific AI | ★ | 仅概念了解 | **大Gap** |
 | AI for Systems | ★★★★ | MLSys=当前核心 | 完成 |
 
-**Gap**: VLM, Agent系统设计, Scientific AI应用
+**Gap**: Agent从2→4! VLM从1→4! 但Scientific AI仍是大Gap
 
 ### F. AI Ethics & Safety — ★★★★ (4/5) — 从1→3→4 持续大幅提升!
 
@@ -173,7 +173,7 @@
   AI Theory: ★★★★★ (极强) → Scaling Laws+数学全补齐!
   AI Model Arch: ★★★★★ (极强) → VLM大幅提升! 从4→5!
   AI Training: ★★★★ (强) → Data+Safety大幅提升! 从3→4!
-  AI Applications: ★★ (弱) → 需拓展VLM+Agent
+  AI Applications: ★★★ (中等) → Agent+VLM大幅提升! Scientific AI仍gap
   AI Ethics: ★★★★ (强) → Safety从1→4! Governance仍gap
 
   → 当前定位: AI infra specialist → 目标: broad AI expert
