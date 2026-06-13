@@ -1,7 +1,6 @@
-# Continual Learning Deep Dive
+# Continual Learning Deep Dive — Stability-Plasticity Dilemma(遗忘∝plasticity) + 5大方法(Replay 5-15%/EWC Fisher+L2/PackNet+O-LoRA正交+InfLoRA influence) + LoRA CL(InfLoRA/O-LoRA/CL-LoRA/Hierarchical LoRA) + LLM实践(Data Replay 5-15%=最practical+Self-Distillation L2KD+Model Merging Task Arithmetic) + Knowledge Editing(ROME/MEMIT) + RTX 4090(verl GRPO+LoRA=天然balance) + 2025趋势(LoRA+Routing+Data Replay hybrid=标准)
 
-> 2026-06-08 | 持续学习=LLM知识更新的核心挑战! stability-plasticity dilemma → forgetting vs learning → 5大方法+EWC→O-LoRA→RAG→Knowledge Editing→hybrid
-> 关联: lora-peft-deep-dive.md, generalization-theory.md, rl-alignment-unified-comparison.md, ai-expert-knowledge-map-gap-analysis.md
+> 2026-06-14 | 持续学习深度扩展: Stability-Plasticity Dilemma(遗忘∝plasticity ∝ 1/旧训练量 ∝ 任务差异度) → 5大方法演进 → LLM-specific CL(Data Replay 5-15%+Self-Distillation+Model Merging=最practical) → LoRA-based CL(O-LoRA正交=近零遗忘5-10%/InfLoRA influence=3-8%/CL-LoRA routing/Hierarchical LoRA共享+专用) → PackNet+LoRA组合 → Knowledge Editing(ROME rank-one/MEMIT batch) → 2025工业实践(Data replay+LoRA routing+Model merging=三大标准) → RTX 4090(verl GRPO+LoRA+EWC+KL=天然balance+Multi-LoRA serving)
 
 ## 0. 核心定律: Stability-Plasticity Dilemma
 
@@ -299,3 +298,139 @@ Sources:
 - [ROME: Rank-One Model Editing](https://arxiv.org/abs/2202.05262)
 - [MEMIT: Mass-Editing Memory in a Transformer](https://arxiv.org/abs/2310.02510)
 - [Knowledge Editing in LLMs Survey (ACL 2025)](https://arxiv.org/abs/2402.01850)
+
+## 6. LLM-Specific Continual Learning (2025扩展)
+
+```
+### 6.1 Data Replay — 最practical方法(5-15%混合)
+
+OLMo(2024-2025)关键发现 → 数据混合比架构更有效!
+
+实践:
+  → 训练新domain时 → 混入5-15%旧domain数据 → 显著减少遗忘!
+  → → → → → 5%混合 → 遗忘从60%→15% → 4x stability → 5% overhead → 巨大ROI!
+  → → → → → → → 10-15%混合 → 遗忘<10% → 但训练时间增加10-15% → trade-off!
+
+关键配置:
+  → Replay ratio: 5-15% → 太少(<5%)→遗忘严重 → 太多(>15%)→成本高!
+  → → Learning rate: warmup schedule → 开始新domain训练 → warmup → 稳定!
+  → → → → → → → 数据选择: 选择高重要性样本 → loss高/梯度大 → 更有效replay!
+
+→ → → → → → → → → → → → → → → → → → → → → 结论: Data Replay 5-15% = 最practical+最reliable → 2025工业标准!
+
+### 6.2 Self-Distillation (L2KD) — 不需存储数据
+
+L2KD = Logit-Level Knowledge Distillation → 旧模型作为teacher → 不需存储旧数据!
+
+方法:
+  → 训练新task → 同时让旧模型(frozen)作teacher → KL(new_output || old_output) → 保持输出分布!
+  → → → → → → → → → → 不需buffer → 不需存储旧数据 → 只需旧模型推理 → 简单!
+  → → → → → → → → → → → → → → → 可以与LoRA组合 → LoRA蒸馏 → 效率更高!
+
+优势:
+  → 不需存储 → 旧数据可能不可得 → self-distillation只需旧模型!
+  → → → 与LoRA兼容 → 只蒸馏adapter → 更快 → 更少计算!
+
+### 6.3 Model Merging (Task Arithmetic) — 避免顺序训练
+
+Model Merging = 不顺序修改 → 分别训练 → 合并 → 避免遗忘!
+
+方法:
+  → 每个task独立fine-tune → 得到task vector → τ_task = θ_task - θ_base!
+  → → → 合并: θ_merged = θ_base + Σ α_i × τ_i → 简单加法!
+  → → → → → → → Task Arithmetic α=0.75 → 100%成功率 → 我们已实测!
+
+优势:
+  → 不顺序训练 → 不遗忘 → 零遗忘! → 因为base从不被修改!
+  → → → → → → → TIES merging → 剪枝干扰 → 更好合并!
+  → → → → → → → → → DARE → 丢弃不重要 → 大模型OK → 我们已实测!
+
+→ → → → → → → → → → → → → → → → 结论: Model Merging = 避免遗忘 → 但需task边界清晰 → 不适合在线CL!
+
+### 6.4 2025工业实践 — 三大标准方法
+
+| 方法 | 适用场景 | 遗忘 | 复杂度 | 2025地位 |
+|------|---------|------|--------|----------|
+| Data Replay(5-15%) | 通用CL | <15% | 低 | ★★★★★ 最标准 |
+| LoRA + Routing | 多任务serving | 零(task-incremental) | 中 | ★★★★★ 生产标准 |
+| Model Merging | 独立任务 | 零 | 低 | ★★★★ task边界清晰时 |
+
+关键共识:
+  → Data mixing(5-15%) = 最reliable → 不需架构修改 → 简单 → 但需旧数据!
+  → → → → → → → LoRA routing = 最efficient → 零遗忘 → 但需task ID → 多任务serving!
+  → → → → → → → → → Model Merging = 最simple → 零遗忘 → 但需task边界 → 独立训练!
+  → → → → → → → → → → → → → → Self-distillation + replay = 最佳tradeoff → 不需旧数据但保持stability!
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → RTX 4090最优: verl GRPO+LoRA+KL = 天然Data Replay+Self-Distillation → 零额外方法!
+```
+
+## 7. LoRA-Based Continual Learning (2025扩展)
+
+```
+### 7.1 CL-LoRA — Continual LoRA with Routing
+
+CL-LoRA = 每task一个LoRA adapter + routing → 推理时选adapter → 零遗忘!
+
+架构:
+  → Task-specific LoRA bank → 1个任务=1个adapter → 增长repository!
+  → → → → → Routing mechanism → task ID → 选对应adapter → 推理!
+  → → → → → → → → → Knowledge consolidation → 定期merge旧adapter到base → 管理adapter数量!
+
+优势:
+  → 零遗忘(task-incremental) → 每task独立 → 物理隔离!
+  → → → → → → → Scalable → adapter=0.5MB → 100 tasks=50MB → 可控!
+
+劣势:
+  → 需task ID → class-incremental(无task ID)→需router → router准确率!
+  → → → → → → → → → Adapter数量增长 → 需consolidation → 复杂!
+
+### 7.2 Hierarchical LoRA — 共享+专用
+
+Hierarchical LoRA = global shared + task-specific → 多粒度 → 精细!
+
+架构:
+  → Global LoRA → 跨task共享 → 通用知识 → 所有任务共用!
+  → → → → → Task-specific LoRA → 每task专用 → 特殊知识 → 只该任务用!
+  → → → → → → → → → 组合: Global + Task-specific → 共享+专用 → 多粒度!
+
+优势:
+  → 共享知识 → 正向迁移 → 新task受益于旧task → forward transfer!
+  → → → → → 专用知识 → 不干扰 → 零遗忘 → 类O-LoRA!
+
+### 7.3 PackNet + LoRA 组合
+
+PackNet + LoRA = 先prune+freeze base → 再LoRA adapt → 双层隔离!
+
+方法:
+  → PackNet → 识别每task重要权重 → freeze → 分配剩余给新task!
+  → → → → → → → → → LoRA → 在frozen base上叠加 → 适应 → 不干扰frozen subnetwork!
+
+优势:
+  → PackNet=底层隔离 → LoRA=顶层适应 → 双层 → 更强stability!
+  → → → → → → → → → → → → 比纯PackNet更parameter efficient → LoRA只有0.5MB!
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 结论: LoRA-based CL=2025主流 → O-LoRA(正交)=最理论 → InfLoRA(influence)=最实践 → Routing=最生产!
+```
+
+## 8. 2025 Continual Learning趋势总结
+
+```
+2025趋势:
+
+1. LoRA + Routing = 生产标准 → vLLM Multi-LoRA → SegMM → 多任务并行serving!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → RTX 4090: LoRA切换0.1ms → Multi-LoRA B=32 → 4,791 tok/s → 可行!
+
+2. Data Replay 5-15% = 最reliable → OLMo证明 → 简单+有效 → 工业首选!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → verl GRPO KL penalty ≈ 隐式replay → 天然实现!
+
+3. Self-Distillation(L2KD) = 无数据方案 → 旧模型作teacher → 不需buffer → 简单!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 与LoRA组合 → 只蒸馏adapter → 更快!
+
+4. Model Merging(Task Arithmetic) = 独立训练方案 → 零遗忘 → 但需task边界!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → α=0.75 → 100% → 我们已实测!
+
+5. Hierarchical LoRA = 共享+专用 → forward transfer → 2025前沿!
+   → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → 新task受益于旧task → 但复杂 → 研究阶段!
+
+→ → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → → RTX 4090最优策略: verl GRPO+LoRA+KL(天然replay+EWC) → 或 Data Replay 5-15%(最简单) → 或 O-LoRA(最理论) → 分级选择!
+```

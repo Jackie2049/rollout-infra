@@ -103,9 +103,9 @@
 | Data Pipeline | ★★★★ | MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall | 完成! |
 | Evaluation | ★★★ | eval跑过(但不够系统) | 进行中 |
 | Safety & Red-team | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming+Llama Guard 3 | 完成! |
-| Continual Learning | ★ | 仅概念了解 | **大Gap** |
+| Continual Learning | ★★★★ | EWC+O-LoRA+InfLoRA+Replay+Knowledge Editing+Data Replay+Self-Distillation+LoRA Routing | 完成! |
 
-**Gap**: Data Pipeline从2→4! Safety从1→4! 但Continual Learning仍是gap
+**Gap**: Continual Learning从1→4! Safety从1→4! Data从2→4! 但Evaluation系统性仍需深化
 
 ### E. AI Applications — ★★ (2/5)
 
@@ -136,27 +136,21 @@
   ✅ Scaling Laws → ★★→★★★★ (Chinchilla+Inference+Data+Serving全链路)
   ✅ AI Safety → ★→★★★★ (Defense-in-Depth+OWASP+Guardrails+Red-Teaming)
   ✅ Data Pipeline → ★★→★★★★ (MinHash+Quality+DoReMi+Contamination+Synthetic+Data Wall)
+  ✅ Multimodal VLM → ★→★★★★ (CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini)
+  ✅ Continual Learning → ★→★★★★ (EWC+O-LoRA+InfLoRA+Replay+Data Replay+Self-Distillation)
 
 当前top 5 gap:
-1. ★★★★ Continual Learning
-   → 为什么重要: 模型持续学习 → 不遗忘 → 生产必须!
-   → 学习路径: EWC+L2+progressive networks+LoRA continual
-   → 预计时间: 1-2小时理论笔记
+1. ★★★ CUTLASS实践深化
+   → 为什么重要: CUDA kernel开发进阶 → production kernel → GPU可用时做!
 
-2. ★★★ CUTLASS实践深化
-   → 为什么重要: CUDA kernel开发进阶 → production kernel
-   → 学习路径: 实际编写SM89 GEMM kernel + epilogue fusion
-   → 预计时间: GPU实验2-3小时
-
-3. ★★★ Agent系统设计
+2. ★★★ Agent系统设计
    → 为什么重要: Agent是AI应用主流 → 工具调用+规划+执行
-   → 学习路径: ReAct+Toolformer+LangChain+AutoGPT架构
-   → 预计时间: 2-3小时理论笔记
+
+3. ★★★ Evaluation系统性深化
+   → 为什么重要: 评估是训练最重要环节 → 需benchmark设计+自动化
 
 4. ★★★ Multimodal实践(GPU实测)
-   → 为什么重要: 理论完成(4/5) → 但需GPU实测 → LLaVA部署+Phi-3.5-Vision推理
-   → 学习路径: vLLM multimodal部署 + Phi-3.5-Vision推理benchmark
-   → 预计时间: GPU实验2-3小时
+   → 为什么重要: 理论完成 → 但需GPU实测 → LLaVA部署
 
 5. ★★ AI Governance & Regulation
    → 为什么重要: EU AI Act+合规 → 负责任部署 → 法律框架
