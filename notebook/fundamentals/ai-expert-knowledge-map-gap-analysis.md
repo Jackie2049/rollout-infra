@@ -119,15 +119,15 @@
 
 **Gap**: Agent从2→4! VLM从1→4! 但Scientific AI仍是大Gap
 
-### F. AI Ethics & Safety — ★★★★ (4/5) — 从1→3→4 持续大幅提升!
+### F. AI Ethics & Safety — ★★★★★ (5/5) — 从1→3→4→5 持续大幅提升!
 
 | Sub-domain | Depth | Practice | Status |
 |-----------|-------|----------|--------|
 | AI Safety | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming+Llama Guard 3 | 完成! |
-| Responsible AI | ★★ | 仅概念了解 | **Gap** |
-| AI Governance | ★ | 仅概念了解 | **大Gap** |
+| Responsible AI | ★★★★ | Fairness+Calibration+Toxicity+Bias评估+7维+Production Pipeline | 完成! |
+| AI Governance | ★★★★ | EU AI Act+NIST RMF+ISO 42001+China 3法规+全球比较+合规Pipeline | 完成! |
 
-**Gap**: Safety从1→4(3级跳跃)! Data从2→4! 但Governance(合规/法规/EU AI Act)仍是大Gap
+**Gap**: Safety从1→4! Governance从1→4(3级跳跃)! Responsible从2→4! 全部大幅提升!
 
 ## 3. Top 5 Knowledge Gaps (Priority Order) — Updated 06-14
 
@@ -141,12 +141,20 @@
   ✅ Agent Systems → ★★→★★★★ (ReAct+Toolformer+MCP+Multi-Agent+Serving+Cascade+RTX 4090)
   ✅ Evaluation → ★★★→★★★★ (MMLU-Pro+GPQA+SWE-bench+IFEval+LiveBench+ARC-AGI+HELM+lm-eval+Arena+Calibration+Robustness+Fairness+Contamination)
 
-当前top 5 gap:
+  ✅ AI Governance → ★→★★★★ (EU AI Act+NIST RMF+ISO 42001+China法规+全球比较+合规Pipeline)
+
+当前top 3 gap:
 1. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel → GPU可用时做!
 
-2. ★★ AI Governance & Regulation
-   → 为什么重要: EU AI Act+合规 → 负责任部署 → 法律框架
+2. ★★ Scientific AI
+   → 为什么重要: AI+科学 → 药物+材料+数学 → 跨领域创新
+   → 学习路径: AlphaFold+材料AI+AI数学 → 理论笔记
+   → 预计时间: 1-2小时理论笔记
+
+3. ★★ NLP深度理解
+   → 为什么重要: NLP是AI应用基础 → 生成+理解+推理
+   → 学习路径: NLP基础+注意力+Transformer理论 → 系统化
    → 学习路径: EU AI Act+NIST RMF+ISO 42001+合规框架
    → 预计时间: 1-2小时理论笔记
 ```
@@ -167,7 +175,7 @@
   AI Model Arch: ★★★★★ (极强) → VLM大幅提升! 从4→5!
   AI Training: ★★★★★ (极强) → Data+Safety+Evaluation大幅提升! 从4→5!
   AI Applications: ★★★ (中等) → Agent+VLM大幅提升! Scientific AI仍gap
-  AI Ethics: ★★★★ (强) → Safety从1→4! Governance仍gap
+  AI Ethics: ★★★★★ (极强) → Safety从1→4→Governance从1→4→Responsible从2→4! 从4→5!
 
   → 当前定位: AI infra specialist → 目标: broad AI expert
   → 短期策略: 补Application gap(VLM+Agent) + CUTLASS实践
