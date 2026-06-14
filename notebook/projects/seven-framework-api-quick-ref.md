@@ -21,7 +21,7 @@
 
 **定位**: ZeRO distributed training — offload optimizer states to CPU/NVMe
 
-**内存公式**: `ZeRO-1: 4Ψ+(12+K)Ψ/N | ZeRO-2: 4Ψ+(12+K+2)Ψ/N | ZeRO-3: (16+K)Ψ/N`
+**内存公式**: `ZeRO-1: 4Ψ+(12+K)Ψ/N | ZeRO-3: (16+K)Ψ/N | ZeRO-Infinity: ≈2Ψ_layer(只持当前层!)`
 
 **RTX 4090建议**: 7B ZeRO-2+CPU Adam+BF16 → 有效; ZeRO-3慢(offload开销); 单GPU用verl更好
 
@@ -32,13 +32,13 @@
 | ZeRO-2配置 | `{"zero_optimization": {"stage": 2}}` | 分片optimizer+gradients, 通信=ReduceScatter |
 | ZeRO-3配置 | `{"zero_optimization": {"stage": 3}}` | 分片optimizer+grad+params, 通信=AllGather+ReduceScatter |
 | CPU Offload | `{"zero_optimization": {"offload_optimizer": {"device": "cpu"...` | ZeRO-2/3 offload optimizer到CPU |
-| NVMe Offload | `{"zero_optimization": {"offload_optimizer": {"device": "nvme...` | ZeRO-Infinity: offload到NVMe SSD |
+| NVMe Offload | `{"zero_optimization": {"offload_optimizer": {"device": "nvme...` | ZeRO-Infinity: offload到NVMe SSD → 支撑任意大模型! |
+| NVMe参数Offload | `{"zero_optimization": {"offload_param": {"device": "nvme"}}}` | 参数分片也offload到NVMe → GPU≈0 |
 | 混合精度 | `{"bf16": {"enabled": true}}` | BF16唯一正确训练精度 |
 | 梯度检查点 | `{"activation_checkpointing": {"partition_activations": true}...` | ZeRO-3配合activation partition |
-| DeepSpeed Engine | `engine = deepspeed.initialize(...)[0]` | 返回DeepSpeedEngine实例 |
+| Prefetch配置 | `param_persistent_threshold=100000` | 小参数常驻GPU(ds_persist) → 省AllGather |
+| AllGather Coalesced | `自动: 多参数合并1次AllGather → O(1)通信` | PartitionedParameterCoordinator自动处理 |
 | 训练step | `engine.step()` | 替代optimizer.step() |
-| 保存checkpoint | `engine.save_checkpoint(save_dir)` | ZeRO-3保存需gather参数 |
-| 加载checkpoint | `engine.load_checkpoint(load_dir)` | ZeRO-3加载需broadcast参数 |
 
 ---
 
