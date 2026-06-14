@@ -1,0 +1,213 @@
+{
+  "decode_heavy": {
+    "normal": {
+      "mode": "normal",
+      "total_iters": 500,
+      "total_time_ms": 5387.4,
+      "total_tokens": 59000,
+      "throughput_tok_per_s": 10951.48,
+      "gpu_utilization_pct": 51.86,
+      "avg_iter_time_ms": 10.77,
+      "avg_gpu_idle_ms": 5.19,
+      "avg_war_barrier_ms": 0.0
+    },
+    "overlap": {
+      "mode": "overlap",
+      "total_iters": 500,
+      "total_time_ms": 3818.76,
+      "total_tokens": 59000,
+      "throughput_tok_per_s": 15450.03,
+      "gpu_utilization_pct": 70.83,
+      "avg_iter_time_ms": 7.64,
+      "avg_gpu_idle_ms": 2.03,
+      "avg_war_barrier_ms": 0.13
+    },
+    "throughput_improvement": 1.411
+  },
+  "prefill_heavy": {
+    "normal": {
+      "mode": "normal",
+      "total_iters": 500,
+      "total_time_ms": 20214.72,
+      "total_tokens": 59000,
+      "throughput_tok_per_s": 2918.67,
+      "gpu_utilization_pct": 87.22,
+      "avg_iter_time_ms": 40.43,
+      "avg_gpu_idle_ms": 5.17,
+      "avg_war_barrier_ms": 0.0
+    },
+    "overlap": {
+      "mode": "overlap",
+      "total_iters": 500,
+      "total_time_ms": 18540.64,
+      "total_tokens": 59000,
+      "throughput_tok_per_s": 3182.2,
+      "gpu_utilization_pct": 94.58,
+      "avg_iter_time_ms": 37.08,
+      "avg_gpu_idle_ms": 2.01,
+      "avg_war_barrier_ms": 0.13
+    },
+    "throughput_improvement": 1.09
+  },
+  "mixed": {
+    "normal": {
+      "mode": "normal",
+      "total_iters": 500,
+      "total_time_ms": 11733.42,
+      "total_tokens": 59000,
+      "throughput_tok_per_s": 5028.37,
+      "gpu_utilization_pct": 73.98,
+      "avg_iter_time_ms": 23.47,
+      "avg_gpu_idle_ms": 6.11,
+      "avg_war_barrier_ms": 0.0
+    },
+    "overlap": {
+      "mode": "overlap",
+      "total_iters": 500,
+      "total_time_ms": 9777.7,
+      "total_tokens": 59000,
+      "throughput_tok_per_s": 6034.14,
+      "gpu_utilization_pct": 89.28,
+      "avg_iter_time_ms": 19.56,
+      "avg_gpu_idle_ms": 2.06,
+      "avg_war_barrier_ms": 0.1
+    },
+    "throughput_improvement": 1.2
+  },
+  "overlap_disable_sweep": [
+    {
+      "disable_overlap_rate": 0.0,
+      "throughput_tok_per_s": 10390.34,
+      "gpu_utilization_pct": 87.04,
+      "avg_gpu_idle_ms": 1.39
+    },
+    {
+      "disable_overlap_rate": 0.05,
+      "throughput_tok_per_s": 9788.7,
+      "gpu_utilization_pct": 85.37,
+      "avg_gpu_idle_ms": 1.7
+    },
+    {
+      "disable_overlap_rate": 0.15,
+      "throughput_tok_per_s": 9647.71,
+      "gpu_utilization_pct": 82.26,
+      "avg_gpu_idle_ms": 2.08
+    },
+    {
+      "disable_overlap_rate": 0.25,
+      "throughput_tok_per_s": 8964.47,
+      "gpu_utilization_pct": 77.05,
+      "avg_gpu_idle_ms": 2.95
+    },
+    {
+      "disable_overlap_rate": 0.5,
+      "throughput_tok_per_s": 8197.38,
+      "gpu_utilization_pct": 70.99,
+      "avg_gpu_idle_ms": 4.15
+    },
+    {
+      "disable_overlap_rate": 0.75,
+      "throughput_tok_per_s": 7581.13,
+      "gpu_utilization_pct": 65.19,
+      "avg_gpu_idle_ms": 5.41
+    },
+    {
+      "disable_overlap_rate": 1.0,
+      "throughput_tok_per_s": 7189.3,
+      "gpu_utilization_pct": 59.36,
+      "avg_gpu_idle_ms": 6.67
+    }
+  ],
+  "gpu_cpu_ratio_sweep": [
+    {
+      "gpu_cpu_ratio": 0.4,
+      "gpu_time_ms": 2.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 14763.04,
+      "overlap_throughput": 18554.9,
+      "improvement": 1.257,
+      "normal_gpu_util": 25.1,
+      "overlap_gpu_util": 31.38
+    },
+    {
+      "gpu_cpu_ratio": 0.8,
+      "gpu_time_ms": 4.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 11828.21,
+      "overlap_throughput": 17501.54,
+      "improvement": 1.48,
+      "normal_gpu_util": 40.17,
+      "overlap_gpu_util": 59.49
+    },
+    {
+      "gpu_cpu_ratio": 1.2,
+      "gpu_time_ms": 6.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 9872.34,
+      "overlap_throughput": 15113.98,
+      "improvement": 1.531,
+      "normal_gpu_util": 50.6,
+      "overlap_gpu_util": 76.99
+    },
+    {
+      "gpu_cpu_ratio": 1.6,
+      "gpu_time_ms": 8.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 8405.9,
+      "overlap_throughput": 12093.93,
+      "improvement": 1.439,
+      "normal_gpu_util": 57.33,
+      "overlap_gpu_util": 82.01
+    },
+    {
+      "gpu_cpu_ratio": 2.0,
+      "gpu_time_ms": 10.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 7397.72,
+      "overlap_throughput": 10154.49,
+      "improvement": 1.373,
+      "normal_gpu_util": 62.8,
+      "overlap_gpu_util": 85.74
+    },
+    {
+      "gpu_cpu_ratio": 3.0,
+      "gpu_time_ms": 15.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 5615.3,
+      "overlap_throughput": 7054.63,
+      "improvement": 1.256,
+      "normal_gpu_util": 71.32,
+      "overlap_gpu_util": 89.64
+    },
+    {
+      "gpu_cpu_ratio": 4.0,
+      "gpu_time_ms": 20.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 4545.6,
+      "overlap_throughput": 5426.0,
+      "improvement": 1.194,
+      "normal_gpu_util": 76.73,
+      "overlap_gpu_util": 92.2
+    },
+    {
+      "gpu_cpu_ratio": 6.0,
+      "gpu_time_ms": 30.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 3288.73,
+      "overlap_throughput": 3695.14,
+      "improvement": 1.124,
+      "normal_gpu_util": 83.32,
+      "overlap_gpu_util": 94.02
+    },
+    {
+      "gpu_cpu_ratio": 10.0,
+      "gpu_time_ms": 50.0,
+      "cpu_time_ms": 5.0,
+      "normal_throughput": 2107.19,
+      "overlap_throughput": 2288.25,
+      "improvement": 1.086,
+      "normal_gpu_util": 89.31,
+      "overlap_gpu_util": 96.33
+    }
+  ]
+}
