@@ -205,3 +205,151 @@ actor_rollout_ref:
 self.checkpoint_manager.update_weights(self.global_steps)
 ```
 支持三种后端: naive (保存+加载) / NCCL (直接传输) / NIXL (RDMA)
+
+---
+
+## 12. GRPO Advantage 源码级深度 (core_algos.py line 267-358)
+
+### Outcome vs Process Reward
+
+verl GRPO 主要用 **outcome reward**:
+```python
+scores = token_level_rewards.sum(dim=-1)  # 每序列: sum所有token reward → 1 scalar
+# outcome: 只EOS位置非零 → sum = 该序列的最终reward
+```
+
+### `compute_grpo_outcome_advantage` (line 267-331) — loop版本
+
+```python
+for each group g (identified by uid):
+    μ_g = mean(scores in group g)
+    σ_g = std(scores in group g)  # or 1.0 for singleton group
+    for each sample i in group g:
+        if norm_adv_by_std_in_grpo:    # default=True → 原始GRPO公式
+            scores[i] = (scores[i] - μ_g) / (σ_g + ε)
+        else:                           # Dr.GRPO variant
+            scores[i] = scores[i] - μ_g  # 只减均值, 不除std
+
+advantages = scores.unsqueeze(-1) * response_mask  # scalar broadcast到所有tokens
+```
+
+关键:
+- Singleton (n=1): μ=0, σ=1 → advantage=raw reward → 无normalization
+- advantage是scalar per sequence → broadcast到所有response tokens
+- `norm_adv_by_std_in_grpo=True` → 标准GRPO; `False` → Dr.GRPO
+
+### `compute_grpo_vectorized_outcome_advantage` (line 334-358) — 纯PyTorch版
+
+```python
+g = as_torch_index(uid)          # UUIDs → contiguous 0..G-1
+mean_g, std_g, _ = group_mean_std(scores, g)  # scatter-add, 无Python loop!
+
+if norm_adv_by_std_in_grpo:
+    scalars = (scores - mean_g[g]) / (std_g[g] + ε)
+else:
+    scalars = scores - mean_g[g]
+advantages = scalars.unsqueeze(-1) * response_mask
+```
+
+**`group_mean_std` (groupwise.py line 164)**: 纯PyTorch scatter
+- `torch.zeros(G).index_add_(0, gidx, values)` → sum + sum_sq
+- `count.clamp_min(1)` → mean; `(count-1).clamp_min(1)` → Bessel-corrected variance
+- Singleton fallback: mean=0, std=1
+
+---
+
+## 13. KL Penalty 详细类型 (core_algos.py line 2126)
+
+| Type | 公式 | 特性 |
+|------|------|------|
+| `kl` / `k1` | `logprob - ref_logprob` | 简单log-ratio |
+| `abs` | `|logprob - ref_logprob|` | 绝对差 |
+| `mse` / `k2` | `0.5*(logprob-ref)^2` | **无偏梯度** |
+| `low_var_kl` / `k3` | `exp(ref-log) - (ref-log) - 1` | **低方差估计**(clipped) |
+| `k3+` / `k1+` | fwd用k1/k3值+bwd用k2梯度 | Straight-through trick |
+
+默认: `use_kl_in_reward=False`, `use_kl_loss=True`, `kl_loss_coef=0.001`, `kl_loss_type=low_var_kl`
+
+---
+
+## 14. PPO-Clip + Dual-Clip Loss (core_algos.py line 1279)
+
+```python
+ratio = exp(log_prob - old_log_prob)  # importance ratio
+
+pg_losses1 = -advantages * ratio              # unclipped
+pg_losses2 = -advantages * clip(ratio, 1-ε, 1+ε)  # clipped
+clip_pg_losses1 = max(pg_losses1, pg_losses2)      # PPO-clip
+
+# Dual-clip (负advantage时防止ratio过小):
+pg_losses3 = -advantages * clip_ratio_c     # c > 1.0 (默认3.0)
+clip_pg_losses2 = min(pg_losses3, clip_pg_losses1)
+
+pg_losses = where(advantages < 0, clip_pg_losses2, clip_pg_losses1)
+```
+
+Dual-clip来源: https://arxiv.org/pdf/1912.09729 → 防止负advantage时ratio过小
+
+IS weights可选: `pg_losses * rollout_is_weights`
+
+---
+
+## 15. Loss Aggregation 四模式 (core_algos.py line 1138)
+
+| Mode | 计算 | 使用场景 |
+|------|------|----------|
+| `token-mean` | Sum所有masked / batch_num_tokens | **verl GRPO默认** |
+| `seq-mean-token-sum` | Sum per seq → mean across seqs | - |
+| `seq-mean-token-sum-norm` | 同上 / loss_scale_factor | **Dr.GRPO** (防length bias) |
+| `seq-mean-token-mean` | Mean per seq → mean across seqs | 原始论文, verl警告不稳定 |
+
+---
+
+## 16. GRPO 变体详解
+
+### Dr.GRPO (`norm_adv_by_std_in_grpo=False`)
+- 只mean-centering → 不除std → 消除length bias
+- 配合 `loss_agg_mode=seq-mean-token-sum-norm` + `use_kl_loss=False`
+
+### GRPO-passk (`adv_estimator=grpo_passk`)
+- 只有best response per group有非零advantage: `r_max - r_second_max`
+- 其他completions advantage=0
+
+### GDPO (Group reward-Decoupled Normalization)
+- 每reward维度独立normalization → weighted sum
+- 需要 `gdpo_reward_keys` (如 ["format_reward", "accuracy_reward"])
+- reward function返回per-dimension scores
+
+### GSPO loss
+- Geometric-mean sequence-level importance ratio
+- `s_i = (π_θ/π_old)^{1/|y_i|}` (length-normalized)
+- combined ratio = `sg[s_i] * ratio_token / sg[ratio_token]`
+- 推荐 `loss_agg_mode=seq-mean-token-mean`
+
+### Vectorized GRPO (`grpo_vectorized`)
+- Python loop → pure PyTorch scatter (`index_add_`) → 大batch更快
+
+### Filter Groups (DAPO)
+- `FilterGroupsConfig`: 过滤group by metric (acc/score/seq_reward)
+- `max_num_gen_batches` 控制上限
+- DAPO reward manager: overlong response penalties
+
+---
+
+## 17. Rollout Correction System
+
+- **2-policy bypass**: `π_rollout = π_old` (同一policy生成+训练)
+- **3-policy decoupled**: `π_rollout` (生成), `π_old` (PPO参考), `π_θ` (当前训练)
+- IS weights: token-level or sequence-level importance sampling
+- Rejection sampling: k1/k2/k3/geometric 配置
+
+---
+
+## 18. Balance Batch & Dynamic BSZ
+
+```python
+# trainer.balance_batch=True → 重新分配数据跨DP ranks → 等化valid token counts
+# → 改变data order但uid-based advantage不受影响
+
+# use_dynamic_bsz=True → 调整per-GPU micro-batch size → 防variable-length OOM
+```

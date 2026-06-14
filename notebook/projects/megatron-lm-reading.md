@@ -195,28 +195,228 @@ GPU3: Chunk3(L9-11), Chunk7(L21-23)
 - 需要更多 P2P 通信 (2x)
 - 适合高带宽互连 (NVLink)
 
-### P2P 通信 (`p2p_communication.py`)
+### P2P 通信 (`p2p_communication.py`, 667行) — 源码级深度
+
+#### P2PCommunicator 核心架构
 
 ```python
 class P2PCommunicator:
-    """Pipeline stage 间的点对点通信"""
+    pp_group: ProcessGroup           # PP进程组
+    next_rank: int                   # 下一个stage的global rank
+    prev_rank: int                   # 前一个stage的global rank
+    virtual_pipeline_model_parallel_size: int  # VP size
 
-    # 三种通信模式:
-    # 1. ring_exchange: 最快，单个集合操作
-    # 2. batched_p2p: 批量 P2P，减少小包开销
-    # 3. individual: 逐个 send/recv
+    # 核心: _communicate() (line 275-421) — 所有P2P方法的基础
+    # 参数: tensor_send_next/tensor_send_prev + recv_prev/recv_next + tensor_shape
+```
 
-    def recv_forward(self, recv_prev, ...):
-        """从前一个 stage 接收激活"""
+#### 通信模式
 
-    def send_forward(self, output_tensor, ...):
-        """发送激活到下一个 stage"""
+| 模式 | 实现 | 特性 |
+|------|------|------|
+| `_batched_p2p_ops` | `torch.distributed.batch_isend_irecv()` | 所有send/recv一次batch → config.batch_p2p_comm=True |
+| `_p2p_ops` | 逐个`isend`/`irecv` | Even rank:先send→后recv; Odd rank:先recv→后send → 避免deadlock |
+| Two-group trick | PP group + WORLD group | PP=2时用两个不同communicator → NCCL真正overlap |
 
-    def recv_backward(self, recv_next, ...):
-        """从后一个 stage 接收梯度"""
+#### 9种P2P方法
 
-    def send_backward(self, input_tensor_grad, ...):
-        """发送梯度到前一个 stage"""
+| 方法 | Send方向 | Recv方向 | 使用场景 |
+|------|----------|----------|----------|
+| `recv_forward` | None | prev(fwd) | Warmup forward recv |
+| `recv_backward` | None | next(bwd) | Cooldown backward recv |
+| `send_forward` | next(fwd) | None | Warmup forward send |
+| `send_backward` | prev(bwd) | None | Cooldown backward send |
+| `send_forward_recv_backward` | next(fwd) | next(bwd) | 1F1B steady: 发fwd收bwd |
+| `send_backward_recv_forward` | prev(bwd) | prev(fwd) | 1F1B steady: 发bwd收fwd |
+| `send_forward_recv_forward` | next(fwd) | prev(fwd) | Interleaved warmup |
+| `send_backward_recv_backward` | prev(bwd) | next(bwd) | Interleaved cooldown |
+| `send_fwd_bwd_recv_fwd_bwd` | both | both | Interleaved steady(无overlap): 一次batched call |
+
+#### Shape Communication (动态序列长度)
+
+```
+variable_seq_lengths=True时:
+1. 先发送shape: 创建int64 tensor size=3 (编码维度)
+2. ring_exchange/batch_isend_irecv 交换shape
+3. cuda.synchronize() → 确保shape可用
+4. 接收方用学到的shape allocate empty tensor
+5. 再发送/接收实际数据
+
+→ 支持不同microbatch有不同序列长度!
+```
+
+#### Receive Buffer Allocation
+
+```python
+# 接收tensor分配为requires_grad=True → autograd graph跨stage!
+recv_buffer = torch.empty(shape, requires_grad=True, dtype=pipeline_dtype, device="cuda")
+```
+
+### 1F1B Without Interleaving (schedules.py, line 2092-2462) — 源码级
+
+#### 三阶段详细流程
+
+**Phase 1: Warmup** (num_warmup = PP-1-rank, 最多PP-1)
+
+```
+for i in range(num_warmup_microbatches):
+    input_tensor = recv_forward()     # 从前stage接收激活
+    output_tensor = forward_step()    # 本stage forward计算
+    send_forward(output_tensor)       # 发送到后stage
+    deallocate_output_tensor()        # 释放output.data→1元素scalar!
+    → 只有forward方向P2P, 无backward通信
+```
+
+**Phase 2: 1F1B Steady** (num_remaining = M - num_warmup)
+
+```
+for i in range(num_microbatches_remaining):
+    forward_step(input_tensor)        # 1个forward
+    send_forward_recv_backward()      # 同时: 发fwd输出+收bwd梯度 → 通信减半!
+    backward_step(pop oldest)         # 1个backward
+    send_backward_recv_forward()      # 同时: 发bwd梯度+收fwd输入 → 通信减半!
+    → 每个iteration: 1 forward + 1 backward
+    → 通信overlap: send+recv同时进行
+```
+
+**Phase 3: Cooldown** (drain pipeline, num_warmup步)
+
+```
+for i in range(num_warmup_microbatches):
+    recv_backward()                   # 从后stage收梯度
+    backward_step(pop oldest)         # backward计算
+    send_backward()                   # 发梯度到前stage
+    → 只有backward方向P2P
+```
+
+#### 气泡分析
+
+```
+气泡大小 = 2*(PP-1)/M
+  warmup: PP-1步forward无backward (stage 0视角)
+  cooldown: PP-1步backward无forward (最后stage视角)
+  → 总idle = (PP-1)*(fwd_time+bwd_time)
+```
+
+### Interleaved 1F1B (schedules.py, line 949-2057) — 源码级
+
+#### Virtual Pipeline Model
+
+```
+PP=2, VP=2:
+GPU 0: chunk_0(early layers) + chunk_1(mid layers)
+GPU 1: chunk_2(later mid) + chunk_3(late layers)
+
+Forward路径: chunk_0(GPU0) → chunk_1(GPU0) → chunk_2(GPU1) → chunk_3(GPU1)
+→ P2P只在PP boundary(chunk_1→chunk_2)
+```
+
+#### Warmup公式 (更复杂!)
+
+```python
+num_warmup = (PP - rank - 1) * 2  # 管线填充×2(每个microbatch穿PP stage两次)
+num_warmup += (num_model_chunks - 1) * microbatch_group_size_per_vp_stage  # VP深度buffer
+if moe_overlap: num_warmup += 1
+```
+
+#### Schedule Table
+
+```
+schedule_table[virtual_microbatch_id] → (microbatch_id, model_chunk_id)
+Example PP=2, VP=2, M=5:
+v_id:  0 1 2 3 4 5 6 7 8 9
+m_id:  0 1 2 0 1 2 3 4 3 4
+c_id:  0 0 0 1 1 1 0 0 1 1
+→ 每组先chunk_0再chunk_1 → 多次穿越PP boundary
+```
+
+#### 通信Overlap机制 (Interleaved独有!)
+
+```
+steady state with overlap_p2p_comm:
+  pp_pre_forward:  wait on posted recv handle (sync recv before compute)
+  pp_post_forward: async send_fwd_recv_fwd for next iteration (overlap!)
+  pp_pre_backward: wait on posted recv handle for backward
+  pp_post_backward: async send_bwd_recv_bwd for next backward
+
+  fwd_recv_buffer: size = microbatch_group_size_per_vp_stage - PP + 1 (leading stage)
+  bwd_recv_buffer: same size
+  → 通信与计算overlap → NVLink高带宽场景最有效
+```
+
+#### 气泡缩减
+
+```
+Interleaved气泡 = 2*(PP-1)/(M*VP)
+  vs Non-interleaved = 2*(PP-1)/M
+  → 气泡减少VP倍!
+
+  约束: microbatch_group_size_per_vp_stage >= PP
+  M % microbatch_group_size_per_vp_stage >= PP or == 0
+```
+
+### 通信模式对比表
+
+| 阶段 | Non-Interleaved | Interleaved(无overlap) | Interleaved(overlap) |
+|------|-----------------|----------------------|---------------------|
+| Warmup | recv_fwd+send_fwd | send_fwd_recv_fwd | async send_fwd_recv_fwd+buffers |
+| Steady 1F1B | send_fwd_recv_bwd+send_bwd_recv_fwd | send_fwd_bwd_recv_fwd_bwd(batched) | pre/post hooks+async handles |
+| Cooldown | recv_bwd+send_bwd | send_bwd_recv_bwd | async send_bwd_recv_bwd+buffers |
+| 气泡 | 2*(PP-1)/M | 2*(PP-1)/(M*VP) | 2*(PP-1)/(M*VP) |
+
+### Deallocate Output Tensor (line 157-188)
+
+```python
+def deallocate_output_tensor(out, deallocate_pipeline_outputs=False):
+    if out is None or not deallocate_pipeline_outputs:
+        return
+    # 只保留grad_fn → autograd graph跨stage
+    # 释放实际data → 省[seq,batch,hidden]大小的内存!
+    out.data = torch.empty((1,), device=out.device, dtype=out.dtype)
+    # 断言: out._base is None → 不能是view!
+```
+
+### Custom Backward Function (line 190-219)
+
+```python
+def custom_backward(output, grad_output):
+    # 为什么需要? deallocate后output shape=(1,)但grad_output shape=(seq,batch,hidden)
+    # torch.autograd.backward()检查shape匹配 → 会报错!
+    # C++ engine (Variable._execution_engine.run_backward) 不检查shape → 直接用grad_fn链
+    Variable._execution_engine.run_backward(
+        tensors=(output,),
+        grad_tensors=(grad_output,),
+        keep_graph=False, create_graph=False,
+        inputs=tuple(), allow_unreachable=True, accumulate_grad=True,
+    )
+```
+
+### ScheduleNode (utils.py, MoE overlap)
+
+```
+ScheduleNode: 每个node有自己的CUDA stream + event
+stream_acquire_context: wait event → run on stream → record event → 跨stream依赖
+free_input flag: forward后立即释放input storage → input.untyped_storage().resize_(0)
+→ combined_1f1b path: MoE overlap调度
+```
+
+### Grad Sync管理
+
+```
+disable_grad_sync()/enable_grad_sync():
+  warmup和1F1B期间 → grad sync disabled → 避免不必要的synchronization
+  只在最后iteration启用 → DP AllReduce/ReduceScatter只在训练末尾执行
+  grad_sync_func/param_sync_func: 允许overlap grad/param sync与compute
+```
+
+### RTX 4090 PP影响
+
+```
+RTX 4090 + PP:
+  - PCIe inter-GPU: ~12GB/s (vs NVLink 300+GB/s) → P2P通信瓶颈严重
+  - PP=2: 气泡=2*(1)/M → M=4时50%气泡 → 加上PCIe延迟更糟
+  - Interleaved PP=2,VP=2: 气泡减半但2x P2P → PCIe更慢
+  - 结论: RTX 4090不适合PP → 单GPU最优(PP=1)
 ```
 
 ### 关键优化
