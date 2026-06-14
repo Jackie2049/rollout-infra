@@ -311,12 +311,149 @@ RTX 4090最优rLLM配置:
     - rejection sampling multiplier=1(省rollout次数)
 ```
 
-## 6. 下一步
+## 6. TinkerBackend 深度实现 (450行)
+
+> 源码: _temp_rllm/rllm/trainer/tinker/tinker_backend.py + tinker_policy_trainer.py (452行)
+
+### 6.1 核心架构
+
+```
+TinkerBackend(BackendProtocol[Iterable, list[tinker.Datum]]):
+  name = "tinker"
+  requires_loop = True  ← 使用async操作 → 需event loop
+
+  关键组件:
+    service_client: tinker.ServiceClient(base_url) ← Tinker API客户端
+    policy_trainer: TinkerPolicyTrainer ← 前向反向+optimizer
+    sampling_client: tinker.SamplingClient ← 推理采样(权重同步!)
+    rollout_engine: TinkerEngine ← 推理引擎(in-process)
+```
+
+### 6.2 LoRA Training Client 初始化
+
+```
+TinkerPolicyTrainer.initialize_async():
+
+  从零开始:
+    training_client = service_client.create_lora_training_client_async(
+      base_model = config.model.name,     ← 如 Qwen3-8B
+      rank = config.model.lora_rank,      ← LoRA rank
+      train_unembed = True,               ← 训练输出层?
+      train_attn = True,                  ← 训练attention层?
+      train_mlp = True,                   ← 训练MLP层?
+    )
+    → 自动创建LoRA adapter → 保存权重 → 返回sampling_client
+
+  恢复训练(resume):
+    training_client = service_client.create_training_client_from_state_async(state_path)
+    sampling_client = create_sampling_client(sampler_path)
+    → 从checkpoint恢复 → 包括dataloader状态!
+```
+
+### 6.3 Loss Function Auto-Mapping
+
+```
+ADV_TO_LOSS_FN_AUTO_MAP:
+  GRPO            → "ppo"             ← PPO loss with clipped advantages
+  RLOO            → "importance_sampling" ← IS correction
+  REINFORCE       → "importance_sampling"
+  REINFORCE++     → "importance_sampling"
+
+TINKER_KNOWN_LOSSES = {"importance_sampling", "ppo", "cispo", "dro", "cross_entropy"}
+
+→ 5种loss function → tinker API提供 → 用户不需要手写!
+→ GRPO用PPO loss(clipped) → 不是IS loss → 这与verl不同!
+```
+
+### 6.4 Advantage → Forward-Backward 流程
+
+```
+TinkerBackend特殊: advantage计算在process_backend_batch内完成!
+
+  compute_advantages → 只是存储algorithm_config!
+    self._algorithm_config = algorithm_config
+
+  process_backend_batch → 实际流程:
+    1. TinkerPolicyTrainer.forward_backward_from_trajectory_groups():
+       a) transform_trajectory_groups_to_datums() ← 优势计算在这里!
+       b) _get_forward_backward_futures() → async forward-backward
+       c) asyncio.gather(*fwd_bwd_futures) → 等待完成
+       d) 提取logprobs + server metrics
+
+    2. 两种模式:
+       - 不fused: forward_backward → 优化器步骤分开
+       - fused: 融合前向、反向、优化器步骤 → 1次async → 减少round-trip!
+```
+
+### 6.5 Mask处理
+
+```
+_remove_mask(datum) → 前向反向前移除mask:
+
+  Datum = tinker.Datum(
+    model_input = ...,
+    loss_fn_inputs = {...所有字段, 不含mask},
+  )
+
+→ Mask只在advantage计算时使用 → forward_backward不需要mask
+→ tinker API不接受mask参数 → 优势在transform阶段已baked into loss_fn_inputs!
+```
+
+### 6.6 Weight Sync机制
+
+```
+on_policy_updated → 关键权重同步流程:
+
+  1. policy_trainer.save_checkpoint_and_get_sampling_client(global_step, do_save)
+  2. → 返回新的sampling_client ← 权重更新后的推理客户端!
+  3. rollout_engine.set_sampling_client(sampling_client) ← 传播到rollout引擎
+  4. → 下次rollout使用更新后的权重!
+
+→ tinker的权重同步: 保存→创建新sampling_client→替换rollout的sampling_client
+→ 不需要显式weight sync(如verl的vLLM weight sync) → sampling_client自动使用最新权重!
+```
+
+### 6.7 Fused Forward-Backward-Optim优化
+
+```
+fuse_forward_backward_and_optim_step=True时:
+
+  policy_trainer.fused_forward_backward_and_optim_step(
+    step, total_steps, trajectory_groups,
+    learning_rate, beta1, beta2, eps
+  )
+  → 1次async调用 → forward+backward+optimizer→ 一次搞定!
+
+  vs 分步模式:
+    1. forward_backward_from_trajectory_groups (async)
+    2. 优化器步骤 (async)
+
+→ fused减少1次async round-trip → 单GPU下更高效!
+→ 但调试更难 → 无法分开观察fwd/bwd/optim
+```
+
+### 6.8 VLM支持
+
+```
+VLM自动检测:
+  if "vl" in model_name_lower or "vision" in model_name_lower:
+    processor = AutoProcessor.from_pretrained(model_name)
+    image_processor = processor.image_processor
+    → TinkerEngine需要image_processor → 渲染图片内容!
+
+  例: Qwen3-VL → 自动加载image_processor → 支持多模态推理!
+```
+
+## 7. 下一步
 
 - [x] GatewayManager深度阅读 → 本文件Section 1
 - [x] BackendProtocol深度阅读 → 本文件Section 2
 - [x] UnifiedTrainer 8-stage pipeline → 本文件Section 3
-- [ ] 研究 TinkerBackend 实现 (process_backend_batch具体逻辑)
+- [x] TinkerBackend深度阅读 → 本文件Section 6
+  - LoRA training client自动创建 + mask处理 + weight sync(sampling_client刷新)
+  - GRPO→PPO loss + RLOO→IS loss → tinker 5种loss function
+  - fused forward-backward-optim → 减少async round-trip → 单GPU更高效
+  - advantage在process_backend_batch内计算(不是独立stage)
 - [ ] 研究 VerlBackend 中的 compute_advantages override
 - [ ] 研究 fully-async训练pipeline细节
 - [ ] GPU可用时: 运行rLLM eval+train实测
@@ -327,3 +464,5 @@ Sources:
 - `_temp_rllm/rllm/gateway/manager.py` (505 lines)
 - `_temp_rllm/rllm/trainer/backend_protocol.py` (209 lines)
 - `_temp_rllm/rllm/trainer/unified_trainer.py` (1078 lines)
+- `_temp_rllm/rllm/trainer/tinker/tinker_backend.py` (450 lines)
+- `_temp_rllm/rllm/trainer/tinker/tinker_policy_trainer.py` (452 lines)
