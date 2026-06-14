@@ -127,8 +127,10 @@
 | Responsible AI | ★★★★ | Fairness+Calibration+Toxicity+Bias评估+7维+Production Pipeline | 完成! |
 | AI Governance | ★★★★ | EU AI Act+NIST RMF+ISO 42001+China 3法规+全球比较+合规Pipeline | 完成! |
 | Mechanistic Interpretability | ★★★★ | SAE 3代+Claude特征+Refusal Circuit+Steering 5种+Circuit Discovery 3层+RTX 4090 | 完成! |
+| AI Economic Impact | ★★★★ | McKinsey $4.4T+PwC $15.7T+GS $7T+自动化+全球不平等+3国模式+Productivity Paradox | 完成! |
+| Human-AI Interaction | ★★★★ | Trust Calibration+Sycophancy+Anthropomorphism+3套指南(Google+Microsoft+Anthropic)+Collaboration 4级 | 完成! |
 
-**Gap**: Safety从1→4! Governance从1→4! Responsible从2→4! Interpretability从1→4! 全部大幅提升!
+**Gap**: Safety从1→4! Governance从1→4! Responsible从2→4! Interpretability从1→4! Economic从1→4! Human-AI从1→4! 全部大幅提升!
 
 ## 3. Top 5 Knowledge Gaps (Priority Order) — Updated 06-14
 
@@ -148,6 +150,8 @@
 
   ✅ Emerging Architecture → ★★→★★★★ (DeltaNet+Mamba+SSM+Mamba-2+RWKV-7+GLA+Hybrid+PS项目)
   ✅ Mechanistic Interpretability → ★→★★★★ (SAE 3代+Claude特征+Refusal Circuit+Steering 5种+Circuit Discovery 3层)
+  ✅ AI Economic Impact → ★→★★★★ (McKinsey+PwC+GS 3机构+自动化+全球不平等+Productivity Paradox)
+  ✅ Human-AI Interaction → ★→★★★★ (Trust Calibration+Sycophancy+Anthropomorphism+3套指南+Collaboration 4级)
 
 当前唯一gap:
 1. ★★★ CUTLASS实践深化
