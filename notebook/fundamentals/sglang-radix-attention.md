@@ -238,10 +238,262 @@ def evict(self, num_tokens):
 6. **7 种驱逐策略**: 默认 LRU，可根据工作负载选择 LFU/FIFO/Priority 等
 7. **分层缓存**: GPU → CPU → SSD 三级，host_value/host_ref_counter 追踪卸载状态
 
+## 9. 源码级补充: C++ Radix Tree + HiCache + match_prefix算法详解
+
+> 2026-06-15 源码深挖: radix_cache.py + cpp_radix_tree/tree_v2 + schedule_policy.py
+
+### 9.1 _match_prefix_helper 算法精确步骤
+
+```python
+# radix_cache.py:619-643
+def _match_prefix_helper(self, node, key, value):
+    """精确匹配算法:
+    1. 从root开始
+    2. 计算 child_key = key.child_key(page_size) → 前 page_size 个tokens
+    3. 如果 child_key 在 node.children 中:
+       - child = node.children[child_key]
+       - prefix_len = child.key.match(key, page_size)  → token级逐个比较!
+       - 如果 prefix_len < len(child.key):
+         → PARTIAL MATCH: _split_node(child, prefix_len)
+         → value.append(new_node.value); node = new_node; break
+       - 否则 (prefix_len == len(child.key)):
+         → FULL NODE MATCH: value.append(child.value); node = child; key = key[prefix_len:]
+    4. 如果 child_key 不在 children 中: break (无匹配)
+    5. 返回: concat(value) → KV池索引 + last_node
+
+    关键: match_prefix同时更新所有访问节点的 last_access_time → 驱逐策略数据!
+    """
+```
+
+### 9.2 _split_node 源码级详解
+
+```python
+# radix_cache.py:645-665
+def _split_node(self, child, split_len):
+    """节点分裂 → Radix Tree核心操作(Patricia Trie标志!)
+
+    1. 创建 new_node:
+       - new_node.key = child.key[:split_len]  → 共享前缀部分
+       - new_node.value = child.value[:split_len].clone()  → 对应KV索引(克隆!)
+       - new_node继承: lock_ref, hit_count, priority → 父节点获得保护
+
+    2. 修改 child (原节点保留不匹配后缀):
+       - child.key = child.key[split_len:]
+       - child.value = child.value[split_len:].clone()
+       - 注意: value是clone不是slice! → KV索引独立管理
+
+    3. 树结构更新:
+       - new_node替换child在parent.children中
+       - child成为new_node的子节点
+       - child.parent = new_node
+
+    4. 内存管理:
+       - 被free的KV indices: token_to_kv_pool_allocator.free()
+       - 已存在于树中的重复indices → 被释放(避免浪费!)
+
+    → 关键: 这是Patricia Trie的标志性操作 → Trie中每边=1个token → 无需split!
+    → Radix Tree中每边=可变长度 → 分叉点需要split → 这是空间效率的核心!
+    """
+```
+
+### 9.3 C++ Radix Tree 实现 (tree_v2)
+
+```cpp
+// cpp_radix_tree/tree_v2_node.h
+struct TreeNode {
+    token_vec_t m_tokens;           // vector<int32> → token序列
+    at::Tensor m_device_indices;    // GPU KV indices
+    at::Tensor m_host_indices;      // CPU KV indices (HiCache)
+    unordered_map<token_vec_t, unique_ptr<TreeNode>> m_children;
+    TreeNode* m_parent;
+    int ref_count, hit_count;
+    float m_last_access_time;
+
+    // HiCache IO状态:
+    bool m_io_locked;               // 正在进行IO操作 → 保护
+    IOStatus m_io_status;           // IDLE/WRITING_THROUGH/LOADING_BACK
+    IOTicket m_io_ticket;           // async IO ticket → 等待完成
+};
+
+// tree_v2_impl.h:83-113 tree_walk
+auto prefix_length = align(node->diff_key(key, page_size) + page_size);
+// diff_key使用 std::ranges::mismatch → 线性扫描 → 非单token比较!
+// → 确认: 这是真正的radix tree(Patricia Trie) → 不是simple trie!
+```
+
+### 9.4 HiCache 分层缓存机制
+
+```
+GPU → CPU → 三级缓存:
+
+1. Device tier (GPU):
+   - m_device_indices → GPU KV池slot IDs
+   - 最快访问 → 解码必须
+
+2. Host tier (CPU pinned memory):
+   - m_host_indices → CPU KV indices
+   - IO操作:
+     - write_through: GPU→CPU异步写 → 不阻塞计算 → IOHandle
+     - load_back: CPU→GPU异步读 → 需等待 → IOTicket→blocking!
+   - m_io_status: IDLE→WRITING_THROUGH→LOADING_BACK→IDLE cycle
+   - m_io_locked: IO进行中 → eviction被阻止 → 保护数据一致性
+
+3. SSD tier (可选):
+   - 通过外部存储系统 → SGLang核心不直接管理
+
+关键: HiCache是C++版本独有的 → Python版本只有device tier
+→ 生产环境应该用C++ radix tree → HiCache offload → 减少GPU内存压力!
+```
+
+### 9.5 Cache-aware调度详解
+
+```python
+# schedule_policy.py:85-126 match_prefix_for_req
+def match_prefix_for_req(self, req, tree_cache):
+    """为请求匹配前缀缓存
+
+    1. tree_cache.match_prefix(req.token_ids)
+    2. 返回: device_indices → 已缓存的KV池slot IDs
+    3. req.prefix_indices = device_indices → prefill时直接用!
+    4. req.num_matched_prefix_tokens = len(device_indices)
+    5. → 未匹配的suffix tokens才需要计算KV → 省(prefill)!
+
+    → lock_ref: inc_lock_ref(last_node) → 从叶到根 → 整条路径保护!
+    → 任何active request的prefix路径节点 → 不可被eviction驱逐!
+    → vs vLLM: vLLM只保护单个block的ref_cnt → 不保护parent blocks → 可能路径断裂!
+    """
+
+# schedule_policy.py LPM策略
+# 等待队列按 num_matched_prefix_tokens 降序排列
+# → 最长前缀匹配的请求 → 优先调度 → 最省GPU计算!
+
+# schedule_policy.py DFS-weight策略
+# 按tree子树权重DFS遍历 → 同子树请求连续调度 → maximize prefix reuse within batch!
+
+# schedule_policy.py 批内前缀缓存 (行258-288)
+# waiting_queue_radix_tree → 模拟的树(不占GPU内存)
+# 如果多个请求共享前缀但缓存命中率低 → 只调度第一个 → 其余降优先级
+# → 第一个完成后 → 前缀缓存到实际树 → 其余请求命中率高 → 再调度!
+# → 这是vLLM完全没有的优化!
+```
+
+### 9.6 RadixKey 精确设计
+
+```python
+# radix_cache.py:56-196
+class RadixKey:
+    token_ids: array[int]         # 可变长度token序列
+    extra_key: Optional[str]      # LoRA/cache隔离命名空间
+    is_bigram: bool               # EAGLE推测解码 → 2 tokens=1逻辑单位
+
+    def child_key(self, page_size):
+        """返回children dict的key → 前page_size个tokens"""
+        # page_size=1 → 第1个token → 类似Trie但边是可变长度!
+        # page_size=16 → 前16个tokens → 类似block但可以split任意位置!
+
+    def match(self, other, page_size):
+        """逐token比较 → 返回共享前缀长度 → 向下对齐到page_size"""
+        # 关键: 比较是token级精确 → 不是hash级近似 → 无碰撞!
+```
+
+### 9.7 Eviction 算法精确步骤
+
+```python
+# radix_cache.py:534-561
+def evict(self, num_tokens):
+    """驱逐算法:
+
+    1. 从 evictable_leaves 构建heap → 按eviction策略排序
+    2. While num_evicted < num_tokens and heap非空:
+       a. Pop最低优先级叶节点
+       b. Free其KV indices → token_to_kv_pool_allocator.free()
+       c. _delete_leaf(x) → 从parent.children删除 → 从evictable_leaves删除
+       d. 如果parent现在无children且lock_ref==0 → push parent到heap(cascade!)
+          → 叶节点驱逐 → 空父节点也驱逐 → 递归释放!
+
+    → vs vLLM: vLLM逐block驱逐 → 不cascade(parent block可能仍有其他children引用)
+    → SGLang cascade更彻底 → 释放更多内存 → 但也更激进 → 需lock_ref保护!
+
+    → 7种策略:
+      LRU(last_access_time) / LFU(hit_count,last_access_time) / FIFO(creation_time)
+      / MRU(-last_access_time) / FILO(-creation_time)
+      / Priority(priority,last_access_time) / SLRU(is_protected,last_access_time)
+    """
+```
+
+### 9.8 Patricia Trie确认: 可变长度边 + _split_node
+
+```
+问题: SGLang用的是true radix tree (Patricia Trie) 还是simple trie?
+
+证据1: 可变长度边
+  → TreeNode.key = RadixKey → array[int] → 可变长度token序列
+  → Simple trie: 每边=1 token → children dict key = 单个整数
+  → Radix tree: 每边=可变长度 → children dict key = child_key(page_size) = 前 page_size 个tokens
+  → 结论: 是radix tree!
+
+证据2: _split_node 操作
+  → 在现有节点内部拆分 → new_node(前缀) + child(后缀)
+  → Simple trie: 每节点只有1个token → 拆分无意义 → 不需要split!
+  → Radix tree: 拆分是核心操作 → Patricia Trie标志性特征!
+  → 结论: 是Patricia Trie!
+
+证据3: C++ diff_key
+  → 使用 std::ranges::mismatch → 线性扫描整个节点token序列
+  → 不是单token比较 → 是多token比较 → radix tree语义!
+  → 结论: 是radix tree!
+
+空间复杂度:
+  Trie: O(N × L) → N个字符串 × L平均长度 → 每token一个节点 → 穱碎
+  Radix Tree: O(N) → N=所有字符串总token数 → 共享前缀合并 → 空省!
+  → 1000-token system prompt × 100 requests: Trie=1000节点, Radix=1节点!
+
+时间复杂度:
+  Trie lookup: O(L) → L次节点访问
+  Radix lookup: O(L) → worst case相同 → 但实践中更少节点访问
+  → 共享前缀只需1次比较(边label全量) → 不需要逐token遍历!
+
+结论: SGLang RadixAttention = **True Patricia Trie** → 不是simple trie!
+```
+
+## 10. RTX 4090 影响与实战
+
+```
+RTX 4090 24GB (SGLang推理):
+
+1. RadixAttention对RTX 4090推理有显著帮助!
+   → 多轮对话: KV cache重用 → 省GPU内存 → 更多并发请求
+   → Self-Consistency/GRPO rollout_n: 相同prompt×N → 共享system prompt → KV复用!
+
+2. HiCache → CPU pinned memory offload → 减少GPU内存压力
+   → 7B BF16: 5500 tokens KV cache ≈ 44MB → CPU offload → GPU省44MB!
+   → INT8 KV: 22MB → 更少 → 但INT8 KV cache和HiCache不兼容(INT8不能offload到CPU BF16)
+   → 解决: INT8 KV + HiCache不做offload → INT8比HiCache更省空间!
+
+3. RTX 4090最优SGLang配置:
+   INT4权重 + INT8 KV + GQA-8 + FlashInfer + RadixAttention
+   → INT4推理 → 4791 tok/s → 加RadixAttention → 多轮对话5x加速!
+   → vs vLLM: INT4+INT8KV+APC → block对齐浪费 → 多轮对话场景不如SGLang!
+
+4. verl GRPO + SGLang rollout:
+   → GRPO rollout_n=8 → 相同prompt → RadixAttention自动复用system prompt KV!
+   → rollout_n=8 → 8×system prompt KV → 只计算1次system + 8次question → 省7×system prefill!
+   → SGLang GRPO rollout 比 vLLM rollout更快 → prefix缓存优势!
+
+5. C++ radix tree → 生产环境必须:
+   → HiCache write-through → GPU→CPU异步写 → 不阻塞计算
+   → load_back → CPU→GPU → 需等待 → 但比recompute快10x+!
+   → RTX 4090: HiCache利用24GB CPU内存 → offload冷KV → GPU腾空间给新请求
+```
+
 ## 参考资料
 
 - SGLang 论文: arXiv 2312.07104
 - LMSYS Blog: SGLang RadixAttention (2024-01-17)
-- 源码: `sglang/python/sglang/srt/mem_cache/radix_cache.py` (~700 行)
+- 源码: `sglang/python/sglang/srt/mem_cache/radix_cache.py` (~800 行)
+- 源码: `sglang/python/sglang/srt/mem_cache/cpp_radix_tree/tree_v2_node.h` (C++ TreeNode)
+- 源码: `sglang/python/sglang/srt/mem_cache/cpp_radix_tree/tree_v2_impl.h` (C++ tree_walk/split_node)
+- 源码: `sglang/python/sglang/srt/mem_cache/cpp_radix_tree/tree_v2.cpp` (C++ match_prefix/evict)
+- 源码: `sglang/python/sglang/srt/mem_cache/evict_policy.py` (7种eviction策略)
+- 源码: `sglang/python/sglang/srt/managers/schedule_policy.py` (LPM/DFS-weight/批内前缀缓存)
 - 源码: `sglang/python/sglang/srt/managers/scheduler.py` (~1600 行)
-- 源码: `sglang/python/sglang/srt/managers/schedule_policy.py`
