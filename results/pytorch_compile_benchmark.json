@@ -1,0 +1,26 @@
+{
+  "device": "cpu",
+  "pytorch_version": "2.2.2",
+  "model": "MiniTransformer(d=256, layers=4)",
+  "n_params": 2168576,
+  "batch_size": 32,
+  "results": [
+    {
+      "mode": "eager",
+      "mean_ms": 2.7349875200889073,
+      "median_ms": 2.496249999239808,
+      "std_ms": 0.7485125482471214,
+      "n_iters": 50
+    },
+    {
+      "mode": "compile-reduce-overhead",
+      "error": "backend='inductor' raised:\nCppCompileError: C++ compile error\n\nCommand:\ng++ /var/folders/bm/kz64zx99",
+      "compile_time_s": 1.3584081249991868
+    },
+    {
+      "mode": "compile-default",
+      "error": "backend='inductor' raised:\nCppCompileError: C++ compile error\n\nCommand:\ng++ /var/folders/bm/kz64zx99",
+      "compile_time_s": 0.0011498329986352473
+    }
+  ]
+}

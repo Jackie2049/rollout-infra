@@ -286,6 +286,87 @@ RowParallelLinear:
 **关键**: AllGather + ReduceScatter = AllReduce
 但 Activation 内存节省 P 倍!
 
+### SP 源码级实现 (mappings.py, 617行)
+
+```
+核心autograd Functions:
+
+  _GatherFromSequenceParallelRegion:
+    Forward: AllGather(seq_dim) → 拼接所有rank的1/P分片
+    Backward: ReduceScatter(seq_dim) → 梯度1/P分片回去
+
+  _ReduceScatterToSequenceParallelRegion:
+    Forward: ReduceScatter(seq_dim) → 分片结果
+    Backward: AllGather(seq_dim) → 拼接梯度恢复完整
+
+  → 对称设计: forward=AG↔backward=RS; forward=RS↔backward=AG
+  → autograd自动处理 → 用户只需调用gather/reduce_scatter函数!
+```
+
+### ColumnParallelLinear中的SP (layers.py, 1402行)
+
+```
+linear_with_frozen_weight (SP模式):
+
+  if sequence_parallel:
+    input = gather_from_sequence_parallel_region(input)
+    → AllGather: [seq/P, hidden] → [seq, hidden] → 恢复完整序列
+
+  output = LinearWithFrozenWeight.apply(input, weight, bias, ...)
+  → 正常计算 → 输出已在TP维度切分
+
+  → backward:
+    if sequence_parallel:
+      grad_input = reduce_scatter_along_first_dim(grad_output)
+      → ReduceScatter: [seq, hidden] → [seq/P, hidden] → 回到SP分片
+```
+
+### RowParallelLinear中的SP
+
+```
+RowParallelLinear (SP模式):
+
+  forward:
+    input已在SP维度切分 [seq/P, hidden/P]
+    → 本地计算: matmul → [seq/P, hidden_full] (但还需reduce)
+    → ReduceScatter(seq_dim): [seq/P, hidden_full] → [seq/P, hidden/P]
+    → 不需要AllGather! → 输入已经是切分维度
+
+  backward:
+    → AllGather(seq_dim): 梯度恢复完整序列 → 再计算
+```
+
+### SP vs TP 通信量对比
+
+```
+TP(无SP):
+  ColumnParallel: 输入copy → forward无通信 → backward AllReduce(grad)
+  RowParallel: forward AllReduce → backward copy
+  → 总通信: 2x AllReduce per layer = 2Ψ
+
+TP+SP:
+  ColumnParallel: forward AllGather(Ψ) → backward ReduceScatter(Ψ/N)
+  RowParallel: forward ReduceScatter(Ψ) → backward AllGather(Ψ/N)
+  → 总通信: AllGather(Ψ) + ReduceScatter(Ψ) = AllReduce(2Ψ) — 等效!
+  → 但activation内存省P倍! → 核心优势!
+
+  关键: AllGather + ReduceScatter = AllReduce (数学等价)
+  → 通信量相同, 但内存更省 → 这是SP的精髓!
+```
+
+### RTX 4090 SP影响
+
+```
+RTX 4090 + SP:
+  - TP>1无意义(PCIe瓶颈) → SP也不适用(依赖TP)
+  - 单GPU: SP=1 → 无通信 → 无分片 → 不节省内存
+  - 结论: RTX 4090不适合SP → 单GPU下无TP
+
+  8x RTX 4090 (高校服务器):
+  - TP=2: SP省2x activation → 7B可能fit每GPU
+  - TP=4: SP省4x → 但PCIe瓶颈严重
+  - 建议: TP=2+SP → 最大内存节省+最小PCIe瓶颈
+
 ---
 
 ## 关键通信原语 (`mappings.py`)
