@@ -90,9 +90,9 @@
 | Model Compression | ★★★★ | Distillation T=4-8最优 | 完成 |
 | Model Merging | ★★★ | Task Arithmetic+DARE实测 | 完成 |
 | Multimodal | ★★★★ | CLIP+LLaVA+InternVL+Qwen2-VL+CogVLM+Gemini+ViT+Projection+Training+RTX4090 | 完成! |
-| Emerging Arch | ★★ | DeltaNet(PS项目中) | 进行中 |
+| Emerging Arch | ★★★★ | DeltaNet+Mamba+SSM+Mamba-2+RWKV-7+GLA+Hybrid+PS项目 | 完成! |
 
-**Gap**: Multimodal从1→4! Emerging Arch(DeltaNet/SSM)仍需深化
+**Gap**: 全部完成! Multimodal从1→4! Emerging Arch从2→4(DeltaNet+Mamba+SSM+RWKV+GLA+Hybrid)!
 
 ### D. AI Training & Alignment — ★★★★★ (5/5) — 从3→4→5 Evaluation大幅提升!
 
@@ -145,14 +145,12 @@
   ✅ Scientific AI → ★→★★★★ (AlphaFold 2/3+GNoME+MatterGen+AlphaProof+AlphaGeometry+FunSearch+Drug Discovery)
   ✅ NLP → ★★→★★★★ (4架构+Tokenization+Autoregressive vs Masked+任务+评估+RTX 4090)
 
-当前top 2 gap:
+  ✅ Emerging Architecture → ★★→★★★★ (DeltaNet+Mamba+SSM+Mamba-2+RWKV-7+GLA+Hybrid+PS项目)
+
+当前唯一gap:
 1. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel → GPU可用时做!
-
-2. ★★ Emerging Architecture
-   → 为什么重要: DeltaNet/SSM是未来架构 → prefix-sharing项目正在用!
-   → 学习路径: DeltaNet理论+SSM原理+线性注意力 → 与PS项目结合
-   → 为什么重要: DeltaNet/SSM是未来架构 → prefix-sharing项目正在用!
+   → 学习路径: SM80 GEMM kernel编写+profiler修复+FA-3替代 → 需GPU!
    → 学习路径: DeltaNet理论+SSM原理+线性注意力 → 与PS项目结合
    → 学习路径: EU AI Act+NIST RMF+ISO 42001+合规框架
    → 预计时间: 1-2小时理论笔记
