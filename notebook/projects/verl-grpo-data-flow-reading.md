@@ -239,6 +239,60 @@ ray_trainer.py:358-360:
 → STANDALONE: actor+ref分离 → 需要≥3个GPU!
 ```
 
+## 6b. Reward Integration in GRPO
+
+```
+RewardLoopManager (reward_loop.py:273-):
+  → 管理 reward computation: RewardLoopWorker(Ray actors) + RewardModelManager
+
+两种reward来源:
+1. custom_reward_function (rule-based) → 大多数GRPO用这个!
+   → 数学题: correctness check → 0/1分数
+   → 代码题: execution result → pass/fail
+   → 不需要GPU → 只需要CPU → 轻量!
+
+2. reward_model (disrm) → vLLM/SGLang HTTP API → 需要额外GPU!
+   → vLLM: POST classify → probs[-1] → RM score
+   → SGLang: POST v1/embeddings → embedding[-1] → RM score
+   → 需要单独GPU → RTX 4090空间不够!
+
+GRPO reward路径 (ray_trainer.py:1518-1603):
+  → self.use_rm = need_reward_model(config) → config.reward.reward_model.enable
+  → GRPO typically: use_rm=False → rule-based → 不需要RM GPU!
+
+  → if use_rm=True:
+    → sleep rollout GPU → wake RM GPU → compute → wake rollout back
+    → RewardLoopWorker → compute_rm_score → assemble_rm_scores → rm_scores tensor
+
+  → GRPO: token_level_rewards = token_level_scores (无KL-in-reward!)
+  → PPO: token_level_rewards = token_level_scores - kl_penalty_in_reward
+```
+
+**Reward数据形状**:
+```
+Outcome reward (GRPO典型):
+  → rm_scores: [bsz * rollout_n, response_length]
+  → 只有最后一个response token非零 → outcome-only!
+  → token_level_rewards.sum(dim=-1) = scalar per response → group-relative!
+
+Token-level reward (PPO):
+  → 每个token都有reward → 需要RM forward per token → 更昂贵!
+
+Rule-based reward:
+  → compute_score函数 → Python函数 → 不需要GPU → 极快!
+  → 但: 只有outcome → 无法区分好的中间步骤 → 可能不够精细
+```
+
+**RTX 4090 GRPO reward选择**:
+```
+RTX 4090: 只能用rule-based reward → 不需要额外GPU!
+  → math: correctness check → 简单但有效
+  → code: execution sandbox → 需要sandbox server → 但不在GPU上
+
+→ 不能用reward model → RTX 4090空间已经占满actor+ref
+→ LoRA mode: actor=14GB(base)+1GB(LoRA) → 24GB只剩9GB → 不够7B RM!
+```
+
 ## 7. AdvantageEstimator完整注册表
 
 ```
