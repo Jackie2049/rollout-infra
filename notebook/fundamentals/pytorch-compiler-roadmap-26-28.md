@@ -183,6 +183,7 @@ Inductor Codegen:
 为什么FSDP2与compile兼容:
   - FSDP1: FlatParameter → 整个module视为1个大参数 → compile看到动态形状 → graph break
   - FSDP2: DTensor per-param → 每个参数独立 → compile可以静态特化 → 无graph break!
+  - FSDP2 unshard/reshard = explicit aten ops (aten.unshard, aten.shard) → compile可trace!
 
   DeepSpeed ZeRO-3: 类似FSDP1问题 → 参数gather/partition → 动态 → graph break
   → ZeRO-3 + compile = 不兼容
@@ -191,6 +192,110 @@ Inductor Codegen:
 RTX 4090建议:
   训练: FSDP2 + compile("reduce-overhead") + BF16 + LoRA → 最优方案
   推理: 不用compile → vLLM/SGLang有专用kernel
+```
+
+### 6.2 实测基准数据 (2025 torchtitan benchmarks, H100)
+
+```
+Llama 3.1 8B, 8×H100 80GB:
+
+| 配置 | TPS/GPU | MFU | vs eager |
+|------|---------|-----|----------|
+| FSDP2 eager | 5,762 | 33% | baseline |
+| FSDP2 + compile | 6,667 | 39% | +15.7% |
+| FSDP2 + compile + Float8 | 8,532 | — | +48.1% |
+
+Llama 3.1 8B, 128×H100:
+
+| 配置 | TPS/GPU | MFU | vs eager |
+|------|---------|-----|----------|
+| FSDP2 eager | 5,605 | — | baseline |
+| FSDP2 + compile | 6,514 | — | +16.2% |
+| FSDP2 + compile + Float8 | 8,380 | — | +49.5% |
+
+关键发现:
+  → compile alone: +15-16% throughput → kernel fusion是主要收益
+  → compile + Float8: +48-50% → FP8 all-gather减少通信2× → 巨大!
+  → 128 GPU scaling: ~90% efficiency → ZeRO-3 ~75-80% → FSDP2显著更优
+
+ZeRO-3 vs FSDP2 量化对比:
+  → FSDP2比ZeRO-3快10-25% (同等硬件) → compile差距更大
+  → 内存: 基本等价(都是全分片) → 但ZeRO-3有padding浪费 → FSDP2无!
+  → ZeRO-3优势: NVMe offload → GPU内存不够时唯一选择
+  → FSDP2优势: compile兼容 → 15-50%额外加速 → 决定性优势!
+```
+
+### 6.3 FSDP2 reshard_after_forward 参数
+
+```
+reshard_after_forward=True (默认):
+  → Forward后释放full params → 重新shard → 省GPU内存
+  → Backward需要重新AllGather → 更多通信(2Ψ per module)
+  → 等价FSDP1 FULL_SHARD → 推荐(默认)
+  → 适用: 内存受限 → 大模型训练
+
+reshard_after_forward=False:
+  → Forward后保留full params → 不释放 → 更多GPU内存占用
+  → Backward不需要重新AllGather → 省通信 → 但peak更高!
+  → 等价FSDP1 NO_SHARD_GRAD_ONLY → 内存富裕时可选
+  → 适用: 小模型或通信瓶颈场景
+
+HSDP (2D DeviceMesh) 场景:
+  → reshard只影响跨节点sharding维度 → intra-node params已replicate
+  → 可per-module设置: 大module=True(省内存) + 小module=False(省通信)
+```
+
+### 6.4 FSDP2 CPU Offload 状态
+
+```
+FSDP2 CPU Offload: 实验性/alpha (nightly PyTorch)
+
+API:
+  from torch.distributed._composable.fsdp import CPUOffloadPolicy
+  model = FSDP(model, offload_policy=CPUOffloadPolicy())
+
+性能(vs FSDP1 CPUOffload):
+  → FSDP2 offload: ~20-30% better throughput than FSDP1 offload
+  → 原因: 改进prefetch + pinned memory + async transfers
+  → 但: ~50-60% slower than pure GPU FSDP2 → offload仍然代价高!
+
+Timeline:
+  → Stable CPU offload: late 2025 / early 2026
+  → MixedOffloadPolicy (selective): 2026 planned
+  → Optimizer state CPU offload: 2026 planned
+
+vs ZeRO-Offload/ZeRO-Infinity:
+  → ZeRO更成熟 → NVMe offload → GPU不够时唯一选择
+  → FSDP2 offload还不稳定 → 如果需要CPU offload → ZeRO仍是首选!
+  → 但长期: FSDP2 offload + compile → 可能超越ZeRO
+
+RTX 4090:
+  → ZeRO-2+CPU_Adam+LoRA → 当前唯一可行CPU offload方案
+  → FSDP2 CPU offload → 等稳定后再考虑 → 目前不推荐!
+```
+
+### 6.5 PyTorch 2.7 DTensor改进
+
+```
+PyTorch 2.7 (2025 Q2-Q3):
+
+ProcessGroupCollection:
+  → DeviceMesh新增ProcessGroupCollection accessor
+  → 每mesh维度自动映射对应ProcessGroup → 无需手动mapping!
+  → Shard(0)自动→TP组, Shard(1)→DP组 → 2D Mesh全自动!
+  → dist.new_group() 软deprecation → 迁移开始
+
+2D/3D DeviceMesh:
+  → FSDP+TP, FSDP+CP 组合并行 → DeviceMesh表达
+  → DTensor→local tensor改进 → migration path更顺畅
+  → compile兼容分布式 → torch.compile sees fixed shapes even with DTensor!
+
+PyTorch 2.8 目标:
+  → ProcessGroupCollection first-class → new_group() hard deprecation
+  → "零配置" → 用户写单设备代码 → compiler+DTensor自动推导最优分布式
+  → HSDP和nested parallelism完全支持 → 2D+ DeviceMesh
+
+→ 长期: DTensor将成为PyTorch分布式唯一抽象 → ZeRO-3 ds_tensor将被替代!
 ```
 
 ## 7. 编译模式选择指南
