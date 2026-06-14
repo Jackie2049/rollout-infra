@@ -523,6 +523,103 @@ class TorchFullyShardedDataParallel:
 
 ---
 
+## MoE Expert Parallel 源码阅读 (2026-06-15)
+
+> 源码: megatron/core/transformer/moe/moe_layer.py (799行)
+
+### MoE Forward 4步Pipeline
+
+```
+MoELayer.forward():
+    1. route: router(hidden) → (probs, routing_map)
+       - TopKRouter: top-k选择 + softmax归一化
+       - 支持padding_mask (排除padding token)
+
+    2. dispatch: token_dispatcher.dispatch(hidden, probs)
+       - 3种dispatcher策略:
+         a) AllGatherTokenDispatcher → AllGather→local compute→ReduceScatter
+         b) AlltoAllTokenDispatcher → AlltoAll(v→expert_rank)→compute→AlltoAll(expert_rank→v)
+         c) FlexTokenDispatcher → 动态负载均衡
+
+    3. expert_compute: experts(dispatched_input, tokens_per_expert, permuted_probs)
+       - 每个rank持有 num_moe_experts/ep_size 个local expert
+       - grouped_gemm_backend: auto(FlashInfer)/torch(PyTorch 2.10+)/te(TransformerEngine)/vllm(Triton)
+
+    4. combine: token_dispatcher.combine(output) + shared_expert_output
+       - 逆向通信(dispatch→combine)
+       - 加上shared_expert_output(如果配置了shared expert)
+```
+
+### 3种Token Dispatcher对比
+
+| Dispatcher | 通信模式 | 适用场景 | 内存 |
+|------------|----------|----------|------|
+| AllGather | AG→local→RS | EP size小, token多 | 高(全聚合) |
+| AlltoAll | A2A(v→e)+A2A(e→v) | EP size大, expert多 | 低(只发分配的) |
+| Flex | 动态负载均衡 | load imbalance严重 | 中 |
+
+### Latent MoE (DeepSeek-V3风格)
+
+```
+hidden_states → fc1_latent_proj → latent_dim → dispatch → expert → combine → fc2_latent_proj → hidden_dim
+                    ↓                                                           ↑
+                moe_latent_size                                             残差连接
+```
+
+- moe_latent_size: hidden_dim→latent_dim投影 → 大幅减少通信量
+- fc1/fc2_latent_proj: TELinear (TransformerEngine) → FP8 GEMM
+- 与DeepSeek-V3的MLA思路类似: 压缩维度→减少通信→节省内存
+
+### Shared Expert Overlap (推理优化)
+
+```
+主stream: route → preprocess → dispatch → expert_compute → combine → postprocess
+侧stream(SharedExpertMLP.stream): shared_experts_compute → latent_proj → join+add
+```
+
+- shared_expert在独立CUDA stream上与主forward并行
+- NVLS(NVLink Shared) dispatcher时自动overlap
+- inference_optimized模式: NCCL dispatcher或NVLS dispatcher
+- latent+shared overlap: fc1_latent_proj先→shared_expert在侧stream→postprocess join+add
+
+### Delayed Wgrad (反向优化)
+
+```
+backward:
+    expert_dgrad → record event → ...
+    _RegisterDelayedWgradForExperts:
+        wgrad_stream.wait_event(dgrad_event)
+        expert_wgrad on wgrad_stream (并行!)
+        current_stream.wait_event(wgrad_done)
+        → post_wgrad_grad_acc_hook (FSDP reduce-scatter)
+```
+
+- expert weight梯度在独立stream上计算 → 与其他backward overlap
+- 类似DeepSpeed的overlap_grad_reduce → 减少backward耗时
+
+### CUDA Graph Partial Capture
+
+```python
+fwd_execution_map = ["route", "expert_compute", "postprocess"]
+# 可选择性capture部分forward → 减少CUDA Graph size
+# route部分: router + preprocess → 小操作 → 值得capture
+# expert_compute: 大GEMM → 可能不值得capture
+```
+
+### 与7框架的关系
+
+| 框架 | MoE实现 | EP支持 |
+|------|---------|--------|
+| Megatron-LM | ✅ 3种dispatcher+latent+shared+overlap | ✅(核心) |
+| DeepSpeed | ❌ (无MoE层) | ❌ |
+| vLLM | ✅ (MoE serving via expert_parallel) | ✅ |
+| verl | ✅ (MoE actor via Megatron strategy) | ✅(via Megatron) |
+| rLLM | ✅ (routing_matrices字段) | ✅(via verl) |
+| MindIE | ✅ (roadmap) | 🔄 |
+| PyTorch | ❌ | ❌ |
+
+---
+
 ## 参考资料
 
 - [Megatron-LM Paper (2020)](https://arxiv.org/abs/1909.08053)
