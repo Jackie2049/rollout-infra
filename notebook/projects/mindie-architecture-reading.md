@@ -181,22 +181,86 @@ CANN Stack:
 
 ## 8. vLLM-Ascend 项目
 
-最值得关注的社区项目:
+最值得关注的社区项目 (2.2K stars):
 - 将 vLLM 移植到 Ascend NPU
 - 使用 ATB 算子替代 CUDA 算子
 - 保持 vLLM API 和特性不变
 - 支持 PagedAttention/Continuous Batching/Prefix Caching
 
+### 8.1 vLLM-Ascend 架构 (源码级)
+
 ```
 vLLM-Ascend 架构:
-    ├── vLLM API层 (不变)
-    ├── vLLM Scheduler (不变)
-    ├── Ascend Executor (替代 GPU Executor)
-    │     ├── ATB FlashAttention
-    │     ├── ATB GEMM
-    │     └── ATB Sampling
-    └── HCCL (替代 NCCL)
+    vllm_ascend/
+    ├── atb_ops/                 # ATB 算子集成 (核心!)
+    │     ├── atb_attention.py    # FlashAttn-Ascend → 替代 xformers/FlashInfer
+    │     ├── atb_linear.py       # 线性算子 → 替代 cuBLAS GEMM
+    │     ├── atb_rmsnorm.py      # RMSNorm → 替代 PyTorch RMSNorm
+    │     ├── atb_rotary_embedding.py  # RoPE → 替代 vLLM rotary
+    │     ├── atb_mlp.py          # MLP → 融合 gate+up+down proj
+    │     └── atb_op.py           # Base ATB op class + utils
+    │
+    ├── ascend_adaptor.py         # 关键桥接层!
+    │     # 替换策略:
+    │     # torch.nn.Linear → ATB Linear (自动)
+    │     # vllm.attention → ATB FlashAttention (自动)
+    │     # RMSNorm → ATB RMSNorm (自动)
+    │     # RotaryEmbedding → ATB Rotary (自动)
+    │
+    ├── ascend_executor.py        # Ascend NPU Executor → 替代 GPU Executor
+    │     # 设备管理, 内存分配, kernel launch
+    │
+    └── utils/
+        ├── paged_attn_ascend.py  # PagedAttention for Ascend
+        └── kv_cache_ascend.py    # KV Cache管理 for Ascend NPU
 ```
+
+### 8.2 AscendNPUAdaptor 桥接机制
+
+```
+工作原理:
+  1. 模型加载 → 检测 Ascend NPU → 自动启用 adaptor
+  2. 替换层:
+     for each layer in model:
+       layer.self_attn → atb_attention (ATB FlashAttn)
+       layer.mlp → atb_mlp (ATB fused MLP)
+       layer.input_layernorm → atb_rmsnorm (ATB RMSNorm)
+  3. 适配KV Cache:
+     PagedAttention → PagedAttention-Ascend
+     block table → Ascend memory allocator
+  4. 通信:
+     NCCL AllReduce → HCCL AllReduce
+     torch.distributed → deepspeed.comm (HCCL backend)
+```
+
+### 8.3 ATB Op vs CUDA Op 对比
+
+| Op | CUDA实现 | ATB实现 (Ascend) | 性能对比 |
+|----|----------|-----------------|----------|
+| FlashAttention | FlashInfer/FA2 | ATB FlashAttn | 910B≈A100水平 |
+| GEMM | cuBLAS/cUTLASS | ATB GEMM (Cube Core) | 910B FP16=320TFLOPS |
+| RMSNorm | PyTorch/Triton | ATB RMSNorm | 融合norm+residual |
+| RoPE | vLLM rotary | ATB RoPE | 融合计算 |
+| MLP | torch.nn.Linear×3 | ATB MLP (fused) | gate+up+down融合 |
+| Sampling | vLLM sampler | ATB TopK/TopP | 融合采样 |
+| KV Cache | PagedAttention | PagedAttn-Ascend | block管理适配 |
+
+### 8.4 支持的模型
+
+| 模型 | vLLM-Ascend支持 | 状态 |
+|------|-----------------|------|
+| LLaMA | ✅ | 稳定 |
+| Qwen/Qwen2 | ✅ | 稳定 |
+| Baichuan | ✅ | 稳定 |
+| ChatGLM | ⚠️ | 部分支持 |
+| DeepSeek | 🔄 | 开发中 |
+
+### 8.5 关键限制
+
+- 动态shape: ATB ops对动态shape支持有限 → 需固定或bucket化
+- 量化: INT8支持, FP8需910C → 当前910B不支持FP8
+- 生态: vLLM新feature需要ATB适配 → 跟随速度慢
+- 性能: ATB op性能依赖昇腾驱动版本 → 需CANN 8.0+
 
 ## 9. 与 7 框架对比
 
@@ -238,10 +302,12 @@ MindIE 的独特价值:
 
 ## 11. 下一步
 
-- [ ] 研究 vLLM-Ascend 源码, 对比 ATB ops vs CUDA ops
-- [ ] 研究 openMind 开源子集
+- [x] 研究 vLLM-Ascend 源码, 对比 ATB ops vs CUDA ops → Section 8 已完成
+- [ ] 研究 openMind 开源子集 → notebook/projects/openmind-architecture-reading.md 已创建
 - [ ] 关注 MindIE FP8 和 PD 分离 roadmap
 - [ ] 评估 Ascend 910B 上 MindIE vs vLLM-Ascend 性能对比
+- [ ] 研究 ATB 融合算子实现细节 (FlashAttention-Ascend kernel)
+- [ ] HCCL vs NCCL 通信性能对比 (RoCE vs NVLink)
 
 ---
 
