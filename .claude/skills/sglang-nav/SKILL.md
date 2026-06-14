@@ -51,15 +51,18 @@ TokenizerManager (API) → Scheduler (orchestration) → TpModelWorker (GPU exec
 ### 5. Speculative Decoding (~7500 lines)
 - **Files**: `sglang/python/sglang/srt/speculative/` (12 core files)
 - **Notes**: `notebook/projects/sglang-spec-decode-reading.md`
-- **Key**: Dual-path dispatch (builtin enum + plugin registry), EAGLE v1/v2, N-gram, DFlash
-- **Workers**: EAGLEWorker(v1) / EAGLEWorkerV2(overlap) / DFlashWorker / NGRAMWorker
+- **Key**: 6 algorithms(EAGLE/EAGLE3/FrozenKV/DFlash/NGRAM/Standalone) + Plugin registry(SpeculativeAlgorithm.register)
+- **Workers**: EAGLEWorkerV2 / DFlashWorkerV2 / FrozenKVMTPWorkerV2 / NGRAMWorker / StandaloneWorkerV2
 - **Flow**: Draft → Verify → DraftExtend (3-phase pipeline)
-- **EAGLE**: Tree-structured speculation, draft model reuses target's hidden states
+- **SpecInput**: abstract class with SpecInputType(9 subtypes) → is_draft_input()/is_verify_input() dispatch
+- **Overlap**: Spec decode + FutureMap overlap → publish draft info mid-forward → schedule prep overlaps
 
-### 6. Overlap Event Loop
-- **File**: `sglang/python/sglang/srt/managers/scheduler.py` (OverlapSchedulerMixin)
-- **Key**: Separate prefill/decode paths, batch merging (not replacing), adaptive new_token_ratio
-- **Flow**: new_token_ratio tracking → batch weight adjustment → merge prefill into running_batch
+### 6. Overlap Event Loop + FutureMap
+- **File**: `sglang/python/sglang/srt/managers/scheduler.py` (event_loop_overlap) + `overlap_utils.py`
+- **Key**: FutureMap(pool-indexed relay, zero-copy) + WAR barrier + separate CUDA streams(schedule/forward/copy)
+- **Flow**: recv_requests → schedule on schedule_stream → forward on forward_stream → WAR barrier → process_batch_result → overlap GPU/CPU
+- **Result**: 20-40% throughput improvement via GPU-CPU parallelism
+- **Dynamic**: Consecutive prefill overlap disabled(SGLANG_DISABLE_CONSECUTIVE_PREFILL_OVERLAP) for TTFT
 
 ### 7. Model Runner
 - **File**: `sglang/python/sglang/srt/managers/model_runner.py` (TpModelWorker)
@@ -69,13 +72,27 @@ TokenizerManager (API) → Scheduler (orchestration) → TpModelWorker (GPU exec
 - **File**: `sglang/python/sglang/srt/managers/tokenizer_manager.py`
 - **Key**: HTTP/gRPC API, request routing, tokenization
 
-### 9. Memory Management
-- **Files**: `sglang/python/sglang/srt/mem_cache/` (radix_cache.py, chunk_cache.py)
-- **Key**: RadixTree for KV cache indexing, token pool allocation, LRU eviction
+### 9. Memory Management + HiCache
+- **Files**: `sglang/python/sglang/srt/mem_cache/` (radix_cache.py, unified_radix_cache.py, chunk_cache.py)
+- **Key**: RadixTree for KV cache indexing + HiCache(3层:GPU+CPU+SSD) + async offload + HiSparse coordinator
+- **UnifiedRadixCache**: RadixTree + HiCache → decode async KV offload to CPU/SSD → GPU memory freed
 
 ### 10. Communication Layer
 - **Files**: `sglang/python/sglang/srt/layers/` (communication via detensorizer)
 - **Key**: TP/PP/EP support, NCCL integration
+
+### 11. PD Disaggregation
+- **Files**: `sglang/python/sglang/srt/disaggregation/` (5 transfer backends)
+- **Key**: DisaggregationMode(NULL/PREFILL/DECODE) → PrefillWorker+DecodeWorker+KVSender+KVReceiver
+- **Backends**: NIXL(RDMA零拷贝) + Mooncake(RDMA+全局KV) + MORI + fake(测试)
+- **PDMux**: 单GPU时间片调度 → prefill→decode切换 → 无需2台机器
+
+### 12. EnvField API
+- **File**: `sglang/python/sglang/srt/environ.py` (1061 lines!)
+- **Key**: EnvField(.get/.set/.override context manager/.is_set/.clear) + EnvStr/EnvBool/EnvInt/EnvTuple
+- **Naming**: SGLANG_* prefix mandatory; ENABLE/DISABLE/USE/FORCE + MAX/MIN/NUM/SIZE + DIR/PATH/PORT
+- **temp_set_env**: rejects SGLANG_* keys by default → use allow_sglang=True only for special cases
+- **Cache dirs**: SGLANG_CACHE_DIR=~/.cache/sglang; Issue #19612 to unify fragmented caches
 
 ## Key Data Flow
 
@@ -108,6 +125,8 @@ User Request
 | KV Cache | RadixTree (variable edges) | BlockHash (fixed blocks) |
 | Prefix Match | Longest Prefix Match | Block-aligned hash |
 | Scheduling | Merge prefill into running | Replace prefill batch |
-| Spec Decode | EAGLE v1/v2 + overlap | Proposer-Scorer dual layer |
-| Event Loop | Normal/Overlap dual mode | Single step() loop |
-| Memory Pool | req_to_token + token_to_kv | BlockPool + FreeQueue |
+| Spec Decode | 6 algorithms + plugin registry + overlap | Proposer-Scorer dual layer |
+| Event Loop | 6 loops: Normal/Overlap/PDMux/PP/DisaggPrefill/DisaggDecode | Single step() loop |
+| Memory Pool | req_to_token + token_to_kv + HiCache(3层) | BlockPool + FreeQueue |
+| PD Separation | Full(Prefill+Decode+KV Transfer+Bootstrap+PDMux) | Experimental |
+| Env Vars | EnvField API(1061 lines) + strict naming | os.getenv |
