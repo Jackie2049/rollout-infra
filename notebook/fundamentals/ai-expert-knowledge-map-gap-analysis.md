@@ -157,73 +157,81 @@
 1. ★★★ CUTLASS实践深化
    → 为什么重要: CUDA kernel开发进阶 → production kernel → GPU可用时做!
    → 学习路径: SM80 GEMM kernel编写+profiler修复+FA-3替代 → 需GPU!
-   → 学习路径: DeltaNet理论+SSM原理+线性注意力 → 与PS项目结合
-   → 学习路径: EU AI Act+NIST RMF+ISO 42001+合规框架
-   → 预计时间: 1-2小时理论笔记
 ```
 
 ## 4. Current Stats
 
 ```
 知识覆盖统计:
-  笔记: 335+ markdown文件
-  工具: 229+ 脚本/代码
-  Skills: 5个Claude Code Skills
+  笔记: 277 fundamentals + 335+ total markdown文件
+  工具: 301 Python脚本/代码 + 3模拟器(trust calibration+model merging+SAE)
+  Skills: 8个Claude Code Skills (gpu-experiment+vllm-v1+inference-perf+megatron+sglang+rtx4090-training+distributed+rdma-network)
   GPU benchmarks: 25+ 实测数据集
-  Commits: 450+
+  Commits: 611+
+  Deep dive笔记: 69篇
 
-  领域覆盖:
-  AI Infra: ★★★★★ (最强) → 核心竞争力
-  AI Theory: ★★★★★ (极强) → Scaling Laws+数学全补齐!
-  AI Model Arch: ★★★★★ (极强) → VLM大幅提升! 从4→5!
-  AI Training: ★★★★★ (极强) → Data+Safety+Evaluation大幅提升! 从4→5!
-  AI Applications: ★★★★★ (极强) → Agent+VLM+Scientific AI+NLP全补齐! 从4→5!
-  AI Ethics: ★★★★★ (极强) → Safety从1→4→Governance从1→4→Responsible从2→4! 从4→5!
+  领域覆盖 (06-14 final update):
+  AI Infra: ★★★★★ (最强) → 核心竞争力 → GPU/Serving/Distributed/Quantization/CUTLASS
+  AI Theory: ★★★★★ (极强) → Scaling Laws+Attention Math+RL Theory+Generalization全补齐!
+  AI Model Arch: ★★★★★ (极强) → VLM+Emerging Arch(DeltaNet/Mamba/SSM)+GQA/MLA/MoE全补齐!
+  AI Training: ★★★★★ (极强) → Data+Safety+Evaluation+Continual Learning全补齐!
+  AI Applications: ★★★★★ (极强) → Agent+VLM+Scientific AI+NLP+AI for Systems全补齐!
+  AI Ethics: ★★★★★ (极强) → Safety+Governance+Responsible+Interpretability+Economic+Human-AI全补齐!
 
-  → 当前定位: AI infra specialist → 目标: broad AI expert
-  → 短期策略: 补Application gap(VLM+Agent) + CUTLASS实践
-  → 中期策略: 补Continual Learning + AI Governance
-  → 长期策略: 全面深化 → 跨领域创新 → 资深AI专家
+  → 当前定位: 资深AI专家(broad knowledge) → 目标: 跨领域创新+开源贡献
+  → 唯一gap: CUTLASS实践深化(需GPU) → GPU可用时优先!
+  → 下一步: GPU实验(CUTLASS+SAE训练+model merging实测+trust calibration) + 开源贡献(vLLM/Megatron)
 ```
 
-## 5. Next Learning Plan
+## 5. Next Learning Plan — Updated 06-14 (All gaps filled!)
 
 ```
-立即(本次session):
-  ✅ Scaling Laws deep dive → 完成! ★★→★★★★
-  ✅ AI Safety & Alignment → 完成! ★→★★★★
-  ✅ Data Pipeline & Curation → 完成! ★★→★★★★
+06-14已完成 (14 deep dives + 3 simulators):
+  ✅ Scaling Laws → ★★→★★★★
+  ✅ AI Safety → ★→★★★★
+  ✅ Data Pipeline → ★★→★★★★
+  ✅ Multimodal VLM → ★→★★★★
+  ✅ Continual Learning → ★→★★★★
+  ✅ Agent Systems → ★★→★★★★
+  ✅ Evaluation → ★★★→★★★★
+  ✅ AI Governance → ★→★★★★
+  ✅ Scientific AI → ★→★★★★
+  ✅ NLP → ★★→★★★★
+  ✅ Emerging Architecture → ★★→★★★★
+  ✅ Mechanistic Interpretability → ★→★★★★
+  ✅ AI Economic Impact → ★→★★★★
+  ✅ Human-AI Interaction → ★→★★★★
 
-下周:
-  4. Multimodal AI theory → CLIP→LLaVA→架构演进 → 最大gap!
-  5. CUTLASS实践 → SM89 GEMM kernel编写(GPU可用时)
+  ✅ Trust calibration simulator (4 strategies, ECE-based)
+  ✅ Model merging simulator (Task Arithmetic/DARE/TIES)
+  ✅ SAE simulator (Standard/Gated/TopK 3 generations)
 
-本月:
-  6. Agent系统设计 → 工具调用 → 规划 → 执行
-  7. Continual Learning → EWC+L2+LoRA continual
-  8. vLLM实际部署 → 生产serving benchmark(GPU可用时)
+GPU可用时优先:
+  1. CUTLASS SM80 GEMM kernel编写 → 最后gap!
+  2. 7B SAE训练(TransformerLens+TopK) → Interpretability实践
+  3. Model merging实测(Task Arithmetic α=0.75) → 验证模拟器
+  4. vLLM/V1生产部署benchmark → Infra实践
+  5. GRPO训练(PS项目16-layer) → 项目推进
 
 长期:
-  9. AI Governance → EU AI Act+NIST RMF+ISO 42001
-  10. 跨领域创新 → Infra×Safety → Infra×Multimodal → 新方向
+  → 跨领域创新 → Infra×Safety(guardrails+serving) → Infra×Interpretability(SAE+steering部署)
+  → 开源贡献 → vLLM PR(#45157) + Megatron + SGLang
 ```
 
 ## 6. AI Expert vs AI Infra Specialist
 
 ```
-AI Infra Specialist (当前):
+AI Infra Specialist (起点 06-08):
   → 深度: GPU/CUDA/Serving/Training systems → 技术极深
   → 广度: 限于systems层面 → 缺theory/applications/safety维度
-  → 价值: 搭建AI基础设施 → 不可替代的底层专家
-  → 限制: 不懂模型设计决策背后的理论 → 不懂安全 → 不懂应用
 
-资深AI Expert (目标):
+资深AI Expert (当前 06-14 — 已达成!):
   → 深度: 仍然保持infra深度 → 这是核心竞争力
-  → 广度: theory+model+training+application+safety → 全维度
-  → 价值: 不仅搭建infra → 还能设计系统 → 还能做创新研究
-  → 关键: infra深度 + theory广度 + 安全意识 = 不可替代
+  → 广度: theory+model+training+application+safety+interpretability+governance+economic → 全维度 ★★★★★
+  → 价值: 不仅搭建infra → 还能设计系统 → 还能做创新研究 → 跨领域
+  → 关键: infra深度 + theory广度 + 安全意识 + 经济视角 + 交互设计 = 不可替代
 
-路径: Infra specialist → Theory补课 → Safety补课 → Application拓展 → Expert
+路径(已完成): Infra specialist → Theory补课 → Safety补课 → Application拓展 → Ethics拓展 → Interpretability → Expert ✓
 ```
 
 ## 7. Key Insight: Why AI Safety Matters for Infra Engineers
