@@ -1,0 +1,155 @@
+{
+  "DDP": {
+    "description": "Standard Data Parallelism",
+    "model_gb": 14.0,
+    "gradients_gb": 42.0,
+    "optimizer_gb": 84.0,
+    "activation_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 141.4,
+    "fits_gpu": false
+  },
+  "ZeRO-1": {
+    "description": "Optimizer state sharding across N GPUs",
+    "model_gb": 42.0,
+    "gradients_gb": 42.0,
+    "optimizer_gb": 7.0,
+    "activation_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 92.4,
+    "memory_saving_vs_ddp": 34.7,
+    "fits_gpu": false,
+    "comm_overhead": "Same as DDP (AllReduce gradients)"
+  },
+  "ZeRO-2": {
+    "description": "Optimizer + gradient sharding",
+    "model_gb": 42.0,
+    "gradients_gb": 5.25,
+    "optimizer_gb": 7.0,
+    "activation_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 55.65,
+    "memory_saving_vs_ddp": 60.6,
+    "fits_gpu": false,
+    "comm_overhead": "ReduceScatter gradients \u2192 same bandwidth as AllReduce"
+  },
+  "ZeRO-2+CPU_Adam": {
+    "description": "ZeRO-2 with CPU optimizer offload",
+    "model_gb": 14.0,
+    "gradients_gb": 1.75,
+    "optimizer_gpu_gb": 0,
+    "optimizer_cpu_gb": 84.0,
+    "activation_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 17.15,
+    "fits_gpu": true,
+    "comm_overhead": "ReduceScatter + CPU\u2194GPU transfer for optimizer",
+    "rtx4090_recommended": true
+  },
+  "ZeRO-3": {
+    "description": "Optimizer + gradient + parameter sharding",
+    "model_gb": 5.25,
+    "gradients_gb": 5.25,
+    "optimizer_gb": 7.0,
+    "allgather_temp_gb": 14.0,
+    "activation_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 32.9,
+    "memory_saving_vs_ddp": 76.7,
+    "fits_gpu": false,
+    "comm_overhead": "3\u00d7: AllGather(params fwd) + ReduceScatter(grads bwd) + AllGather(params bwd) = 3\u03a8",
+    "note": "Peak includes AllGather temp buffer for current layer params"
+  },
+  "FSDP1": {
+    "description": "PyTorch FSDP1 (FlatParameter sharding)",
+    "peak_per_gpu_gb": 32.9,
+    "fits_gpu": false,
+    "comm_overhead": "Same as ZeRO-3: 3\u03a8",
+    "vs_zero3": "Similar peak, but FlatParameter may have padding waste",
+    "note": "FlatParameter \u2192 fixed-size shard \u2192 may waste memory on small params"
+  },
+  "FSDP2": {
+    "description": "PyTorch FSDP2 (DTensor per-parameter sharding)",
+    "peak_per_gpu_gb": 25.9,
+    "fits_gpu": false,
+    "comm_overhead": "2\u03a8: ReduceScatter(grads) + AllGather(params) = 2\u03a8 (no backward AllGather needed)",
+    "vs_fsdp1": "No padding waste + torch.compile compatible + TP compatible",
+    "compile_compatible": true,
+    "note": "DTensor \u2192 per-param sharding \u2192 no padding \u2192 compile sees static shapes"
+  },
+  "LoRA_r16_ZeRO-2": {
+    "description": "LoRA r=16 with ZeRO-2 gradient sharding",
+    "base_model_gb": 14.0,
+    "lora_trainable_gb": 0.875,
+    "activation_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 16.27,
+    "fits_gpu": true,
+    "rtx4090_recommended": true
+  },
+  "LoRA_r16_CPU_Adam": {
+    "description": "LoRA r=16 with CPU Adam optimizer",
+    "base_model_gpu_gb": 14.0,
+    "lora_gpu_gb": 0.21875,
+    "optimizer_cpu_gb": 0.66,
+    "activation_gpu_gb": 1.4000000000000001,
+    "peak_per_gpu_gb": 15.62,
+    "fits_gpu": true,
+    "rtx4090_recommended": true,
+    "note": "Single GPU optimal: no distributed ops needed!"
+  },
+  "GRPO_LoRA_r16": {
+    "description": "GRPO with LoRA r=16 (no critic!)",
+    "base_model_gb": 14.0,
+    "lora_gb": 0.21875,
+    "activation_gb": 2.8000000000000003,
+    "no_critic_saving_gb": 14.0,
+    "peak_per_gpu_gb": 17.02,
+    "fits_gpu": true,
+    "rtx4090_recommended": true,
+    "note": "GRPO advantage = group mean \u2192 no critic model \u2192 saves ~\u03a8 memory!"
+  },
+  "_summary": {
+    "DDP": {
+      "peak_per_gpu_gb": 141.4,
+      "fits_gpu": false
+    },
+    "ZeRO-1": {
+      "peak_per_gpu_gb": 92.4,
+      "fits_gpu": false
+    },
+    "ZeRO-2": {
+      "peak_per_gpu_gb": 55.65,
+      "fits_gpu": false
+    },
+    "ZeRO-2+CPU_Adam": {
+      "peak_per_gpu_gb": 17.15,
+      "fits_gpu": true
+    },
+    "ZeRO-3": {
+      "peak_per_gpu_gb": 32.9,
+      "fits_gpu": false
+    },
+    "FSDP1": {
+      "peak_per_gpu_gb": 32.9,
+      "fits_gpu": false
+    },
+    "FSDP2": {
+      "peak_per_gpu_gb": 25.9,
+      "fits_gpu": false
+    },
+    "LoRA_r16_ZeRO-2": {
+      "peak_per_gpu_gb": 16.27,
+      "fits_gpu": true
+    },
+    "LoRA_r16_CPU_Adam": {
+      "peak_per_gpu_gb": 15.62,
+      "fits_gpu": true
+    },
+    "GRPO_LoRA_r16": {
+      "peak_per_gpu_gb": 17.02,
+      "fits_gpu": true
+    }
+  },
+  "_config": {
+    "model_size_b": 7,
+    "gpu_count": 8,
+    "gpu_memory_gb": 24,
+    "lora_rank": 16,
+    "total_params_\u03a8": 7000000000.0
+  }
+}
