@@ -126,8 +126,9 @@
 | AI Safety | ★★★★ | Defense-in-Depth+OWASP+Guardrails+Red-Teaming+Llama Guard 3 | 完成! |
 | Responsible AI | ★★★★ | Fairness+Calibration+Toxicity+Bias评估+7维+Production Pipeline | 完成! |
 | AI Governance | ★★★★ | EU AI Act+NIST RMF+ISO 42001+China 3法规+全球比较+合规Pipeline | 完成! |
+| Mechanistic Interpretability | ★★★★ | SAE 3代+Claude特征+Refusal Circuit+Steering 5种+Circuit Discovery 3层+RTX 4090 | 完成! |
 
-**Gap**: Safety从1→4! Governance从1→4(3级跳跃)! Responsible从2→4! 全部大幅提升!
+**Gap**: Safety从1→4! Governance从1→4! Responsible从2→4! Interpretability从1→4! 全部大幅提升!
 
 ## 3. Top 5 Knowledge Gaps (Priority Order) — Updated 06-14
 
@@ -146,6 +147,7 @@
   ✅ NLP → ★★→★★★★ (4架构+Tokenization+Autoregressive vs Masked+任务+评估+RTX 4090)
 
   ✅ Emerging Architecture → ★★→★★★★ (DeltaNet+Mamba+SSM+Mamba-2+RWKV-7+GLA+Hybrid+PS项目)
+  ✅ Mechanistic Interpretability → ★→★★★★ (SAE 3代+Claude特征+Refusal Circuit+Steering 5种+Circuit Discovery 3层)
 
 当前唯一gap:
 1. ★★★ CUTLASS实践深化
