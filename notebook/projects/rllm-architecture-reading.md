@@ -387,6 +387,59 @@ Gateway 工作流:
 - _train_verl(): ray.init → TaskRunner.remote() → runner.run.remote()
 - tinker backend 用 unified_trainer.AgentTrainer
 
+### 9.8 VerlBackend (trainer/verl/verl_backend.py, 880行)
+
+**深度集成verl的实现**: 两种worker部署模式
+
+| 模式 | colocated (混合引擎) | separated (异步训练) |
+|------|---------------------|----------------------|
+| 训练GPU | Actor+Rollout+Ref共享 | Actor+Ref独占训练GPU |
+| Rollout | AgentLoopManager(同GPU) | FullyAsyncAgentLoopManager(独立GPU) |
+| Weight Sync | checkpoint_manager.update_weights(每batch) | on_policy_updated(异步pipeline) |
+| 优势 | 资源共享→成本低 | 训练不阻塞rollout→吞吐高 |
+
+**CustomPPOLoss**: 包装verl的ppo_loss，支持per-call loss mode override
+→ `policy_loss_mode_override` 字段 → 同一batch不同role用不同loss
+
+**Rollout Correction** (重要性采样):
+- bypass_mode=True: π_old=π_rollout(直接用rollout logprobs → 无IS权重)
+- TIS mode: π_old≠π_rollout → importance sampling weights → log_ratio = old_log_probs - rollout_log_probs
+
+**Batch Processing Pipeline**:
+1. interleave_tasks(batch, rollout.n) → 每个task重复N次
+2. _execute_tasks_async(tasks, task_ids, engine) → agent workflow执行
+3. sleep_replicas() → 释放KV cache内存(colocated模式)
+4. transform_episodes_to_dataproto → rllm→verl数据格式
+5. pad_dataproto_to_world_size → DP对齐
+6. balance_batch → 跨DP rank平衡token数
+7. compute_log_prob → old_log_probs + entropy
+8. compute_ref_log_prob → ref_log_probs(LoRA: ref_in_actor, 无LoRA: ref_policy_wg)
+9. collect_reward_and_advantage → GRPO/RLOO/REINFORCE++
+10. update_dataproto_with_advantages → broadcast到每个token
+11. update_actor → PPO loss → policy update
+
+**Decoupled Batch Sizes**:
+- mini_batch_size = m (ROWS per optimizer step) → 控制update数量
+- global_batch_size = gbs (ROLLOUTS per update) → seq-mean loss denominator
+- m和gbs解耦 → stable loss scale regardless of merge ratio
+
+### 9.9 GRPO/RLOO实现 (trainer/algorithms/rl_algo.py, 28行)
+
+```python
+def calculate_grpo_advantages_per_group(rewards, norm_adv_by_std_in_grpo=True):
+    group_mean = np.mean(rewards)
+    group_std = np.std(rewards)
+    advantages = (rewards - group_mean) / (group_std + epsilon)
+    return advantages, advantages
+
+def calculate_rloo_advantages_per_group(rewards):
+    # Leave-One-Out baseline: advantage = N/(N-1) * (r - mean)
+    advantages = num_trajs / (num_trajs - 1) * (rewards - rewards.mean())
+    return advantages, advantages
+```
+
+→ 极简实现! GRPO=group normalization; RLOO=leave-one-out baseline
+
 ## 10. 下一步
 
 - [x] 克隆 rLLM 源码 ✅ → _temp_rllm/
