@@ -1,0 +1,169 @@
+{
+  "DDP": {
+    "pattern": "AllReduce(gradients)",
+    "volume_per_step_gb": 0.11,
+    "volume_desc": "2\u00d70.11GB gradients \u2192 AllReduce",
+    "time_ms": 4.56,
+    "bandwidth_needed_gbs": 24.0,
+    "frequency": "every backward pass",
+    "lora_effect": "LoRA r=16: 0.8% of full \u2192 0.11GB vs 14.00GB"
+  },
+  "ZeRO-1": {
+    "pattern": "AllReduce(gradients) [same as DDP]",
+    "volume_per_step_gb": 0.11,
+    "time_ms": 4.56,
+    "optimizer_comm_gb": 10.5,
+    "note": "Optimizer sharded \u2192 no extra comm, just AllReduce grads"
+  },
+  "ZeRO-2": {
+    "pattern": "ReduceScatter(gradients)",
+    "volume_per_step_gb": 0.11,
+    "time_ms": 4.56,
+    "optimizer_comm_gb": 0,
+    "note": "ReduceScatter \u2248 AllReduce bandwidth but sharded optimizer saves memory"
+  },
+  "ZeRO-2+CPU_Adam": {
+    "pattern": "ReduceScatter(gradients) + CPU\u2194GPU optimizer transfer",
+    "volume_per_step_gb": 0.11,
+    "time_ms": 4.56,
+    "cpu_transfer_gb": 0.08,
+    "cpu_transfer_time_ms": 1.6,
+    "note": "CPU optimizer offload \u2192 PCIe transfer for optimizer states",
+    "rtx4090_warning": "PCIe CPU transfer adds latency but saves GPU memory"
+  },
+  "ZeRO-3": {
+    "pattern": "AllGather(params,fwd) + ReduceScatter(grads,bwd) + AllGather(params,bwd)",
+    "volume_per_step_gb": 42.0,
+    "volume_breakdown": {
+      "forward_AllGather": 14.0,
+      "backward_ReduceScatter": 14.0,
+      "backward_AllGather": 14.0
+    },
+    "time_ms": 1750.0,
+    "time_breakdown_ms": {
+      "forward_AllGather": 583.33,
+      "backward_ReduceScatter": 291.67,
+      "backward_AllGather": 583.33
+    },
+    "overlap_potential": "PartitionedParameterCoordinator can prefetch next layer AllGather during compute",
+    "note": "3\u03a8 total communication \u2192 high overhead on PCIe \u2192 NVLink required for efficiency"
+  },
+  "FSDP2": {
+    "pattern": "AllGather(params,fwd) + ReduceScatter(grads,bwd)",
+    "volume_per_step_gb": 28.0,
+    "volume_breakdown": {
+      "forward_AllGather": 14.0,
+      "backward_ReduceScatter": 14.0
+    },
+    "time_ms": 1166.67,
+    "vs_zero3": "2\u03a8 vs 3\u03a8 \u2192 33% less communication",
+    "no_backward_AllGather_reason": "FSDP2 keeps full param after forward \u2192 reshard after backward \u2192 no 3rd AllGather",
+    "compile_compatible": true,
+    "note": "torch.compile sees static shapes \u2192 max kernel fusion \u2192 compensates for 2\u03a8 overhead"
+  },
+  "Megatron_TP": {
+    "pattern": "TP=1 \u2192 no intra-layer communication",
+    "volume_per_step_gb": 0,
+    "note": "Single GPU \u2192 no TP communication needed"
+  },
+  "Megatron_PP": {
+    "pattern": "PP=1 \u2192 no pipeline communication",
+    "volume_per_step_gb": 0,
+    "note": "Single GPU \u2192 no PP communication needed"
+  },
+  "Megatron_MoE_EP": {
+    "pattern": "All-to-All dispatch + All-to-All combine",
+    "volume_approx": "2 \u00d7 num_tokens \u00d7 hidden_dim \u00d7 2 bytes per dispatch+combine",
+    "note": "MoE EP comm depends on routing; DeepEP asymmetric reduces padding waste"
+  },
+  "verl_GRPO": {
+    "pattern": "GRPO advantage = group mean/std \u2192 no critic forward needed",
+    "single_gpu": {
+      "volume_per_step_gb": 0,
+      "note": "Single GPU \u2192 no distributed ops \u2192 TinkerBackend fastest"
+    },
+    "multi_gpu_fsdp2": {
+      "volume_per_step_gb": 28.0,
+      "note": "Same as FSDP2 pattern + rollout generation overhead"
+    },
+    "rollout_transfer_gb": 14.0,
+    "no_critic_saving": "Saves 14.00GB critic model + 14.00GB critic optimizer"
+  },
+  "rLLM_Tinker": {
+    "pattern": "In-process \u2192 no distributed communication",
+    "volume_per_step_gb": 0,
+    "time_ms": 0,
+    "note": "TinkerBackend: same process \u2192 LoRA weight sync via checkpoint file \u2192 no GPU-to-GPU transfer",
+    "sync_mechanism": "save_checkpoint \u2192 new SamplingClient \u2192 file-based \u2192 ~1-2s overhead per sync",
+    "rtx4090_optimal": true
+  },
+  "_summary": {
+    "DDP": {
+      "volume_gb": 0.11,
+      "time_ms": 4.56,
+      "pattern": "AllReduce(gradients)"
+    },
+    "ZeRO-1": {
+      "volume_gb": 0.11,
+      "time_ms": 4.56,
+      "pattern": "AllReduce(gradients) [same as DDP]"
+    },
+    "ZeRO-2": {
+      "volume_gb": 0.11,
+      "time_ms": 4.56,
+      "pattern": "ReduceScatter(gradients)"
+    },
+    "ZeRO-2+CPU_Adam": {
+      "volume_gb": 0.11,
+      "time_ms": 4.56,
+      "pattern": "ReduceScatter(gradients) + CPU\u2194GPU optimizer transfer"
+    },
+    "ZeRO-3": {
+      "volume_gb": 42.0,
+      "time_ms": 1750.0,
+      "pattern": "AllGather(params,fwd) + ReduceScatter(grads,bwd) + AllGather(params,bwd)"
+    },
+    "FSDP2": {
+      "volume_gb": 28.0,
+      "time_ms": 1166.67,
+      "pattern": "AllGather(params,fwd) + ReduceScatter(grads,bwd)"
+    },
+    "Megatron_TP": {
+      "volume_gb": 0,
+      "time_ms": 0,
+      "pattern": "TP=1 \u2192 no intra-layer communication"
+    },
+    "Megatron_PP": {
+      "volume_gb": 0,
+      "time_ms": 0,
+      "pattern": "PP=1 \u2192 no pipeline communication"
+    },
+    "Megatron_MoE_EP": {
+      "volume_gb": 0,
+      "time_ms": 0,
+      "pattern": "All-to-All dispatch + All-to-All combine"
+    },
+    "verl_GRPO": {
+      "volume_gb": 0,
+      "time_ms": 0,
+      "pattern": "GRPO advantage = group mean/std \u2192 no critic forward needed"
+    },
+    "rLLM_Tinker": {
+      "volume_gb": 0,
+      "time_ms": 0,
+      "pattern": "In-process \u2192 no distributed communication"
+    }
+  },
+  "_config": {
+    "model_size_b": 7,
+    "gpu_count": 8,
+    "interconnect": "pcie",
+    "training_type": "grpo",
+    "lora_rank": 16,
+    "tp_size": 1,
+    "pp_size": 1,
+    "dp_size": 8,
+    "bf16_model_gb": 14.0,
+    "hardware_bandwidth_key": "pcie_gen4_x16"
+  }
+}
