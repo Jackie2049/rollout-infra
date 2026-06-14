@@ -233,9 +233,119 @@ ZeRO-Offload (ZeRO-2 + CPU optimizer):
 → ZeRO-3通信量最大(3Ψ), 但内存最省(16Ψ/N); FSDP2更优(2Ψ)
 → RTX 4090: verl GRPO+LoRA+CPU Adam = 最实用方案
 
-## 10. 下一步
+## 10. AllGatherCoalescedHandle 内部机制 (源码级)
 
-- [ ] 研究 PartitionedParameterCoordinator prefetch 机制
-- [ ] 研究 ZeRO-Infinity NVMe swap 数据流
-- [ ] 对比 DeepSpeed Init vs FSDP1 FlatParameter vs FSDP2 DTensor
+> 源码: partition_parameters.py:710-782 + 1233-1273 + 1348-1492
+
+### 10.1 Coalescing核心思路
+
+```
+问题: 一个模块有多个参数(q_proj, k_proj, v_proj, o_proj)
+传统: 每个参数单独AllGather → 4次通信 → 高延迟
+
+Coalescing: 所有参数拼成1个flat_tensor → 1次AllGather → 从flat_tensor中切出各参数
+
+实现:
+  1. 计算总分区大小: partition_sz = sum(p.ds_tensor.ds_numel for p in params)
+  2. 分配flat_tensor: flat_tensor = torch.empty(partition_sz * world_size, dtype, device)
+  3. 切分flat_tensor为N个分区: partitions[i] = flat_tensor.narrow(partition_sz * i)
+  4. 将本rank的分片写入: torch.cat([p.ds_tensor for p in params], out=partitions[rank_in_group])
+  5. 一次AllGather: dist.all_gather(partitions[rank], flat_tensor, group=dp_group)
+  6. wait()后: 从flat_tensor切出各参数 → param.data = cat(partitions).view(param.ds_shape)
+```
+
+### 10.2 _all_gather_dtype实现
+
+```python
+def _all_gather_dtype(params, world_size, rank_in_group, ds_process_group, allgather_dtype):
+    # 所有参数必须同dtype
+    assert all(p.dtype == dtype for p in params)
+
+    partition_sz = sum(p.ds_tensor.ds_numel for p in params)
+    # 分配flat buffer: [partition_sz * world_size]
+    flat_tensor = torch.empty(partition_sz * world_size, dtype=allgather_dtype, device=...)
+
+    # 切分为N个分区(每rank一个)
+    partitions = [flat_tensor.narrow(0, partition_sz * i, partition_sz) for i in range(world_size)]
+
+    # 将本rank的所有参数分片拼接写入本rank分区
+    torch.cat([p.ds_tensor for p in params], out=partitions[rank_in_group])
+
+    # 一次AllGather → 所有rank同时获得所有参数
+    handle = dist.all_gather(partitions[rank_in_group], flat_tensor, group=ds_process_group)
+
+    return AllGatherCoalescedHandle(handle, params, partitions, world_size, ...)
+```
+
+### 10.3 AllGatherCoalescedHandle.wait() — 拆解flat_tensor
+
+```python
+def wait(self, handle_dependency=True):
+    self.allgather_handle.wait()  # 等待AllGather完成
+
+    # 从flat_tensor中切出各参数
+    param_offset = 0
+    for param in self.params:
+        partitions = []
+        for rank in range(self.world_size):
+            # 每个参数在每个rank中的偏移
+            part_to_copy = partitions[rank].narrow(0, param_offset, ds_tensor_numel)
+            partitions.append(part_to_copy)
+
+        # 拼接所有rank的分区 → 恢复完整参数
+        param.data = torch.cat(partitions).view(param.ds_shape).to(param.ds_tensor.dtype)
+        param.ds_status = ZeroParamStatus.AVAILABLE  # 参数可用!
+
+        param_offset += ds_tensor_numel  # 移到下一个参数
+```
+
+### 10.4 dtype分组策略
+
+```python
+def _all_gather_coalesced(params, world_size, rank_in_group, use_secondary_tensor, ds_process_group, quantize):
+    if not quantize:
+        # 按dtype分组 → 不同dtype需要不同AllGather
+        dtype_params = defaultdict(list)
+        for p in params:
+            allgather_dtype = get_allgather_dtype(p, p.ds_tensor)
+            dtype_params[allgather_dtype].append(p)
+
+        handles = []
+        for dtype in sort_dtypes(dtype_params.keys()):
+            handles.append(_all_gather_dtype(dtype_params[dtype], world_size, ...))
+
+        return MultipleAllGatherHandles(handles)  # 多个handle → 一个wait管理
+```
+
+**为什么需要dtype分组?**
+- BF16参数 → BF16 AllGather
+- FP32参数 → FP32 AllGather
+- 不同dtype不能在同一flat_tensor中混合 → 需要分组
+
+### 10.5 AllReduce替代路径
+
+```python
+if self.use_all_reduce_for_fetch_params and not quantize:
+    # AllReduce替代AllGather → 通信量相同但更简单!
+    flat_tensor = torch.zeros(flat_buffer_size, dtype, device)
+    # 先将本rank分片填入正确位置
+    for param in params:
+        start = start_param + param.ds_tensor.ds_numel * self.get_partition_rank()
+        flat_tensor.narrow(0, start, param.ds_tensor.ds_numel).copy_(param.ds_tensor)
+
+    handle = dist.all_reduce(flat_tensor, group=ds_process_group, async_op=True)
+    return AllReduceCoalescedHandle(handle, params)
+```
+
+**AllReduce vs AllGather**:
+- AllGather: 每rank发送1/N → 收集N个1/N → 总量Ψ
+- AllReduce: 每rank发送全Ψ → reduce → 总量Ψ → 但输入只有1/N非零 → 等效!
+- AllReduce更简单 → 但需要flat_tensor全零初始化+只填本rank部分
+
+## 11. 下一步
+
+- [x] 研究 PartitionedParameterCoordinator prefetch 机制 → notebook/projects/deepspeed-prefetch-coordinator-reading.md
+- [x] 研究 ZeRO-Infinity NVMe swap 数据流 → notebook/projects/deepspeed-nvme-swap-reading.md
+- [x] 研究 AllGatherCoalescedHandle 内部机制 → 本文件Section 10
+- [x] 对比 DeepSpeed Init vs FSDP1 FlatParameter vs FSDP2 DTensor → tools/sharding_strategy_simulator.py
 - [ ] 在GPU可用时实测 ZeRO-2+CPU Adam 7B 训练
