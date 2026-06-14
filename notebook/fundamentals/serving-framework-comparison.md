@@ -47,39 +47,62 @@ AsyncLLM (前端进程)
 - torch.compile 优化 (V1 默认 level 3)
 - 5 个采样后端 (FlashInfer/PyTorch/CPU/XPU/ROCm)
 
-### 2.2 SGLang
+### 2.2 SGLang (2026-06 source reading updated)
 
 ```
-TokenizerManager (前端)
+TokenizerManager (主进程)
     │
-    ├── Scheduler (单线程事件循环)
-    │     ├── receive_batch()
-    │     ├── schedule() (缓存感知)
-    │     ├── forward_batch_generation() (GPU)
-    │     └── process_batch_result() (CPU)
+    ├── Scheduler (GPU子进程, ZMQ IPC)
+    │     ├── 6种事件循环: Normal/Overlap/PDMux/PP/DisaggPrefill/DisaggDecode
+    │     ├── Mixin架构: DisaggregationDecode/Prefill/Multiplex/PP/Dllm/MlxOverlap
+    │     ├── Overlap调度 (核心创新!)
+    │     │     ├── FutureMap (pool-indexed relay, 跨迭代值传递)
+    │     │     ├── WAR barrier (schedule_stream.wait_stream(forward_stream))
+    │     │     └── 双CUDA Stream: forward_stream + schedule_stream + copy_stream
+    │     │     → GPU forward 与 CPU schedule_result 并行 → 20-40%吞吐提升!
+    │     ├── Speculative Decoding (6种+Plugin)
+    │     │     ├── EAGLE/EAGLE3/DFlash/FrozenKV_MTP/NGRAM/Standalone
+    │     │     ├── SpecInput统一抽象 (9种SpecInputType)
+    │     │     └── SpeculativeAlgorithm.register() → 第三方扩展
+    │     └── PD分离 (完整)
+    │           ├── PrefillWorker (只prefill → KV Transfer)
+    │           ├── DecodeWorker (接收KV → 只decode → PREBUILT ForwardMode)
+    │           ├── PDMux (单GPU时间片调度)
+    │           └── TransferBackend: NIXL/Mooncake/MORI/fake
     │
-    ├── RadixAttention (基数树)
-    │     ├── match_prefix() → 最长前缀匹配
-    │     ├── insert() → 动态节点分裂
-    │     └── evict() → 7 种策略 (LRU/LFU/FIFO/...)
+    ├── DetokenizerManager (子进程, ZMQ IPC)
+    │     └── detokenize → stream返回TokenizerManager
+    │
+    ├── RadixAttention (基数树 + HiCache)
+    │     ├── RadixTree → prefix-sharing → 自动匹配system prompt
+    │     ├── HiCache → 3层(GPU+CPU+SSD) → async offload → decode不停顿
+    │     ├── HiRadixCache → RadixTree+HiCache整合
+    │     └── HiSparse → 稀疏注意力协调器 → 长上下prefill→sparse→decode继续
     │
     ├── Cache-Aware Scheduling
     │     ├── LPM (最长前缀优先)
-    │     ├── DFS-weight
     │     └── 批内前缀检测
     │
-    └── 多后端
-          ├── Triton (decode attention)
-          ├── FlashInfer (prefill attention)
-          └── CUDA Graph (decode 固定形状)
+    ├── SamplingBatchInfo + Penaltylib
+    │     ├── 4 penalizers: Frequency/Presence/Repetition/MinNewTokens
+    │     ├── Repetition = multiplicative(is_multiplicative=True)
+    │     └── custom_logit_processor + logit_bias
+    │
+    └── EnvField API (1061行environ.py)
+          ├── SGLANG_* 前缀强制通过EnvField
+          ├── temp_set_env() 拒绝SGLANG_* (需allow_sglang=True)
+          └── 严格命名: ENABLE/DISABLE/USE/FORCE + MAX/MIN/NUM/SIZE
 ```
 
-**特点**:
-- 单进程事件循环 (比 vLLM 双进程更轻)
-- Radix Tree prefix caching (token 级, 无 block 对齐限制)
-- 缓存感知调度 (LPM 策略主动优化缓存命中)
-- Compressed Finite State Machine (结构化输出零开销)
-- Prefill-Decode 分离 (disaggregated serving)
+**特点 (2026-06 源码阅读更新)**:
+- **3进程架构** (TokenizerManager+Scheduler+DetokenizerManager) → vs vLLM双进程
+- **Overlap调度** = 核心竞争力 → GPU forward与CPU schedule并行 → 零GPU空闲 → 吞吐20-30%! → vs vLLM无overlap
+- **FutureMap** = pool-indexed relay → 跨迭代传递output_tokens/new_seq_lens → D2H async copy → pinned memory
+- **RadixAttention** → Token级prefix sharing → vs vLLM Block级(16 tokens/block)
+- **HiCache** → 3层(GPU+CPU+SSD) → async offload → decode时GPU内存释放 → vs vLLM 2层
+- **PD分离** → 完整(Prefill/Decode/KV Transfer/Bootstrap/PDMux) → vs vLLM实验性
+- **Plugin Spec** → 6种算法+注册式 → vs vLLM内置
+- **EnvField** → 严格环境变量管理 → vs vLLM os.getenv
 
 ### 2.3 TensorRT-LLM
 
