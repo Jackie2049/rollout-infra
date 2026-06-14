@@ -300,7 +300,47 @@ rLLM: 天然支持 → prefix-merge + response_mask
 → RTX 4090: 多轮agent GRPO训练, rLLM是唯一可行方案(不需手动构造)
 ```
 
-## 9. 总结
+## 9. Tinker Backend Transform (补充)
+
+rLLM tinker backend的transform与verl backend核心逻辑完全相同，但输出格式不同:
+
+### 9.1 输出格式差异
+
+| 方面 | verl backend | tinker backend |
+|------|-------------|---------------|
+| 输出类型 | `DataProto` (TensorDict+dict) | `tinker.Datum` (Tinker API) |
+| 数据格式 | PyTorch Tensor batch | `TensorData` list |
+| loss输入 | batch.batch["advantages"] | Datum.loss_fn_inputs["advantages"] |
+| mask表示 | batch.batch["response_mask"] | Datum.loss_fn_inputs["mask"] |
+| routing | tensors["routed_experts"] | Datum.model_input.routing_matrices |
+
+### 9.2 Prefix-Merge逻辑 (完全相同!)
+
+```python
+# tinker transform.py: trajectory_to_datums()
+# 与verl transform.py: _process_trajectory() 逻辑100%相同:
+# - cumulative prefix检测: seq1[:len(full_seq)] == full_seq
+# - delta_obs = 新prompt超出full_seq的部分
+# - mask: [0]*len(delta_obs) + [1]*len(action)
+# - prefix break → emit当前segment, start新segment
+
+# 关键代码:
+if _is_prefix(SequenceAccumulator.full_sequence, token_input_flat):
+    delta_token_input_flat = token_input_flat[len(SequenceAccumulator.full_sequence):]
+else:
+    data.append(make_datum_from_state())  # emit
+    SequenceAccumulator.clear()            # reset
+```
+
+### 9.3 优势计算位置
+
+- verl backend: `update_dataproto_with_advantages()` → 训练前更新DataProto
+- tinker backend: `collect_reward_and_advantage_from_trajectory_groups()` → transform前计算
+- **差异**: tinker在transform前计算advantage(直接写入step.advantage), verl在transform后(写入DataProto)
+
+→ 两者语义等价，只是数据流时序不同
+
+## 10. 总结
 
 | 方面 | verl原生 | rLLM (over verl) |
 |------|----------|-------------------|
