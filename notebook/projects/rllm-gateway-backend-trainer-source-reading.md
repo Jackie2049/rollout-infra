@@ -444,7 +444,117 @@ VLM自动检测:
   例: Qwen3-VL → 自动加载image_processor → 支持多模态推理!
 ```
 
-## 7. 下一步
+## 7. VerlBackend vs TinkerBackend 对比 (879行 vs 450行)
+
+> 源码: _temp_rllm/rllm/trainer/verl/verl_backend.py + transform.py(624行)
+
+### 7.1 核心架构差异
+
+```
+VerlBackend(BackendProtocol[Iterable, DataProto]):
+  name = "verl"
+  → Ray分布式训练 → 多GPU
+  → colocated(hybrid engine) / separated(async rollout)
+  → DataProto数据格式
+
+TinkerBackend(BackendProtocol[Iterable, list[tinker.Datum]]):
+  name = "tinker"
+  requires_loop = True
+  → in-process单GPU训练
+  → tinker.Datum数据格式
+  → LoRA自动管理
+```
+
+### 7.2 Advantage计算对比 (关键差异!)
+
+```
+VerlBackend.compute_advantages → 实际计算advantage!
+  1. collect_reward_and_advantage_from_trajectory_groups(trajectory_groups, algorithm_config)
+     → rLLM-native advantage计算 → GRPO/RLOO/REINFORCE++
+  2. update_dataproto_with_advantages(batch, episodes, mode="broadcast")
+     → advantage写入DataProto → trajectory.uid→step_id映射
+     → broadcast模式: scalar advantage广播到所有response tokens
+
+→ 符合BackendProtocol默认流程: advantage在Stage 6独立计算!
+
+TinkerBackend.compute_advantages → 只存储algorithm_config!
+  → advantage在process_backend_batch内计算(transform_trajectory_groups_to_datums)
+  → 打破了Stage 6独立计算的约定 → 更高效(减少数据传递)
+
+→ 这是两个backend最核心的架构差异!
+```
+
+### 7.3 Worker管理对比
+
+```
+VerlBackend:
+  - _init_colocated_workers: Ray + ResourcePoolManager + colocated worker groups
+    → ActorRolloutRef(训练+推理+ref) 同一GPU → hybrid engine
+    → Role.ActorRolloutRef / Role.RefPolicy → 角色映射
+  - _init_separated_workers: 分离训练和推理
+    → Role.Actor / Role.ActorRollout → 训练worker
+    → FullyAsyncAgentLoopManager → 独立rollout server
+  - LoRA时: ref_in_actor=True → ref policy和actor共用worker → 省GPU!
+  - CheckpointEngineManager → checkpoint管理+sleep replicas
+
+TinkerBackend:
+  - TinkerEngine + TinkerPolicyTrainer → in-process
+  - 无Ray → 无分布式 → 单GPU
+  - LoRA: service_client.create_lora_training_client_async → 自动创建
+  - sampling_client → weight sync → 最简单的路径!
+```
+
+### 7.4 Loss Function对比
+
+```
+VerlBackend:
+  - CustomPPOLoss: 包装verl ppo_loss + policy_loss_mode_override
+  - 从POLICY_LOSS_REGISTRY获取已知loss → vanilla/clipped等
+  - _update_actor_with_loss_routing:
+    → loss_fn_map → 每组role用不同loss → 合理分组
+    → 同loss的角色 → 合并为1次update_actor → 减少optimizer steps!
+
+TinkerBackend:
+  - ADV_TO_LOSS_FN_AUTO_MAP: GRPO→PPO, RLOO→IS
+  - 5种tinker loss: PPO/IS/cispo/dro/CE
+  - training_client.forward_backward_async → tinker API自动处理
+```
+
+### 7.5 update_policy对比
+
+```
+VerlBackend.update_policy:
+  1. DataProto → TensorDict → left_right_2_no_padding → 去padding
+  2. metadata注入: mini_batch_size, global_batch_size, epochs, seed
+  3. loss_override → 不同group_roles用不同loss
+  4. actor_rollout_wg.update_actor(batch_td, metadata) → Ray RPC
+  5. critic_warmup: 前N步只warmup critic → 不更新actor
+
+TinkerBackend.update_policy:
+  1. policy_trainer.optim_step_future(step, total_steps, lr, beta1, beta2, eps)
+  2. → tinker API optimizer step → async
+  3. 或fused时: 已在process_backend_batch内完成 → skip!
+```
+
+### 7.6 RTX 4090决策
+
+```
+RTX 4090单GPU → TinkerBackend最优:
+  - 无Ray overhead → in-process → 快
+  - LoRA自动管理 → 简单
+  - fused fwd-bwd-optim → 1次async round-trip
+  - GRPO→PPO loss → 无需critic模型
+
+RTX 4090多GPU(8x) → VerlBackend更优:
+  - Ray分布式 → 多GPU并行
+  - hybrid engine → 训练+推理+ref同一GPU
+  - colocated模式 → 省GPU数量
+  - async rollout → 训练推理overlap
+
+→ 单GPU=Tinker, 多GPU=Verl → 清晰决策!
+```
+
+## 8. 下一步
 
 - [x] GatewayManager深度阅读 → 本文件Section 1
 - [x] BackendProtocol深度阅读 → 本文件Section 2
@@ -454,7 +564,7 @@ VLM自动检测:
   - GRPO→PPO loss + RLOO→IS loss → tinker 5种loss function
   - fused forward-backward-optim → 减少async round-trip → 单GPU更高效
   - advantage在process_backend_batch内计算(不是独立stage)
-- [ ] 研究 VerlBackend 中的 compute_advantages override
+- [x] VerlBackend深度阅读 → 本文件Section 7 (新增)
 - [ ] 研究 fully-async训练pipeline细节
 - [ ] GPU可用时: 运行rLLM eval+train实测
 
@@ -466,3 +576,5 @@ Sources:
 - `_temp_rllm/rllm/trainer/unified_trainer.py` (1078 lines)
 - `_temp_rllm/rllm/trainer/tinker/tinker_backend.py` (450 lines)
 - `_temp_rllm/rllm/trainer/tinker/tinker_policy_trainer.py` (452 lines)
+- `_temp_rllm/rllm/trainer/verl/verl_backend.py` (879 lines)
+- `_temp_rllm/rllm/trainer/verl/transform.py` (624 lines)
