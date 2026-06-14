@@ -565,8 +565,141 @@ RTX 4090多GPU(8x) → VerlBackend更优:
   - fused forward-backward-optim → 减少async round-trip → 单GPU更高效
   - advantage在process_backend_batch内计算(不是独立stage)
 - [x] VerlBackend深度阅读 → 本文件Section 7 (新增)
-- [ ] 研究 fully-async训练pipeline细节
+- [ ] 研究 fully-async训练pipeline细节 → Section 9 (新增!)
 - [ ] GPU可用时: 运行rLLM eval+train实测
+
+## 9. Fully-Async Training Pipeline 深度阅读
+
+> 源码: unified_trainer.py(_fit_fully_async) + experimental/fully_async/ + sync_coordinator.py + buffer.py + algorithms/config.py
+
+### 9.1 On-Policy vs Fully-Async 对比
+
+| Config | 行为 |
+|--------|------|
+| `staleness=0, sync_step=1` | **On-policy** (传统PPO) |
+| `staleness=0, sync_step=K` | **Stream off-policy** (K步才sync) |
+| `staleness>0, partial=False` | **Async with staleness** |
+| `staleness>0, partial=True` | **Async with partial rollout** |
+
+### 9.2 UnifiedTrainer Async Data Flow
+
+```
+_fit_fully_async:
+  两个并发asyncio task:
+  ├── _generation_loop → 独立生成episode → 流入TrajectoryGroupBuffer
+  └── _training_loop → 消费buffer中的groups → mini_batch_size一组 → fwd-bwd → optimizer step
+
+  Generation:
+    dataloader(batch_size=1) → group_size rollout tasks → asyncio concurrent → Episode → buffer.add_episode
+
+  TrajectoryGroupBuffer.add_episode:
+    accumulate per task_id → group_size episodes = TaskBatch:
+    1. transform episodes → trajectory groups
+    2. drop < min_trajs groups
+    3. compute advantages (buffer内计算!不是training loop内)
+    4. rejection sampling: drop all-zero advantage groups
+    5. set weight_version = min(episode versions) → staleness tracking
+    6. queue TaskBatch → _queue for training
+
+  Training:
+    pull mini_batch_size task batches from buffer →
+    split into num_fwd_bwd_passes chunks →
+    per chunk: transform_to_backend_batch → process_backend_batch(fwd-bwd) →
+    all chunks done: update_policy(optimizer step) →
+    check coordinator.should_sync() → _perform_weight_sync →
+    staleness metrics: coordinator.weight_version - group.weight_version
+```
+
+### 9.3 Weight Sync机制
+
+**TinkerBackend** (in-process):
+```
+on_policy_updated → policy_trainer.save_checkpoint_and_get_sampling_client
+  → save_weights_and_get_sampling_client_async → 新SamplingClient
+  → rollout_engine.set_sampling_client(new_client)
+  → 无GPU-GPU broadcast → 最快sync!
+```
+
+**VerlBackend** (distributed):
+```
+on_policy_updated → checkpoint_manager.update_weights(version)
+  → NCCL broadcast: trainer GPU → rollout GPU workers
+  → Requires is_separated=True for async
+  → No chunked fwd-bwd supported (fwd_bwd_group_size == mini_batch_size)
+```
+
+**Experimental FullyAsyncTrainer** (Ray-based, Meituan origin):
+```
+ParameterSynchronizer.sync_weights:
+  rollout_executor.pause → abort in-flight requests → clear KV cache
+  → NCCL collective broadcast or checkpoint_engine (SGLang always direct broadcast)
+  → rollout_executor.resume
+  → separate Ray actors: RolloutExecutor + MessageQueue + FullyAsyncTrainer
+```
+
+### 9.4 SyncCoordinator Quota System
+
+```python
+max_rollout_quota = int((1 + staleness_threshold) * trigger_parameter_sync_step * mini_batch_size)
+# staleness_threshold=0 → quota = sync_step * mini_batch = exactly one optimizer step
+# staleness_threshold>0 → more stale data allowed before sync forced
+# quota resets on on_sync_complete; in-flight carries over
+```
+
+### 9.5 Staleness Tracking
+
+**Multiple levels:**
+- TrajectoryGroup: `weight_version = min(episode weight_versions)` → buffer.py line 414-421
+- Training loop: staleness = `coordinator.weight_version - group.weight_version` → line 713-716
+- Experimental: Sequence has `start_version`/`end_version`; OutputChunk has `version`
+- RolloutExecutor staleness gating: `max_queue_size = required * (staleness+1) * sync_steps`
+
+### 9.6 IS (Importance Sampling) Corrections
+
+**3种IS correction机制:**
+
+| 机制 | 路径 | 实现 |
+|------|------|------|
+| **Tinker IS loss** | UnifiedTrainer+Tinker | 默认loss=importance_sampling → 自然off-policy纠正 |
+| **MIS (Multi-step IS)** | Experimental | `compute_prox_log_prob`: rollout-era policy log probs → proper IS ratio |
+| **RolloutCorrectionConfig** | Config | `tis_mode`: token/sequence IS; `bypass_mode`: True=rollout logprobs; False=3-policy PPO |
+| **TIS cap** | Config | Upper clamp on TIS importance weight (default 5.0/2.0) |
+
+### 9.7 Async vs On-Policy 8-Stage Pipeline 重构
+
+```
+On-policy 8 stages → Async 重构:
+
+  Stage 1-3 (generate→transform→filter):
+    → _generation_loop + TrajectoryGroupBuffer (并发)
+    → advantage在buffer内计算 (不是training loop!)
+
+  Stage 4-7 (to_batch→process→advantage→update):
+    → _training_loop (消费buffer)
+    → advantage已经预计算 → process_backend_batch直接用
+
+  关键差异:
+    - On-policy: advantage在Stage 6计算
+    - Async: advantage在buffer内预计算 → training loop只消费
+    - On-policy: Stage 1 block直到完成
+    - Async: Stage 1-3持续运行 → episodes stream into buffer
+```
+
+### 9.8 Architecture对比表
+
+| 维度 | On-Policy | UnifiedTrainer Async | Experimental FullyAsync |
+|------|-----------|---------------------|------------------------|
+| Generation | Sequential per batch | Concurrent asyncio task | Concurrent Ray actor |
+| Training | Sequential after gen | Concurrent asyncio task | Ray actor (独立进程) |
+| Communication | Direct (in-process) | asyncio.Queue (buffer) | Ray MessageQueue (cloudpickle) |
+| Weight sync | Every step | Every K steps | Every K steps |
+| Staleness | 0 | Configurable threshold | Configurable threshold |
+| IS correction | Not needed | Tinker IS loss / TIS | MIS + rollout_correction |
+| Quota system | N/A | SyncCoordinator (per-window) | RolloutExecutor (max_queue_size) |
+| Partial rollout | N/A | Optional config | Optional, FullyAsyncLLMServerManager |
+| RTX 4090最优 | On-policy+Tinker | Async+Tinker(staleness=2,sync=4) | ❌(Ray overhead太大) |
+
+**TODO (line 397): "after some benchmarking, maybe we just keep the fully-async and treat on-policy as a special case"**
 
 ---
 
@@ -578,3 +711,7 @@ Sources:
 - `_temp_rllm/rllm/trainer/tinker/tinker_policy_trainer.py` (452 lines)
 - `_temp_rllm/rllm/trainer/verl/verl_backend.py` (879 lines)
 - `_temp_rllm/rllm/trainer/verl/transform.py` (624 lines)
+- `_temp_rllm/rllm/trainer/sync_coordinator.py` (quota + throttle)
+- `_temp_rllm/rllm/trainer/buffer.py` (TrajectoryGroupBuffer + advantage预计算)
+- `_temp_rllm/rllm/trainer/algorithms/config.py` (AsyncTrainingConfig + RolloutCorrectionConfig)
+- `_temp_rllm/rllm/experimental/fully_async/` (Experimental FullyAsyncTrainer)
