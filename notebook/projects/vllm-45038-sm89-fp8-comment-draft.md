@@ -18,11 +18,14 @@ This fix directly addresses a critical SM89 correctness issue that affects both 
 
 I've been studying RTX 4090 (SM89) limitations in depth for AI training and inference workloads. A few observations that may be helpful:
 
-**SM89 FP8 support matrix** (from our research):
-- FP8 E5M2 (inference): ✗ — not supported on SM89, only SM90+
+**SM89 FP8 support matrix** (updated with v0.23.0 findings):
+- FlashInfer FP8 KV: ✗ — flash_attn_varlen_func_fp8_sm90 kernels only compiled for SM90+, crash on SM89
+- Triton FP8 KV: ✓ (v0.23.0 #43914) — SM89 is the fp8 boundary for Triton backend, technically allowed but slower than FlashInfer
+- compressed-tensors FP8 override: ✗ — unconditionally overrides kv_cache_dtype to fp8 → uses FlashInfer backend → crash on SM89 (this PR fixes it)
+- NVFP4 KV: ✗ — fail-fast ValueError on SM89, requires SM100/SM103 (v0.23.0 #43669)
 - FP8 E4M3 (training): ✗ — no native GEMM pipeline on SM89, no performance advantage
 - FP8 AllGather/communication: ✗ — NCCL FP8 requires SM90+
-- INT4 GPTQ + INT8 KV: ✓ — the practical path for SM89 inference (vLLM v0.23.0+)
+- INT4 GPTQ + INT8 KV: ✓ — the practical production path for SM89 inference (vLLM v0.23.0+)
 - BF16 training: ✓ — the only correct training precision for SM89
 
 **Impact for GRPO training on RTX 4090**:
@@ -30,6 +33,8 @@ The FP8 KV cache override is particularly problematic for GRPO/RL training scena
 - vLLM is used as the rollout engine (verl/rLLM)
 - INT8 KV cache is the correct choice for SM89 (not FP8)
 - compressed-tensors models with FP8 config would silently crash on RTX 4090
+
+Note: v0.23.0 also revealed a related SM89 issue — SM<90 batch invariance breaks with CUDA graphs + torch.compile (#39096). For RTX 4090 users, this means speculative decoding (EAGLE/MTP) requires `enforce_eager=True`. Combined with this FP8 guard, the SM89 production path becomes: INT4 GPTQ + INT8 KV + MRv1 + enforce_eager (for spec decode) or INT8 KV + MRv2 (for dense BF16).
 
 Note: vLLM v0.23.0 (released 2026-06-15) includes MRv2 as default for Llama/Mistral but MRv2 doesn't support quantized models yet — RTX 4090 INT4 inference still uses V1 ModelRunner. This FP8 guard is essential for V1 + INT8 KV to work correctly on SM89.
 

@@ -25,6 +25,8 @@ Thanks for flagging this. I've been studying vLLM V1's LoRA serving + prefix cac
 
 **PR #44706 assessment**: The domain-tag fix `[("lora", request.lora_request.lora_name)]` and `[("cache_salt", request.cache_salt)]` correctly brings LoRA and cache_salt into alignment with `mm_extra_keys` (which already uses `(identifier, offset)` tuples). This is the minimal, mathematically-guaranteed fix — domain-tagged tuples cannot collide regardless of string values. However, this PR appears stalled with no maintainer review and CI blocked by the `ready` label.
 
+**Additional SM89 concern**: v0.23.0 also reveals that SM<90 GPUs have a separate batch invariance bug (#39096) where CUDA graphs + torch.compile break batch-invariant outputs. For RTX 4090 users running GRPO rollout with prefix caching, there are now **two** SM89 correctness issues stacked: (1) this hash collision silently corrupts prefix reuse, and (2) CUDA graphs break spec decode batch invariance. The practical RTX 4090 GRPO path requires both `enable_prefix_caching=True` (for 7x compute savings) AND correct hash domain separation — making this collision fix even more critical for SM89 users.
+
 I've documented this interaction in detail at my research notes (https://github.com/Jackie2049/rollout-infra/blob/main/notebook/projects/vllm-prefix-cache-hash-collision-reading.md) — includes exact source code paths, chained hash analysis, SGLang comparison, and GRPO rollout impact.
 ```
 
