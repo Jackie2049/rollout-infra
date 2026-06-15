@@ -1,0 +1,11 @@
+{
+  "memory": {
+    "model_size": "7b",
+    "lora_rank": 32,
+    "base_weights_gb": 14.0,
+    "lora_adapters_gb": 0.016777216,
+    "adam_optimizer_gb": 0.134217728,
+    "total_gb": 14.684549376,
+    "rtx4090_feasible": true
+  }
+}
