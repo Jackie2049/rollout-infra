@@ -24,6 +24,7 @@
 | #45038 (FP8 guard) | 2+ | 0 | ★★★ SM89替代路径(INT8KV) |
 | #44701 (LoRA collision) | 5+ | 0 | ★★★ 源码级LoRA+prefix分析 |
 | #43731 (INT4 Triton) | merged | 1 | ★★★ INT4 Triton fallback理解 |
+| #39096 (batch invariance) | 6+ | 0 | ★★★★★ SM89 dual failure path + Inductor root cause |
 
 ★★★ **核心策略**: 先评论(Tier 1) → 再提交PR(Tier 2-3) → 深度贡献(Tier 4)
 
