@@ -1,0 +1,17 @@
+{
+  "strategy": "gradient_checkpointing",
+  "full_checkpoint_size": 12.1,
+  "optimized_checkpoint_size": 8,
+  "full_checkpoints": [
+    "linear1",
+    "relu",
+    "linear2",
+    "loss"
+  ],
+  "optimized_checkpoints": [
+    "linear1",
+    "linear2"
+  ],
+  "savings_ratio": 0.33884297520661155,
+  "checkpoint_interval": 2
+}
