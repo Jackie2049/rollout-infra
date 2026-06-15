@@ -1,0 +1,59 @@
+{
+  "singleton": {
+    "n1": {
+      "rewards": [
+        0.5
+      ],
+      "uids": [
+        "prompt_0"
+      ],
+      "groups": {
+        "prompt_0": {
+          "scores": [
+            0.5
+          ],
+          "mean": 0.0,
+          "std": 1.0
+        }
+      },
+      "advantages": [
+        0.5
+      ],
+      "advantage_sum": 0.5,
+      "norm_adv_by_std": true,
+      "problem": "n=1 → μ=0, σ=1 → advantage = (r - 0)/(1 + ε) = r",
+      "actual_advantage": [
+        0.5
+      ],
+      "explanation": "advantage = raw_reward when n=1 → BUT group variance=0 → no relative comparison → weak learning signal",
+      "recommendation": "rollout_n ≥ 4 (at least 4 responses per prompt for meaningful group normalization)"
+    },
+    "n2": {
+      "rewards": [
+        0.5,
+        0.7
+      ],
+      "uids": [
+        "prompt_0",
+        "prompt_0"
+      ],
+      "groups": {
+        "prompt_0": {
+          "scores": [
+            0.5,
+            0.7
+          ],
+          "mean": 0.6,
+          "std": 0.14142135623730948
+        }
+      },
+      "advantages": [
+        -0.7071,
+        0.7071
+      ],
+      "advantage_sum": 0.0,
+      "norm_adv_by_std": true
+    },
+    "conclusion": "n=1 → advantage=raw_reward (weak signal); n≥4 → meaningful group comparison; ★ rollout_n≥4必需!"
+  }
+}
