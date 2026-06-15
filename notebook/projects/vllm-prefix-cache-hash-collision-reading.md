@@ -70,36 +70,67 @@ BlockHashToBlockMap:
 
 ## 2. _gen_lora_extra_hash_keys详解
 
-### 2.1 LoRA hash key生成
+### 2.1 LoRA hash key生成 (★★★ exact source code from vllm/v1/core/kv_cache_utils.py)
 
 ```
-★★★★ _gen_lora_extra_hash_keys(request):
-  → 返回LoRA adapter的标识字符串
-
-  逻辑:
-  if request.has_lora:
-    return (request.lora_name,)  ← ★★★ 只有adapter name!
-  else:
-    return ()  ← 空tuple → 无LoRA
+★★★★ _gen_lora_extra_hash_keys (buggy version, line 484):
+  def _gen_lora_extra_hash_keys(request: Request) -> list[str]:
+    if not request.lora_request:
+      return []
+    return [request.lora_request.lora_name]  ← ★★★★ bare string! No domain tag!
 
   ★★★★ 问题1: LoRA name是纯字符串 → 无domain prefix → 可与cache_salt碰撞!
   ★★★★ 问题2: 同名LoRA reload → 新adapter但相同name → hash不变 → stale KV (#42125)
 ```
 
-### 2.2 cache_salt
+### 2.2 cache_salt (★★★ exact source code)
 
 ```
-★★★★ cache_salt:
-  → 来自请求参数 → 随机字符串 → 用于区分不同请求的prefix
+★★★★ generate_block_hash_extra_keys (buggy version, line 525):
+  lora_extra_keys: list[str] = _gen_lora_extra_hash_keys(request)
+  cache_salt_keys: list[str] = (
+    [request.cache_salt] if (start_token_idx == 0 and request.cache_salt) else []
+  )
 
-  来源:
-  - API请求中的cache_salt参数 → user-provided
-  - 或自动生成 → hash(random_seed)
+  extra_keys: list[Any] = (
+    lora_extra_keys + mm_extra_keys + cache_salt_keys + prompt_embeds_keys
+  )
 
-  ★★★★ 问题: cache_salt也是纯字符串 → 与LoRA name在同一extra_keys tuple → 无domain prefix!
+  ★★★★ Both LoRA name and cache_salt appended as UNTAGGED single strings into flat tuple!
+  ★★★★ mm_extra_keys already uses (identifier, offset) tuples → properly tagged
+  ★★★★ prompt_embeds_keys are raw bytes → different type → no collision risk
+  ★★★★ Only LoRA + cache_salt are bare strings → THE collision source!
 ```
 
-### 2.3 Domain Collision数学证明
+### 2.3 hash_block_tokens (★★★ exact source code)
+
+```
+★★★★ hash_block_tokens (line 563) — where collision manifests:
+  def hash_block_tokens(hash_function, parent_block_hash, curr_block_token_ids, extra_keys):
+    if not parent_block_hash:
+      parent_block_hash = NONE_HASH
+    curr_block_token_ids_tuple = tuple(curr_block_token_ids)
+    return BlockHash(
+      hash_function((parent_block_hash, curr_block_token_ids_tuple, extra_keys))
+    )
+
+  ★★★★ extra_keys tuple passed directly into hash_function
+  ★★★★ Collision on block 0 → cascades through ENTIRE hash chain (chained hash)
+  ★★★★ Issue reporter confirmed: block hash cae16dc07873c36e9b370e40 was shared cross-adapters
+```
+
+### 2.4 cache_salt scope (★★★★★ only on FIRST block!)
+
+```
+★★★★ cache_salt only added to start_token_idx == 0 (first block):
+  cache_salt_keys = [request.cache_salt] if (start_token_idx == 0 and request.cache_salt) else []
+
+  ★★★★★ This means collision ONLY occurs on the first block
+  ★★★★★ But since hash is CHAINED (parent-dependent), collision on block 0 →
+    all subsequent blocks also share the same hash chain → entire prefix corrupted!
+```
+
+### 2.5 Domain Collision — confirmed dynamic reproduction
 
 ```
 ★★★★ Collision条件:
@@ -222,33 +253,69 @@ Multi-tenant serving → 不同LoRA adapter → 不同system prompt:
 
 ## 5. PR #44706修复方案分析
 
-### 5.1 Domain-tag prefix fix
+### 5.1 Domain-tag prefix fix (★★★★★ exact source code from PR #44706)
 
 ```
-★★★★ PR #44706 提出的修复:
+★★★★★ PR #44706 fix — domain-tagging LoRA and cache_salt:
 
-  Before: extra_keys = (*lora_keys, cache_salt)
-    → ("adapter_A", "some_salt") → LoRA和salt在同一个flat tuple
+  _gen_lora_extra_hash_keys (FIXED version):
+    def _gen_lora_extra_hash_keys(request: Request) -> list[tuple[str, str]]:
+      if not request.lora_request:
+        return []
+      return [("lora", request.lora_request.lora_name)]  ← ★★★ domain-tagged!
 
-  After: extra_keys = ("lora:" + lora_name, "salt:" + cache_salt)
-    → ("lora:adapter_A", "salt:some_salt") → ★★★ domain-separated!
+  generate_block_hash_extra_keys (FIXED version):
+    lora_extra_keys: list[tuple[str, str]] = _gen_lora_extra_hash_keys(request)
+    cache_salt_keys: list[tuple[str, str]] = (
+      [("cache_salt", request.cache_salt)]  ← ★★★ domain-tagged!
+      if (start_token_idx == 0 and request.cache_salt) else []
+    )
 
-  ★★★★ Domain separation保证:
-  - "lora:adapter_A" ≠ "salt:adapter_A" → 前缀不同 → 不可能碰撞!
-  - 即使lora_name == cache_salt → domain prefix确保区分
-  - ★★★ 数学保证: domain-tag string不可能与另一个domain-tag碰撞 → prefix唯一!
+  ★★★★★ Now all 4 extra_key sources are mutually distinguishable:
+  - LoRA: ("lora", name) → tuple[str, str]
+  - cache_salt: ("cache_salt", value) → tuple[str, str]
+  - mm_extra_keys: (identifier, offset) → already tuple!
+  - prompt_embeds_keys: bytes → different type entirely!
 
-  示例:
-    Before collision:
-    Request A: lora="alpha", salt="" → ("alpha")
-    Request B: lora="", salt="alpha" → ("alpha") ← ★★★ 碰撞!
+  ★★★ Test added: test_generate_block_hash_extra_keys_lora_cache_salt_no_collision
+    → Verifies lora_name="COLLIDE" ≠ cache_salt="COLLIDE" → different extra_keys
 
-    After (no collision):
-    Request A: lora="alpha", salt="" → ("lora:alpha", "salt:")
-    Request B: lora="", salt="alpha" → ("lora:", "salt:alpha") ← ★★★ 不碰撞!
+  ★★★ PR #44706 status (June 2026):
+    - OPEN but STALLED — no maintainer review after 9 days
+    - CI blocked by `ready` label requirement (author has 0 prior merged PRs)
+    - 41 additions / 11 deletions across 2 files
+    - Only automated bot comments, no human review
 ```
 
-### 5.2 评估
+### 5.2 SGLang comparison (★★★★★ exact source code)
+
+```
+★★★★★ SGLang RadixAttention — per-adapter radix tree → structurally safe:
+
+  RadixKey class (sglang/srt/mem_cache/radix_cache.py):
+    class RadixKey:
+      __slots__ = ("token_ids", "extra_key", "is_bigram", "limit")
+      def __init__(self, token_ids, extra_key=None, ...):
+        self.token_ids = token_ids
+        self.extra_key = extra_key  ← ★★★ single namespace tag on entire tree path
+
+  child_key method — extra_key namespaces radix tree lookups:
+    def child_key(self, page_size=1):
+      plain = t[0] if page_size == 1 else tuple(t[:page_size])
+      return plain if self.extra_key is None else (self.extra_key, plain)
+      ← ★★★ extra_key always prepended as first element → structural namespace!
+
+  How extra_key is set from lora_id (schedule_batch.py):
+    if lora_id is not None:
+      extra_key = (extra_key or "") + lora_id  ← ★★★ concatenated to extra_key
+
+  ★★★★★ Key difference from vLLM:
+  - SGLang: extra_key is a SINGLE string → structural namespace → no collision possible
+  - vLLM: extra_keys is a FLAT tuple of mixed sources → collision risk when sources share values
+  - SGLang's approach is architecturally safe → doesn't depend on string encoding!
+```
+
+### 5.3 Assessment
 
 ```
 ★★★★ 方案评估:
