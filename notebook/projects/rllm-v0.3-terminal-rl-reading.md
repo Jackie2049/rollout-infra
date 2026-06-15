@@ -171,3 +171,19 @@ Loader/eval/oracle:
 - PR #649: pass@k via --attempts
 - 相关: [rLLM Architecture](rllm-architecture-reading.md), [TinkerBackend Deep Reading](rllm-tinker-backend-deep-reading.md)
 - Terminus-2: Harbor's agent evaluation harness
+
+---
+
+## v0.3.0-pre Release Update (2026-04-30)
+
+★★★★ rLLM v0.3.0-pre release新增功能:
+- ★★★★★ **Fully Async Trainer** (#394): 完全异步训练 → rollout和training完全解耦 → 类似verl的async模式
+- ★★★★ **On Policy Distillation** (#356): 在策略蒸馏 → 新的训练范式
+- ★★★ **Geo3K Tinker VLM** (#357): 视觉语言模型Tinker训练 → 多模态RL
+- ★★★ **Custom Metric for SDK** (#362): SDK自定义metric → 更灵活的reward
+- ★★★ **Verifiers + Prime Intellect Integration** (#367): 环境验证框架 → agent RL
+- ★★★★ **Advantage Computation Fix** (#375): Tinker advantage计算bug修复 → 正确的GAE
+- ★★★ **Tinker Rollout Prompt IDs Fix** (#390): rollout prompt ids修复 → 正确的sequence tracking
+- ★★★ **Unified Trainer Enhancements** (#383/#385): 统一训练器进一步改进
+
+★★★ 与verl对比: rLLM v0.3.0-pre的Fully Async Trainer → 类似verl的AsyncRolloutManager → 但rLLM是in-process → 零拷贝更高效
