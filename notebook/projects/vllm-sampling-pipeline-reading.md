@@ -238,7 +238,140 @@ logits.div_(temperature.unsqueeze(1))  # 批量 temperature
 - `processed_logprobs`: 用处理后的 logits 计算
 - `logprob_token_ids`: 只收集特定 token 的 logprobs (避免全 vocab 计算)
 
-## 8. 关键洞察
+## 9. GRPO 采样交互
+
+### 9.1 GRPO rollout 采样需求
+
+GRPO训练中的rollout阶段需要特殊采样行为:
+
+| 需求 | 说明 | vLLM配置 |
+|------|------|----------|
+| 多response生成 | 同prompt生成N个response (rollout_n) | 重复发送N个请求, 不同seed |
+| temperature>0 | 需要随机采样, 不能greedy | `temperature=0.7-1.0` |
+| top_p限制 | 避免极端采样 | `top_p=0.9-0.95` |
+| logprobs收集 | 需要每个token的logprob计算GRPO advantage | `logprobs=1` |
+| 响应长度限制 | 防止生成过长 | `max_tokens=512-2048` |
+
+### 9.2 GRPO bypass_mode与采样
+
+★★★ bypass_mode的核心交互:
+
+```
+标准PPO路径:
+  Actor forward → sample tokens → get log_probs
+  Ref forward → get ref_log_probs (需要额外forward!)
+
+bypass_mode (★★★ rLLM Tinker + verl V1):
+  Actor forward → sample tokens → get log_probs = rollout_log_probs
+  bypass: old_log_probs = rollout_log_probs (零额外forward!)
+  → 省掉ref_in_actor的forward → ~3.5s/step on RTX 4090
+```
+
+**采样关键**: rollout阶段必须收集logprobs(`logprobs=1`), 否则bypass_mode无法工作。
+
+### 9.3 outcome reward = last token
+
+```
+GRPO outcome reward:
+  reward = reward_fn(response)  → scalar
+  ★★★ outcome reward = last nonzero token位置
+
+  token-level reward mask:
+  [0, 0, 0, ..., 0, reward]  → 只有最后一个token获得reward
+  → GRPO天然对齐: group-relative advantage = (reward - mean(group_rewards)) / std
+```
+
+**采样交互**: vLLM的`SamplingParams.max_tokens`控制response长度 → reward只在response结束时赋值。
+
+## 10. Top-n-sigma Logits Processor (★★★ 我们的fork PR #7)
+
+### 10.1 算法
+
+```
+Top-n-sigma = 动态top-k, 基于logits分布自适应选择候选token数
+
+算法:
+  1. 计算logits的mean和std
+  2. threshold = mean + n * std  (n通常=2)
+  3. 保留所有 logits > threshold 的token
+  4. 从候选token中采样
+
+优点:
+  - 自适应: 窄分布→少候选(高效), 宽分布→多候选(多样)
+  - 比fixed top-k更灵活
+  - 比top-p更可控(不会collapse到1-2个token)
+```
+
+### 10.2 我们的实现
+
+**Fork PR #7**: Top-n-sigma logits processor, vectorized实现:
+- 原版: 逐token Python循环 → O(batch × vocab) CPU
+- 我们的: Triton vectorized kernel → 10-66x speedup
+- 状态: 已完成, 待upstream PR到vLLM
+
+```python
+# Vectorized top-n-sigma: batch处理
+def top_n_sigma_logits_processor(token_ids, logits):
+    # 1. 计算每个样本的mean+std → threshold
+    thresholds = logits.mean(dim=-1) + n * logits.std(dim=-1)
+    # 2. 批量mask: logits < threshold → -inf
+    mask = logits < thresholds.unsqueeze(-1)
+    logits[mask] = -float('inf')
+    return logits
+```
+
+### 10.3 对GRPO的意义
+
+```
+★★★ GRPO需要多样化response → Top-n-sigma天然适配:
+  - rollout_n=8 → 需要8个不同response
+  - fixed top-k=50 → 可能过于确定 → response多样性不足
+  - top_n_sigma(n=2) → 动态候选 → 保证多样性+避免极端token
+  - 特别适合数学推理: 窄分布(确定步骤)→少候选, 宽分布(探索)→多候选
+```
+
+## 11. SM89 采样约束
+
+### 11.1 RTX 4090 采样限制
+
+| 特性 | SM89状态 | 影响 |
+|------|---------|------|
+| FlashInfer sampler | ✓ 支持 | Top-K/P采样正常, CUDA graph兼容 |
+| Triton sampling kernel | ✓ 支持 | Fallback路径, SM89完全可用 |
+| FP8 logits | ✗ 不支持 | logits必须BF16/FP16 → 采样输入正常 |
+| CUDA graph + sampling | ✓ 支持 | FlashInfer sampler在SM89上graph-compatible |
+| Speculative decoding sampling | ✓ 支持 | EAGLE/MTP rejection sampling正常 |
+
+### 11.2 RTX 4090 采样配置
+
+```python
+# ★★★ RTX 4090最优GRPO采样配置
+SamplingParams(
+    temperature=0.7,           # 多样性+稳定性平衡
+    top_p=0.95,               # 稍宽, 保证diversity
+    max_tokens=1024,           # response长度限制
+    logprobs=1,               # ★★★ 必须! bypass_mode需要
+    seed=None,                # 每个rollout不同seed → 不同response
+)
+```
+
+### 11.3 采样性能瓶颈分析
+
+```
+RTX 4090 decode阶段 (memory-bound):
+  95.1% 时间读权重 → sampling几乎无开销(<1%)
+
+  Sampling时间分解:
+  - logits→float32: <0.1ms (batch小)
+  - temperature: <0.1ms (in-place div)
+  - Top-K/P FlashInfer: <0.5ms (GPU native)
+  - argmax/gather: <0.1ms
+
+  ★★★ 采样不是瓶颈 → 权重读取才是
+  → INT4 = 权重4x小 → 采样不变 → 整体3.4x加速
+```
+
+## 12. 关键洞察 (更新)
 
 1. **处理顺序固定**: whitelist → bad_words → min_tokens → logit_bias → penalties → temperature → min_p → top_k/p → sample
 2. **Greedy vs Random 分支**: 先算 greedy, 再算 random, 最后用 temperature 选择
@@ -246,9 +379,16 @@ logits.div_(temperature.unsqueeze(1))  # 批量 temperature
 4. **Penalty 三种类型**: repetition (乘法), frequency (减法×次数), presence (减法×存在)
 5. **CUDA Graph**: FlashInfer sampler 兼容, Triton 需 mark_unbacked
 6. **Logprobs 两种模式**: raw (不受 penalty 影响) vs processed (受影响)
+7. ★★★ **GRPO采样**: rollout_n=8需要logprobs=1 → bypass_mode必需 → 3.5s/step
+8. ★★★ **outcome reward**: last nonzero token → GRPO天然对齐
+9. ★★★ **Top-n-sigma**: 动态top-k → vectorized 10-66x → 我们的PR #7
+10. ★★★ **SM89采样**: 全部兼容 → 采样不是瓶颈 → INT4才是
 
 ## 参考资料
 
 - 源码: `vllm/v1/sample/` (sampler.py, ops/, logits_processor/)
 - 相关: [vLLM V1 Executor](vllm-v1-executor-reading.md), [Spec Decoding](vllm-spec-decode-reading.md)
+- ★★★ [GRPO Training Loop](verl-grpo-training-loop-internals-reading.md) — bypass_mode+采样交互
+- ★★★ [Top-n-sigma PR](https://github.com/Jackie2049/vllm/pull/7) — 我们的vectorized实现
 - `tools/sampling_simulator.py` — 采样方法模拟器
+- `tools/sm89_compatibility_checker.py` — SM89特性兼容矩阵
