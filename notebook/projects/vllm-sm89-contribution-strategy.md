@@ -187,3 +187,34 @@ Month 3+:
 | verl-6401 | ★★ READY | verl-6401-rfc-full-model-ps.md | 用户review后post |
 
 ★★★ **立即行动**: 用户review 4份草稿 → 手动post到GitHub → 建立SM89专家声誉
+
+---
+
+## 八、 新发现补充 (Session 3)
+
+### 8.1 QuantKey refactor (#32268) → SM89 guard基础
+
+★★★★ **QuantKey refactor = 系统性SM89 guard的基础**
+→ 当前boolean: `is_fp8=True` → 在SM89 → crash → 无guard → 无SM89-awareness
+→ QuantKey: `QuantKey(method="fp8_e4m3_kv")` → 可以在registry层面添加SM89 guard
+→ → ★★★★ 直接支持 #44879/#45038 的SM89 FP8 guard → 更系统性fix!
+→ ★★★ Phase 1(纯重构): 替换boolean→QuantKey → 低风险
+→ ★★★ Phase 2(SM guard): QuantKey+requires_sm → registry-level SM89 guard → 更好
+→ 草稿: `notebook/projects/vllm-32268-quantkey-refactor-prep.md`
+
+### 8.2 verl GRPO RTX 4090内存优化
+
+★★★★★ **RTX 4090 GRPO内存3层优化**:
+1. bypass_mode=True → 省ref model 14GB → KL penalty=0 → RTX 4090 MUST
+2. detach_metrics_per_micro_batch=True → 28→18GiB → 防止OOM → RTX 4090 MUST
+3. rule-based reward → CPU → 不占GPU → RM 14GB省掉
+
+→ ★★★ verl完整配置: bypass_mode + detach_metrics + LoRA-32 + rule_reward → 17GB可行!
+→ ★★★ rLLM Tinker: 自动安全(bypass default, in-process no detach needed)
+→ 草稿: `notebook/projects/verl-grpo-bypass-mode-reading.md` + `verl-grpo-detach-metrics-rtx4090-reading.md`
+
+### 8.3 新工具: GRPO troubleshooter
+
+★★★ `tools/grpo_troubleshooter_4090.py`:
+→ 3-mode: check(13 pitfalls) + budget(memory计算) + fix(问题诊断)
+→ 验证最优路径: Tinker+LoRA-32+bypass=12.2GB/21.6GB ✓✓✓
