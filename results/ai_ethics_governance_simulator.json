@@ -1,9 +1,0 @@
-{
-  "fairness_dp_fair": false,
-  "fairness_eo_fair": true,
-  "fairness_cal_fair": true,
-  "fairness_ind_fair": true,
-  "privacy_epsilon_7b": 1.211972808775793,
-  "transparency_rtx4090_pct": 60.0,
-  "governance_high_risk_cost_pct": 15
-}

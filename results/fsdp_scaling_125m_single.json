@@ -1,7 +1,0 @@
-{
-  "mode": "single_gpu",
-  "n_gpu": 1,
-  "step_time_s": 0.0243,
-  "per_gpu_throughput_tok_s": 42112.2,
-  "mem_peak_mb": 1668.9
-}

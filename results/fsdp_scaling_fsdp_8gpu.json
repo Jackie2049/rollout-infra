@@ -1,9 +1,0 @@
-{
-  "mode": "fsdp",
-  "n_gpu": 8,
-  "step_time_s": 0.1086,
-  "total_throughput_tok_s": 75400.5,
-  "per_gpu_throughput_tok_s": 9425.1,
-  "mem_peak_mb": 1273.9,
-  "speedup_vs_1gpu": 0
-}

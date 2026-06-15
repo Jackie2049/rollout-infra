@@ -1,9 +1,0 @@
-{
-  "mode": "ddp",
-  "n_gpu": 4,
-  "step_time_s": 0.0951,
-  "total_throughput_tok_s": 43089.0,
-  "per_gpu_throughput_tok_s": 10772.3,
-  "mem_peak_mb": 1912.4,
-  "speedup_vs_1gpu": 0
-}
