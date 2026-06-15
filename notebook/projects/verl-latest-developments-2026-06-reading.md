@@ -173,7 +173,29 @@ SGLang LoRA support PR → active:
   → ★★★★ 多GPU → PD mode → SGLang decode → 可能更快
 ```
 
-## 6. 关键洞察总结
+## 6. ★★★★★ Tinker Worker Primitives (#6717) — verl走向in-process!
+
+```
+★★★★★ PR #6717 — Tinker Worker Primitives → verl正在走rLLM-style in-process路线!
+
+→ 新增 TinkerTrainingWorker 和 TinkerActorRolloutRefWorker
+→ 分解训练步骤: optimizer_zero_grad() + forward_backward() + optimizer_step()
+→ → 可独立调用! → 允许accumulated gradients across multiple forward_backward calls!
+→ 默认API不变: worker.train_batch(data) → 保持兼容
+→ ★★★★★ 这是verl走向in-process training的第一步!
+
+★★★★★★★ 与rLLM Tinker对比:
+  rLLM Tinker: 完整in-process → TinkerBackend → zero-copy → bypass default
+  verl Tinker: worker primitives → split API → 但还没完整in-process trainer!
+  → ★★★ verl正在缩小与rLLM的差距 → 但rLLM仍然领先!
+
+★★★★★ RTX 4090影响:
+  → verl Tinker primitives → 未来可能in-process → 不需要detach → 更高效
+  → 但当前版本 → 仍需Ray → 跨进程 → 需要detach_metrics
+  → ★★★★ 等下一版本完整Tinker trainer → RTX 4090 GRPO更简洁!
+```
+
+## 7. 关键洞察总结
 
 ```
 ★★★★★★ 6个关键洞察:

@@ -68,7 +68,42 @@
 → 但RTX 4090只有24GB → offload主要用于大模型训练 → 对7B INT4不太需要
 ```
 
-## 2. ★★★★ 其他活跃开发
+## 2. ★★★★★ AutoEP — 自动Expert Parallelism (merged #7938)
+
+```
+★★★★★ AutoEP PR#7938 merged 2026-06-11 → DeepSpeed 2026最重要新feature!
+
+AutoEP = Automatic Expert Parallelism:
+  → deepspeed.initialize()自动检测MoE block → 替换为EP-enabled执行路径
+  → 用户只需JSON config → 无需修改模型代码!
+  → 当前支持: ZeRO-0/1/2 → ZeRO-3 follow-up (#8060)
+
+★★★★★ 5 preset MoE models:
+  | Preset | 模型 | has_shared_experts |
+  |--------|------|--------------------|
+  | Mixtral | mixtral | False |
+  | Qwen3-MoE | qwen3_moe/qwen2_moe | True(shared_expert) |
+  | Qwen3.5-MoE | qwen3_5_moe_text | True(shared_expert+gate) |
+  | DS-V2 | deepseek_v2 | True(shared_experts) |
+  | DS-V3 | deepseek_v3 | True(shared_experts) |
+
+★★★★★ AutoEP+AutoTP folding (#8064 OPEN):
+  → TP(attention/dense) + EP(expert) → 同一组ranks共存!
+  → Dense: tp*dp → Expert: ep*etp*edp → 不变量: tp*dp == ep*etp*edp
+  → ★★★ 8GPU → TP=2+EP=4 → dense 2卡TP + expert 4卡EP → 最优利用!
+
+★★★★★ AutoEP+ZeRO-3 (#8060 OPEN) → 解决double-partitioning:
+  → expert params → expert replica group分区 → 不是global DP
+  → router params → global DP group分区 → 标准ZeRO-3
+  → ★★★★★ 这是正确的解决方案 → 与之前workaround完全不同!
+
+★★★★ RTX 4090 AutoEP可行性:
+  → EP=1 → 单GPU → 所有experts同GPU → 无AllToAll → 可行!
+  → ★★★ Singleton MoE (#7997) → EP=1 → 15x speedup → AutoEP自动走singleton path!
+  → Qwen3-MoE(A0.6B+B4B) + LoRA + AutoEP ZeRO-2 → RTX 4090唯一MoE训练方案!
+```
+
+## 3. ★★★★★ Singleton MoE Collectives优化 (#7997)
 
 ### 2.1 AutoEP状态
 

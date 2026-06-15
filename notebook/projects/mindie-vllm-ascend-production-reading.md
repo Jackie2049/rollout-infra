@@ -27,8 +27,8 @@
 > ⚠ 7-framework advisor已包含MindIE/vLLM-Ascend矩阵
 # MindIE / vLLM-Ascend Production Deep Reading
 
-> 源码: Ascend/vllm-ascend GitHub | CANN 8.x | vLLM-Ascend v0.20.2rc1 | 最近commit: 2026-06-15
-> 核心: 5层桥架构 + ATB kernel + MC2+EPLB MoE EP + FlashMLA/DeepEP-Ascend
+> 源码: Ascend/vllm-ascend GitHub | CANN 9.0 | vLLM-Ascend v0.20.2rc1 | 最近commit: 2026-06-15
+> 核心: 5层桥架构 + ATB 3层融合(kernel/graph/compose) + MindIE Turbo + MC2+EPLB + FlashMLA + MXFP4
 > ★★★★★★ MindIE/vLLM-Ascend = Ascend NPU推理的唯一生产级路径
 > ⚠ 不适用于RTX 4090 (Ascend-only)
 > ⚠ 对AI专家: Ascend生态 = 替代GPU生态 = 第二赛道
