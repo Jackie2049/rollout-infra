@@ -171,28 +171,35 @@ ubatch_utils.py:
 ## 5. ★★★★★★★ verl MRv2 Handling — ZERO Code!
 
 ```
-★★★★★★★★★ 关键发现: verl对MRv2完全没有处理!
+★★★★★★★★★ 关键修正: verl使用AsyncLLM.generate() → 内部处理两步分离 → MRv2可能安全!
 
 搜索 verl-project/verl:
-  → VLLM_USE_V2_MODEL_RUNNER → 0 matches → ZERO!
+  → VLLM_USE_V2_MODEL_RUNNER → 0 matches → ZERO! (verl不设置此env)
   → model_runner_v2 → 0 matches → ZERO!
   → USE_V2_MODEL → 0 matches → ZERO!
 
 ★★★★★★★★★ verl vLLM rollout worker → 如何调用vLLM:
-  → verl/workers/rollout/vllm_rollout/ → vLLM rollout worker
-  → 初始化 → vllm.LLM(..., model_runner_cls=???)
-  → → ★★★★★★★ 如果vLLM默认MRv2 → 但verl不知道MRv2 → execute_model + sample_tokens两步
-  → → → ★★★★★★★★ verl可能只调用一次 → 得到None → 不知道需要再调sample_tokens()!
+  → verl/workers/rollout/vllm_rollout/vllm_async_server.py → AsyncLLM.generate()
+  → → ★★★★★★★ AsyncLLM.generate() → 内部调用 EngineCore.step()
+  → → → ★★★★★★★★ EngineCore.step() → execute_model() → future → future.result() → 如果None → sample_tokens()
+  → → → → ★★★★★★★★★★★★★★★ Engine Core已经正确处理两步分离 → verl不需要知道MRv2!
 
-★★★★★★★★★ RTX 4090安全兜底:
-  → ★★★★★★★★ VLLM_USE_V2_MODEL_RUNNER=0 → 强制MRv1 → verl安全!
-  → → 这是之前MEMORY中记录的建议 → 现在有源码级证据!
-  → → ★★★★★★★★ 所有verl+vLLM GRPO实验 → 必须设置此环境变量!
+★★★★★★★★★ 源码级验证:
+  → uniproc_executor.py → execute_model() + sample_tokens() → 两个RPC → 正确分离!
+  → → self.collective_rpc("execute_model", args=(scheduler_output,)) → model forward
+  → → self.collective_rpc("sample_tokens", args=(grammar_output,)) → sampling
+  → → → ★★★★★★★★★★★★★★★★★★★ Engine Core → step() → 先execute_model → 再sample_tokens → 自动!
+
+★★★★★★★★★ 结论修正:
+  → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ MRv2对verl可能是安全的! AsyncLLM.generate()内部处理两步!
+  → → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 但: compilation_config → verl设置FULL_AND_PIECEWISE → MRv2也支持!
+  → → → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ VLLM_USE_V2_MODEL_RUNNER=0 → 保守兜底 → 但可能不必要!
+  → → → → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 需要GPU验证 → 在RTX 4090测试verl+Qwen3(MRv2 default) → 是否正常工作!
 
 ★★★★★★★★★ verl MRv2 PR机会:
-  → verl需要PR → 检测vLLM是否使用MRv2 → 正确处理两步分离
-  → → ★★★★★★★★ 但这是Tier 3贡献 → 优先级低于BudgetRefiner/Inductor Fusion Guard
-  → → → ★★★★★★★★★ 短期推荐: 环境变量兜底 → 不需要PR
+  → ★★★★★★★★ verl不需要MRv2适配PR → AsyncLLM.generate() → 内部处理!
+  → → ★★★★★★★★★ 但: 可以添加显式VLLM_USE_V2_MODEL_RUNNER设置 → 文档化 → 用户更清楚!
+  → → → ★★★★★★★★★★★★★★★★★★★★★★★★★★★ 优先级 → Tier 4 → 低于BudgetRefiner/Inductor Fusion Guard
 ```
 
 ## 6. ★★★★★ MRv2 Migration Roadmap (Issue #41286)
