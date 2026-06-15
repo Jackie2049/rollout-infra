@@ -208,7 +208,8 @@ SCENARIOS = {
             "cppo_w_min": 0.8,
             "cppo_delta_b": 0.02,
         },
-        "alternative": "rLLM Tinker (simpler setup, no CPPO)",
+        "alternative": "verl ReMax (lowest variance, needs ref model → RTX 4090 tight)",
+        "remax_note": "★★★★★ ReMax canonical: adv_estimator=remax, use_kl_in_reward=True → ref model needed → ~18-20GB on RTX 4090. ReMax-bypass hybrid: undocumented → risky. CPPO+bypass still #1 for RTX 4090.",
     },
     "code-generation": {
         "description": "Code generation GRPO training (medium responses 2k tokens)",
@@ -257,7 +258,7 @@ SCENARIOS = {
 }
 
 # ============================================================
-# CPPO vs GRPO decision tree
+# CPPO vs GRPO vs ReMax decision tree
 # ============================================================
 
 CPPO_DECISION = {
@@ -273,7 +274,18 @@ CPPO_DECISION = {
         "Simplest setup → one config → GRPO works well for short",
         "Already stable with GRPO → no need to change",
     ],
-    "key_rule": "★★★★★★ CPPO is NEVER worse than GRPO → overhead is near-zero → always safe to use on verl. Use CPPO when available.",
+    "use_remax": [
+        "Math/reasoning tasks → greedy baseline → lowest variance → ReMax 97 vs GRPO 89 on GSM8k!",
+        "verl TransferQueue sync → ReMax merged (#6340) → canonical config available",
+        "Want deterministic baseline → greedy (temperature=0) → more stable than group mean",
+    ],
+    "remax_rtx4090_warning": [
+        "★★★★★★ ReMax canonical requires ref model (use_kl_in_reward=True) → NOT compatible with bypass_mode!",
+        "★★★★★★ ReMax-bypass hybrid possible (use_kl_in_reward=False) → undocumented → untested → risky!",
+        "★★★★★ ReMax canonical on RTX 4090: param_offload ref model to CPU → ~18-20GB peak → feasible but tight",
+        "★★★★★★ RTX 4090推荐: GRPO+bypass_mode (#1) > ReMax-bypass hybrid (risky) > ReMax canonical (tight)",
+    ],
+    "key_rule": "★★★★★★ CPPO is NEVER worse than GRPO → overhead near-zero → always safe on verl. ReMax has lowest variance but needs ref model → RTX 4090 use GRPO+bypass_mode unless math quality critical enough to accept ref model overhead.",
 }
 
 
