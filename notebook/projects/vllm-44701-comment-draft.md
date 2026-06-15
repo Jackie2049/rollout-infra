@@ -17,7 +17,9 @@ Thanks for flagging this. I've been studying vLLM V1's LoRA serving + prefix cac
 
 **Key detail**: `cache_salt` is only added on `start_token_idx == 0` (first block), while LoRA keys appear on every block. This means the collision occurs specifically at the chain root, maximizing corruption propagation.
 
-**Impact for GRPO training**: This is particularly relevant for GRPO rollout scenarios where `rollout_n=8` responses share the same system prompt prefix. With the same LoRA adapter, prefix caching should work correctly (same adapter → same hash). But with multi-tenant serving where different adapters process different requests, this collision could silently corrupt KV cache.
+**Related fix in v0.23.0**: PR #42971 (merged) fixed DFlash prefix-cache corruption due to missing lookahead block. This confirms that vLLM is actively working on prefix-cache correctness — our domain collision fix (#44706) should be prioritized alongside these efforts.
+
+**Impact for GRPO training**: This is particularly relevant for GRPO rollout scenarios where `rollout_n=8` responses share the same system prompt prefix. With the same LoRA adapter, prefix caching should work correctly (same adapter → same hash). But with multi-tenant serving where different adapters process different requests, this collision could silently corrupt KV cache. On RTX 4090 (SM89) where `enable_prefix_caching=True` is critical for GRPO throughput (7x compute savings), this bug could cause incorrect prefix reuse — silently corrupting training data.
 
 **Comparison with SGLang**: SGLang's RadixAttention handles this correctly at the architectural level. `RadixKey.child_key` (in `sglang/srt/mem_cache/radix_cache.py`) prepends `extra_key` as the first element of the tree node key, creating a structural namespace that prevents cross-adapter sharing by design. No hash collision possible because different `extra_key` values are in different subtrees.
 
