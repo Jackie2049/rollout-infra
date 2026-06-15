@@ -178,6 +178,27 @@ CONTRIBUTIONS = [
     ),
     # ===== TIER 2 PRs (future) =====
     Contribution(
+        id="AE1",
+        title="DeepSpeed AutoEP RTX 4090 MoE benchmark → DeepSpeed cookbook",
+        target="microsoft/DeepSpeed",
+        tier=Tier.TIER2_PR,
+        priority=6,
+        status=Status.GPU_VALIDATION_NEEDED,
+        issue_ref="microsoft/DeepSpeed #7938",
+        description="RTX 4090 MoE training benchmark with AutoEP EP=1 singleton + LoRA + CPU_Adam. "
+                    "First-ever RTX 4090 MoE training validation. "
+                    "Qwen3-MoE (A0.6B+B4B) fits 24GB with LoRA rank=32. "
+                    "DeepSpeed cookbook addition with complete config.",
+        next_steps=[
+            "Run Qwen3-MoE AutoEP on RTX 4090 (GPU needed)",
+            "Benchmark step time and memory",
+            "Write DeepSpeed cookbook entry",
+            "Submit PR to microsoft/DeepSpeed",
+        ],
+        gpu_needed=True,
+        unique_contribution=True,
+    ),
+    Contribution(
         id="QK1",
         title="QuantKey refactor → systematic SM89 FP8 guard",
         target="vllm-project/vllm",
