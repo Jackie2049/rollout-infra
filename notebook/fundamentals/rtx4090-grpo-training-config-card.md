@@ -184,13 +184,20 @@ total: ~17GB / 24GB → 7GB headroom ✓
 ## 7. MindIE — ✗ RTX 4090不适用
 
 ```
-★ ★ ★ MindIE = 昇腾专用 → RTX 4090完全不可用
+★★★ MindIE = 昇腾专用 → RTX 4090完全不可用
   ✗ NPU only (910B/C/D) → GPU无法使用
   ✗ HCCL → 昇腾通信 → NCCL不可替代
   ✗ ATB kernel → Ascend专用 → CUDA无等价
   ✗ FP8需910C → SM89完全不支持
 
+★★★ MindIE vs vLLM-Ascend 关系:
+  → MindIE: graph-level整图优化 → 黑盒 → 最高性能 → 但不可控
+  → vLLM-Ascend: op-level patch → 保留vLLM调度 → 灵活但稍慢
+  → SGLang-Ascend: 用MindIE作为底层 → 黑盒 → 丢失调度控制
+  → ★★★ vLLM-Ascend更灵活 → MindIE性能更高 → 不同定位
+
 替代: vLLM-Ascend(适配层) → 但也是NPU专用 → RTX 4090用vLLM GPU版
+★★★ DeepEP-Ascend(sgl-kernel-npu) → HCCL EP → fused_deep_moe → NPU only
 ```
 
 ## 8. 推理部署配置 (训练后)
