@@ -967,4 +967,93 @@ CI配置:
 
 参数:
   → megatron/training/arguments.py → GRPO参数 → grpo_*/rl_* → ★ 40+RL参数
+
+---
+
+## 2026-06-16 Update — 7 Critical New Findings
+
+### ★★★★★ 1. Single-GPU LayerWise Optimizer CRASH (#5203)
+
+```
+★★★★★ Issue #5203 — LayerWiseDistributedOptimizer CRASH on single GPU!
+
+Bug location:
+  → megatron/core/optimizer/layer_wise_optimizer.py
+  → shard_params() → dp_cp_size = get_pg_size(self.pg_collection.dp_cp)
+  → if dp_cp_size == 1 → self.dp_cp_params_list = None ← ★★★★★ Set to None!
+  → set_bucket_layerwise_params_list() → iterates over dp_cp_params_list → None → TypeError!
+
+★★★★★★★★ ROOT CAUSE:
+  → On single GPU → dp_cp_size=1 → shard_params sets dp_cp_params_list=None
+  → But code later iterates over it → None → CRASH!
+  → ★★★★★★★★ CONFIRMS: singleton PG degeneration has REAL bugs → NOT just theoretical!
+
+★★★★ RTX 4090 impact:
+  → LayerWise optimizer → single GPU → CRASH → cannot use!
+  → Workaround: use standard DistributedOptimizer → no dp_cp_params_list dependency
+  → ★★★★★★★★ Megatron single-GPU path NOT seamless → real bugs exist!
+```
+
+### ★★★★★ 2. NO LoRA in Core Megatron — Confirmed
+
+```
+★★★★★ Megatron-LM LoRA Status — 4 separate pieces, no unified native LoRA:
+
+1. PR #3954 (OPEN) — LoRA-after-quantization:
+   → Only in quantization pipeline (modelopt.torch.peft) → NOT training LoRA!
+   → Uses NVIDIA TensorRT ModelOpt → not Megatron-Core native
+
+2. Issue #3210 (CLOSED) — LoRA in Megatron Bridge:
+   → LoRA only in NeMo2/Megatron-Bridge → NOT core Megatron standalone
+   → NeMo2 restricts LoRA to linear_qkv → correct practice
+
+3. Megatron Lite (#4885 merged, #5290 skeleton):
+   → experimental/lite/ package → lightweight runtime
+   → ★★★★★ Explicitly lists LoRA as "intentionally excluded" → future work!
+   → ★★★ LoRA planned → but months away → not actionable now
+
+4. DenseMixer #4169 — compatible with LoRA → but MoE-specific → not general LoRA
+
+★★★★★★★★★ RTX 4090 verdict: No native LoRA in core Megatron → rLLM Tinker remains best LoRA path!
+```
+
+### ★★★ 3. Megatron Lite — Lightweight Direction (#4885)
+
+```
+★★★★ Megatron Lite (#4885 merged 2026-06-11):
+
+  → experimental/lite/ package → lightweight runtime → Qwen3/Qwen3.5 MoE
+  → ★★★ Potentially single-GPU friendly → no distributed overhead!
+  → ★★★★★ BUT: LoRA intentionally excluded → future work → months away
+  → ★★★★ Watch: Megatron Lite + LoRA → could be future RTX 4090 path
+```
+
+### ★★★ 4. DeepSeek-V4-Flash = Exclusively SM90 (#5266)
+
+```
+★★★★ PR #5266 (MERGED) — DeepSeek-V4-Flash inference recipe:
+  → SM90 required → H100/H200 → grouped GEMM + TMA + warpgroup MMA
+  → ★★★★★ CONFIRMED: no SM89 fallback → RTX 4090 CANNOT use optimized recipe
+  → ★★★ RTX 4090: stick with dense models (Qwen3-4B/8B) → skip DeepSeek-V4
+```
+
+### ★★★★★ 5. Updated RTX 4090 GRPO Framework Ranking
+
+```
+★★★★★★★★★ Updated 3-Framework GRPO Comparison:
+
+| Dimension           | Megatron-LM     | verl            | rLLM Tinker       |
+|---------------------|-----------------|-----------------|-------------------|
+| LoRA                | ✗ NONE          | ✓ auto-init     | ★★★★★ auto-init   |
+| Single-GPU bug-free | ✗ CRASH (#5203) | ✓ (Ray local)   | ★★★★★ in-process  |
+| IS correction       | ✓ full          | ✓ (bypass)      | ★★★★★ bypass=true |
+| Optimizer offload   | ✗ BUG (#5203)   | ✓ CPU_Adam      | ★★★★★ optional    |
+| Setup complexity    | ★★★★★ extreme    | ★★★ medium       | ★★★★★★★ minimal    |
+| RTX 4090 optimal    | ✗ NOT viable     | ✓ viable         | ★★★★★★★★ BEST     |
+
+★★★★★★★★★ Final ranking:
+  rLLM Tinker: ★★★★★★★★★ #1 → auto LoRA + bypass + zero-copy + bug-free
+  verl:        ★★★★★      #2 → LoRA ✓ + bypass ✓ + Ray overhead + more config
+  Megatron-LM: ★★          #3 → single-GPU bugs + no LoRA → learning only
+```
 ```
