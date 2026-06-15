@@ -83,7 +83,8 @@
 | PagedAttention | `--gpu-memory-utilization 0.9` | KV Cache block管理, 90% GPU内存 |
 | Prefix Caching | `--enable-prefix-caching` | hash-based block级prefix sharing |
 | 量化 | `--quantization awq_marlin` | INT4 AWQ量化推理 |
-| KV量化 | `--kv-cache-dtype fp8_e5m2` | FP8 KV Cache → 省50%内存 |
+| KV量化 | `--kv-cache-dtype fp8_e5m2` | FP8 KV → ★★★ SM89 crash! RTX 4090必须用INT8! |
+| INT8 KV | `--kv-cache-dtype int8` | ★★★ RTX 4090唯一可行KV量化 → 同FP8 footprint但不crash |
 | Speculative | `--speculative-config model=small_model` | speculative decoding |
 | PD分离 | `--kv-transfer-config connector_type=nixl` | prefill-decode disaggregation |
 | LoRA服务 | `--enable-lora` | 动态加载LoRA adapter |
@@ -112,7 +113,9 @@
 | LoRA训练 | `--actor.model.lora.rank=16` | LoRA adapter训练 |
 | FSDP2 | `--actor.strategy=fsdp2` | PyTorch FSDP2分片训练 |
 | Megatron策略 | `--actor.strategy=megatron` | Megatron-LM backend |
-| Reward函数 | `reward_fn(task, response) → float` | 用户提供reward函数 |
+| Bypass Mode | `--actor_rollout_ref.bypass_mode=True` | ★★★★ skip ref model→省14GB+1 forward→KL=0 |
+| Detach Metrics | `--trainer.detach_metrics_per_micro_batch=True` | ★★★★ 防止OOM→28→18GiB→RTX 4090必须! |
+| Reward函数 | `reward_fn(task, response) → float` | 用户提供reward函数(rule-based→CPU→不占GPU) |
 | Checkpoint | `--trainer.save_freq=100` | 每100步保存checkpoint |
 
 ---
