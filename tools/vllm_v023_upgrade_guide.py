@@ -146,7 +146,10 @@ def generate_guide(args):
     lines.append("## 1. What's New in v0.23.0 for RTX 4090")
     lines.append("")
     for name, data in POSITIVE_CHANGES.items():
-        lines.append(f"### ✓ {name} ({data['pr']}) — Impact: {data['impact']}")
+        pr_str = data.get('pr', data.get('prs', []))
+        if isinstance(pr_str, list):
+            pr_str = ', '.join(pr_str)
+        lines.append(f"### ✓ {name} ({pr_str}) — Impact: {data['impact']}")
         lines.append(f"  Before: {data['before']}")
         lines.append(f"  After:  {data['after']}")
         lines.append(f"  {data['description']}")
