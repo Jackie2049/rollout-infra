@@ -107,9 +107,13 @@
 
 ★★★★★ 区分3种FP8 KV路径:
 
-1. Triton FP8 KV (#43914) → SM89 ALLOWED → Triton backend → fp8_e5m2 KV cache
+1. Triton FP8 KV (#43914) → SM89 ALLOWED → Triton backend → fp8_e4m3fn KV cache
    → ★★★ 新发现: Triton FP8 KV = SM89可行路径!
    → 但: Triton backend性能不如FlashInfer → 不是生产首选
+   → ★★★ 源码证据 (PR#43914 merged 6/15):
+     → _is_supported_kv_cache_dtype(): kv_cache_dtype.startswith("fp8") → has_device_capability(89) → SM89=边界
+     → TritonFlashAttentionBackend.__init__(): fp8 KV cache → ValueError if SM<89 → "native FP8 (fp8e4nv) requires SM89+"
+     → Triton reshape_and_cache_flash kernel → fp8_dtype=float8_e4m3fn → Triton fp8e4nv → SM89最低
 
 2. FlashInfer FP8 KV → SM89 NOT supported → flash_attn_varlen_func_fp8_sm90
    → ★★★ FlashInfer FP8 kernels只编译SM90+ → SM89 crash
@@ -148,9 +152,39 @@
   → ★★★ EAGLE在SM89需enforce_eager → 推理吞吐回退 → 无法用CUDA graph加速spec decode
 
 ★★★★ 修复状态:
-  → Issue #39096: OPEN → 无修复PR → 无进展
-  → ★★★ 深层原因: SM<90的CUDA graphs在某些op上不保证batch invariance → torch.compile问题
-  → ★★★ 对vLLM贡献机会: SM89 batch invariance → 深入研究 → 可能找到root cause → PR!
+  → Issue #39096: OPEN → 无修复PR → 6 comments → 无进展
+  → PR #38938 (merged): 移动test_eagle_dp到H100 CI + enforce_eager guard
+  → PR #30018 (merged): 引入enforce_eager=IS_DEVICE_CAPABILITY_BELOW_90 workaround
+
+★★★★★ 源码级调查结果 (来自issue #39096精确分析):
+
+  测试矩阵 (L4 SM89):
+    enforce_eager=True + cudagraph_mode=NONE → Off+Off → Works ✓
+    enforce_eager=False + cudagraph_mode=NONE → On+Off → Fails at token 80 ✗
+    enforce_eager=False + cudagraph_mode=FULL_AND_PIECEWISE → On+On → Fails ✗
+
+  ★★★★★ 关键发现: torch.compile alone就破坏batch invariance! CUDA graphs不是唯一原因!
+    → torch.compile active + CUDA graphs disabled → still fails
+    → 但: isolated RMSNorm compile → bitwise_equal=True → 单op没问题!
+    → → ★★★★★ Root cause: Inductor对full Llama forward pass的fusion处理!
+    → → 某些RMSNorm+residual+linear的fused kernel → batch-size-dependent results on SM<90
+    → → ★★★★ Root cause未隔离 → 这是一个contribution机会!
+
+  ★★★ YM2132发现: Qwen3-1.7B on RTX 3090 (SM86) → test_batch_invariance PASSED!
+    → ★★★ 某些模型在Ampere上可以torch.compile+batch invariant → 不是所有模型!
+    → yewentao256解释: vLLM override torch.mean → batch invariance version → 保持reduction order
+    → → ★★★★★ 模型特有! 不同架构→不同Inductor fusion→不同结果 → 需逐模型测试!
+
+  相关PyTorch issue:
+    → pytorch/pytorch#170563 → upstream batch invariance discussion
+    → vllm/v1/determinism/utils.py → "SM < 90, batch invariance does not support CUDA Graphs"
+    → tests/v1/determinism/test_batch_invariance.py → 5 tests enforce_eager guard
+
+★★★★★ RTX 4090 contribution机会:
+  → Root cause未隔离 → 需逐fusion排查 → Inductor fusion + SM<90 precision差异
+  → 可能fix: 检测哪些fusion patterns破坏batch invariance → 添加SM<90 guard
+  → 或者: 为SM<90提供specialized batch-invariant kernel → bypass problematic fusion
+  → ★★★★ 低竞争: 只有6 comments → 无人深入root cause → 我们的RTX 4090可以测试!
 ```
 
 ## 6. MRv2 Default — ★★★ RTX 4090中性影响
