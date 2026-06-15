@@ -1,0 +1,96 @@
+{
+  "rtx4090_hw": {
+    "gpu_name": "RTX 4090",
+    "sm_version": 8.9,
+    "memory_gb": 24,
+    "gemm_tflops_bf16": 169.6,
+    "hbm_bandwidth_gb_s": 890.8,
+    "cuda_version_min": "12.0",
+    "supported": [
+      "BF16",
+      "INT4_GPTQ",
+      "INT8_KV",
+      "CUDA_graph",
+      "FlashInfer",
+      "NCCL"
+    ],
+    "not_supported": [
+      "NVLS",
+      "TMA",
+      "FP8_E5M2",
+      "FP8_training",
+      "FP8_AllGather"
+    ]
+  },
+  "vllm_int4": {
+    "model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+    "quantization": "gptq",
+    "kv_cache_dtype": "fp8_e4m3",
+    "gpu_memory_utilization": 0.9,
+    "max_model_len": 8192,
+    "enable_prefix_caching": true,
+    "enable_chunked_prefill": true,
+    "dtype": "auto",
+    "served_model_name": "qwen2.5-7b-int4",
+    "trust_remote_code": true,
+    "cuda_graph_sizes": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "max_num_seqs": 32,
+    "max_num_batched_tokens": 4096
+  },
+  "eagle": {
+    "base_model": "Qwen/Qwen2.5-7B-Instruct-GPTQ-Int4",
+    "eagle_model": "yuhui-He/EAGLE-Qwen2.5-7B-Instruct",
+    "speculative_method": "eagle",
+    "num_speculative_tokens": 5,
+    "acceptance_rate_expected": "0.70-0.80",
+    "expected_throughput_bf16": "~2,400 tok/s",
+    "expected_throughput_int4": "~4,791 tok/s",
+    "expected_throughput_eagle_int4": "~9,088 tok/s"
+  },
+  "memory_budget": {
+    "int4_inference": {
+      "int4_weights_gb": 3.5,
+      "int8_kv_cache_gb": 5.0,
+      "cuda_graph_pool_gb": 2.0,
+      "buffers_gb": 0.5,
+      "total_gb": 11.0,
+      "headroom_gb": 13.0,
+      "feasible": true
+    },
+    "int4_eagle_inference": {
+      "int4_weights_gb": 3.5,
+      "int8_kv_cache_gb": 5.0,
+      "cuda_graph_pool_gb": 2.0,
+      "buffers_gb": 0.5,
+      "eagle_draft_gb": 0.5,
+      "total_gb": 11.5,
+      "headroom_gb": 12.5,
+      "feasible": true
+    },
+    "bf16_inference": {
+      "bf16_weights_gb": 14.0,
+      "kv_cache_gb": 10.0,
+      "total_gb": 24.0,
+      "headroom_gb": 0.0,
+      "feasible": false
+    },
+    "bf16_lora_training": {
+      "bf16_weights_gb": 14.0,
+      "lora_weights_gb": 2.6,
+      "optimizer_gb": 0.5,
+      "gradients_gb": 0.5,
+      "activations_gb": 2.0,
+      "total_gb": 17.1,
+      "headroom_gb": 6.9,
+      "feasible": true
+    }
+  },
+  "timestamp": "2026-06-15 13:17:27"
+}
