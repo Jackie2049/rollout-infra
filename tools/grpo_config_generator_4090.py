@@ -112,6 +112,24 @@ FRAMEWORKS = {
                 "loss_mode": "★★★★★ cppo (recommended) or grpo",
                 "mrv2": "VLLM_USE_V2_MODEL_RUNNER=0",
                 "command": "python -m verl.trainer.main_ppo_sync --config grpo_qwen3_1.7b.yaml",
+                "remax_bypass_config": {
+                    "adv_estimator": "remax",
+                    "bypass_mode": "True",
+                    "use_kl_in_reward": "False",
+                    "loss_mode": "ppo_clip",
+                    "clip_ratio": "0.15",
+                    "use_kl_loss": "True",
+                    "kl_loss_coef": "0.05",
+                },
+                "remax_icepop_config": {
+                    "adv_estimator": "remax",
+                    "bypass_mode": "True",
+                    "use_kl_in_reward": "False",
+                    "loss_type": "reinforce",
+                    "rollout_is": "token",
+                    "rollout_is_threshold": "0.5_5.0",
+                    "rollout_rs": "null",
+                },
                 "cppo_config": {
                     "adv_estimator": "grpo",
                     "bypass_mode": "True",
@@ -285,7 +303,14 @@ CPPO_DECISION = {
         "★★★★★ ReMax canonical on RTX 4090: param_offload ref model to CPU → ~18-20GB peak → feasible but tight",
         "★★★★★★ RTX 4090推荐: GRPO+bypass_mode (#1) > ReMax-bypass hybrid (risky) > ReMax canonical (tight)",
     ],
-    "key_rule": "★★★★★★ CPPO is NEVER worse than GRPO → overhead near-zero → always safe on verl. ReMax has lowest variance but needs ref model → RTX 4090 use GRPO+bypass_mode unless math quality critical enough to accept ref model overhead.",
+    "key_rule": "★★★★★★ CPPO is NEVER worse than GRPO → overhead near-zero → always safe on verl. ReMax has lowest variance but needs ref model → RTX 4090 use GRPO+bypass_mode unless math quality critical enough to accept ref model overhead. IcePop provides exact IS population bounds → more precise than TIS → but requires loss_type=reinforce → less stable than PPO-clip for beginners.",
+    "remax_icepop_combination": [
+        "★★★★★★ ReMax + IcePop + bypass_pg = theoretically strongest (greedy baseline + exact IS + no ref model)",
+        "★★★★★★ But requires loss_type=reinforce → less stable than PPO-clip → NOT recommended for beginners",
+        "★★★★★★★ ReMax + bypass + PPO-clip = practical strongest (greedy baseline + trust region + simple)",
+        "★★★★★★★ IcePop useful when: high IS weight variance → toxic out-of-range samples → want exact population",
+        "★★★★★ IcePop NOT useful when: low IS weight variance → all samples good → IcePop zeros useful data",
+    ],
 }
 
 
