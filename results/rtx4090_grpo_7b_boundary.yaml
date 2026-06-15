@@ -1,0 +1,44 @@
+# RTX 4090 GRPO Training — rLLM TinkerBackend
+# ★★★ RTX 4090最优: Tinker + GRPO + LoRA-32 + bypass_mode + rule-based
+
+model:
+  name: "Qwen/Qwen2.5-Math-7B-Instruct"
+  lora_rank: 16
+  train_unembed: true
+  train_attn: true
+  train_mlp: true
+
+training:
+  group_size: 4
+  learning_rate: 1e-05
+  lr_schedule: "constant"
+  max_length: 4096
+  num_minibatches: 1
+
+data:
+  train_batch_size: 4
+  val_batch_size: 32
+  max_prompt_length: 2048
+  max_response_length: 2048
+
+rllm:
+  algorithm:
+    adv_estimator: grpo
+    norm_adv_by_std_in_grpo: true
+    rollout_correction:
+      bypass_mode: true          # ★★★ 省forward pass → Tinker默认true
+    kl_beta: 0.001
+  rollout:
+    n: 4
+    n_val: 1
+    train:
+      temperature: 1.0           # ★ Tinker要求1.0
+      top_p: 1.0
+  trainer:
+    total_epochs: 1
+    total_batches: 100
+    logger: ['console']
+    project_name: 'rtx4090-grpo'
+    experiment_name: 'grpo-7b_boundary'
+    test_freq: 10
+    save_freq: 20

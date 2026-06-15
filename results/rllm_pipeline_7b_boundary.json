@@ -1,0 +1,23 @@
+{
+  "config_name": "7b_boundary",
+  "model_config": {
+    "model": "Qwen/Qwen2.5-Math-7B-Instruct",
+    "group_size": 4,
+    "batch_size": 4,
+    "lora_rank": 16,
+    "max_length": 4096,
+    "lr": 1e-05,
+    "estimated_memory_gb": 17.5,
+    "headroom_gb": 6.5,
+    "notes": "\u2605 \u8fb9\u754c \u2192 17.5GB/24GB \u2192 6.5GB headroom \u2192 OOM\u98ce\u9669!"
+  },
+  "files": {
+    "training_yaml": "results/rtx4090_grpo_7b_boundary.yaml",
+    "vllm_yaml": "results/vllm_int4_7b_boundary.yaml"
+  },
+  "commands": {
+    "train_command": "rllm train gsm8k --agent math --evaluator math --config results/rtx4090_grpo_7b_boundary.yaml",
+    "eval_command": "rllm eval math500 --agent math --evaluator math --model Qwen/Qwen2.5-Math-7B-Instruct --base-url http://localhost:8000/v1 --attempts 4",
+    "vllm_command": "python -m vllm.entrypoints.openai.api_server --config results/vllm_int4_7b_boundary.yaml"
+  }
+}

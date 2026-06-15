@@ -1,0 +1,10 @@
+# vLLM INT4 + INT8KV 推理配置
+# ★★★ RTX 4090推理最优: INT4 + INT8KV + GQA-8 + FlashInfer → 4,791 tok/s
+
+model: "merged_models/grpo-1.5b_compact"
+quantization: gptq_int4
+kv_cache_dtype: int8
+gpu_memory_utilization: 0.95
+max_model_len: 4096
+enforce_eager: false              # CUDA graph启用 (INT4 Marlin kernel)
+port: 8000

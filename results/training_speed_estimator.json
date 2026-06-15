@@ -1,40 +1,40 @@
 {
-  "strategy": "zero3",
+  "strategy": "tinker-grpo-lora",
   "config": {
     "model_size_b": 7.0,
-    "gpu_count": 8,
+    "gpu_count": 1,
     "gpu_type": "rtx4090",
     "interconnect": "pcie_gen4",
-    "strategy": "zero3",
-    "lora_rank": 0,
+    "strategy": "tinker-grpo-lora",
+    "lora_rank": 16,
     "training_type": "grpo",
     "batch_size": 4,
     "seq_len": 2048
   },
   "compute": {
-    "total_flops_per_step": 1513881600000000.0,
-    "per_gpu_flops": 189235200000000.0,
-    "compute_time_s": 1.1158,
+    "total_flops_per_step": 70371840000000.0,
+    "per_gpu_flops": 70371840000000.0,
+    "compute_time_s": 0.4149,
     "gemm_tflops": 169.6,
-    "lora_fraction": 1.0,
+    "lora_fraction": 0.0078125,
     "grpo_factor": 0.55,
     "compile_speedup": 1.0
   },
   "communication": {
-    "comm_time_s": 0.42,
-    "comm_volume_gb": 42.0,
+    "comm_time_s": 0,
+    "comm_volume_gb": 1.4,
     "overlap_efficiency": 0.2
   },
   "throughput": {
-    "total_time_per_step_s": 1.4518,
-    "tokens_per_sec": 45142.03,
-    "steps_per_sec": 0.6888,
-    "samples_per_sec": 22.04
+    "total_time_per_step_s": 0.4149,
+    "tokens_per_sec": 19743.17,
+    "steps_per_sec": 2.4101,
+    "samples_per_sec": 9.64
   },
   "time_to_train": {
-    "fine_tuning_1B_tokens_hours": 6.15,
-    "full_training_100B_tokens_hours": 615.34
+    "fine_tuning_1B_tokens_hours": 14.07,
+    "full_training_100B_tokens_hours": 1406.96
   },
-  "memory_peak_gb": 38.15,
-  "fits_rtx4090": false
+  "memory_peak_gb": 16.909375,
+  "fits_rtx4090": true
 }

@@ -1,0 +1,55 @@
+{
+  "rtx4090": {
+    "paths": {
+      "training": {
+        "framework": "rLLM TinkerBackend",
+        "algorithm": "GRPO + LoRA-32",
+        "key_features": [
+          "bypass_mode=true",
+          "fused fwd-bwd-optim",
+          "zero-copy weight sync"
+        ],
+        "memory": "~17GB (7B BF16 + LoRA)",
+        "throughput": "~19,743 tok/s training"
+      },
+      "inference": {
+        "framework": "vLLM",
+        "configuration": "INT4 + INT8KV + GQA-8 + prefix caching",
+        "key_features": [
+          "CUDA graph (FULL decode)",
+          "FlashInfer",
+          "EAGLE speculative"
+        ],
+        "throughput_basic": "4,791 tok/s",
+        "throughput_eagle": "9,088 tok/s (8.3x!)"
+      },
+      "evaluation": {
+        "framework": "rLLM",
+        "method": "pass@k (--attempts N)",
+        "key_features": [
+          "warm-pool (CPU)",
+          "snapshot acceleration",
+          "Terminus-2 harness"
+        ],
+        "gpu_needed": "No (CPU only)"
+      },
+      "full_pipeline": "rLLM Tinker+GRPO+LoRA+bypass → merge → HF → INT4 vLLM → 4,791 tok/s → EAGLE → 9,088 tok/s"
+    },
+    "key_conclusions": [
+      "GRPO > PPO (省50%内存+compute) → RTX 4090唯一可行RL训练方法",
+      "rLLM Tinker > verl HYBRID (auto-init LoRA + in-process + bypass_mode)",
+      "INT4 + INT8KV + EAGLE → 9,088 tok/s → RTX 4090推理最优",
+      "PCIe scaling灾难 → 单GPU最优 → TP>1/PP>1不可行",
+      "BF16唯一正确训练精度 → INT4唯一正确推理精度",
+      "LoRA merge后推理同(无overhead) → merge→INT4→vLLM→最快",
+      "Rule-based reward > RM(14GB GPU) → GRPO典型用math/code correctness",
+      "pass@k eval(CPU) + GRPO train(GPU) → 最大化GPU利用率"
+    ],
+    "memory_budget": {
+      "training": "17GB (7B BF16 + LoRA-32) → 24GB ✓",
+      "inference": "~11GB (INT4 3.5GB + KV 5GB + graph 2GB + misc 0.5GB) → 24GB ✓",
+      "ppo_training": "~48GB → 24GB ✗✗✗",
+      "fsdp2_training": "~26GB → 24GB ✗ (需LoRA)"
+    }
+  }
+}

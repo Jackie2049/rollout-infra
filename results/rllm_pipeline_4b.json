@@ -1,0 +1,23 @@
+{
+  "config_name": "4b",
+  "model_config": {
+    "model": "Qwen/Qwen3-4B-Instruct",
+    "group_size": 4,
+    "batch_size": 8,
+    "lora_rank": 32,
+    "max_length": 4096,
+    "lr": 2e-05,
+    "estimated_memory_gb": 14,
+    "headroom_gb": 10,
+    "notes": "\u2605 \u4e2d\u7b49 \u2192 14GB/24GB \u2192 10GB headroom"
+  },
+  "files": {
+    "training_yaml": "results/rtx4090_grpo_4b.yaml",
+    "vllm_yaml": "results/vllm_int4_4b.yaml"
+  },
+  "commands": {
+    "train_command": "rllm train gsm8k --agent math --evaluator math --config results/rtx4090_grpo_4b.yaml",
+    "eval_command": "rllm eval math500 --agent math --evaluator math --model Qwen/Qwen3-4B-Instruct --base-url http://localhost:8000/v1 --attempts 4",
+    "vllm_command": "python -m vllm.entrypoints.openai.api_server --config results/vllm_int4_4b.yaml"
+  }
+}
