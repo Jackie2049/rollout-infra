@@ -283,7 +283,11 @@ Phase 6: Evaluation (CPU warm-pool)
 ✗✗✗ NVLS/TMA → SM89不支持 → ★ NCCL+FlashInfer
 ✗✗✗ GRPO cudagraph exponential sizing → +13.6%peak → ★ linear sizing
 ✗✗✗ GRPO small group(n=1) → σ=0 → gradient vanish → ★ Dr.GRPO或rollout_n≥4
-✗✗✗ LoRA+prefix caching → vLLM hash不含LoRA ID → ★ 单adapter merge后可用
+✗✗✗ LoRA+prefix caching → vLLM hash不含LoRA ID → ★ 单adapter merge后可用 (#44701)
+✗✗✗ FP8 KV cache → SM89 crash → ★ INT8 KV唯一可行 (#44879/#45038)
+✗✗✗ vLLM preemption → retraction(无CPU swap) → ★ 必须enable_prefix_caching=True
+✗✗✗ compressed-tensors FP8 override → SM89 crash → ★ PR #45038 guard needed
+✗✗✗ DeepSpeed inference → MII/FastGen已死 → ★ vLLM推理优先
 ```
 
 ## 参考资料
@@ -297,3 +301,9 @@ Phase 6: Evaluation (CPU warm-pool)
 - Quantization Crosspoint: notebook/projects/quantization-inference-training-crosspoint-reading.md
 - RL Design Patterns: notebook/projects/rl-training-design-patterns-comparison.md
 - RTX 4090 Practical Config: notebook/projects/rtx4090-seven-framework-practical-config.md
+- ★★★ Prefix Cache Hash: notebook/projects/vllm-prefix-cache-hash-collision-reading.md
+- ★★★ GRPO Rollout Scheduler: notebook/projects/vllm-grpo-rollout-scheduler-reading.md
+- ★★★ FlashInfer Integration: notebook/projects/vllm-flashinfer-integration-reading.md
+- ★★★ SM89 Compatibility: tools/sm89_compatibility_checker.py
+- ★★★ KV Cache Cost: tools/sm89_kv_cache_cost_analyzer.py
+- ★★★ Contribution Tracker: tools/vllm_contribution_tracker.py
