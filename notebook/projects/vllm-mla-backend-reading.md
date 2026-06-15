@@ -1,651 +1,517 @@
-# vLLM MLA Attention Backend 深度源码阅读
+# vLLM MLA Attention Backend 源码阅读
 
-> 基于 `rollout-infra/vllm/vllm/v1/attention/backends/mla/` + `model_executor/layers/attention/mla_attention.py` + `platforms/cuda.py` 全量源码分析
->
-> 覆盖 DeepSeek-V2/V3/V4 MLA 全 backend 变体, SM89 (RTX 4090) vs SM90+ (H100) vs SM100 (Blackwell) 兼容性矩阵, TritonMLA 作为 SM89 唯一 MLA 选项的关键影响, batch invariance + prefix caching 行为, fp8_ds_mla 格式, INT8 KV cache 支持, 压缩比对比, 以及 DeepSeek-V4 MLA 扩展
->
-> 日期: 2026-06-16 (更新版)
+> 基于 vLLM v0.23.0 源码分析 (`rollout-infra/vllm/vllm/v1/attention/backends/mla/`)
+> 分析 DeepSeek-V2/V3/V4 的 Multi-head Latent Attention 在 vLLM 中的多种 backend 实现
+> 日期: 2026-06-16
 
 ---
 
-## 1. MLA Backend 总览 — 10 种 Decode + 5 种 Prefill + 5 种 Sparse
+## 1. 为什么 MLA 需要专门的 Attention Backend
 
-### 1.1 Decode Backend 完整列表
+★★★★★ MLA (Multi-head Latent Attention) 和标准 Attention (MHA/GQA) 的核心区别：
 
-| Backend | 类名 | 目标 SM | KV Cache dtype | Block Size | HND Layout | Key Feature |
-|---------|------|--------|----------------|------------|------------|-------------|
-| **FlashMLA** | `FlashMLABackend` | SM9, SM10 (major=9 或 10) | BF16/FP16/FP8/FP8_e4m3 | 64 | No | SM90 主力, fp8_ds_mla FP8 KV, Seesaw Scheduling |
-| **FlashAttnMLA** | `FlashAttnMLABackend` | SM9 (major=9) | BF16/FP16 only | MultipleOf(16) | No | FA3 MLA varlen, 支持 batch invariance, **不支持 FP8 KV** |
-| **FlashInferMLA** | `FlashInferMLABackend` | SM10 (major=10) | BF16/FP16/FP8/FP8_e4m3 | 32, 64 | **Yes (HND)** | Blackwell 专用, trtllm API, qk_nope ∈ {64,128,192} |
-| **TritonMLA** | `TritonMLABackend` | **All CUDA** (True) | BF16/FP16/FP8/FP8_e4m3 | MultipleOf(16) | No | ★★★★★ **SM89 唯一 MLA 选项**, FP8 Mode1 (BF16 Q + kernel 内 dequant) |
-| **CutlassMLA** | `CutlassMLABackend` | SM10 (major=10) | BF16/FP16/FP8/FP8_e4m3 | 128 | No | Blackwell CUTLASS, q_pad=128 heads, workspace 128MB |
-| **TokenspeedMLA** | `TokenspeedMLABackend` | SM10 (major=10) | **FP8/FP8_e4m3 only** | 32, 64 | **Yes (HND)** | Blackwell CuTe DSL, FP8 Q+KV, DSR1 专用维度 |
-| **AiterTritonMLA** | `AiterTritonMLABackend` | ROCm (AMD) | - | - | - | AMD GPU 专用, 继承 AiterMLABackend |
-| **AiterMLA** | `AiterMLABackend` | ROCm (AMD) | - | - | - | AMD GPU 专用 |
+```
+标准 Attention (MHA/GQA):
+  K, V 直接存储在 KV Cache 中: [seq_len, num_kv_heads, head_dim]
+  Attention: Q @ K^T / sqrt(d)
 
-★★★★★ **关键发现**: TritonMLA `supports_compute_capability()` 返回 `True` (源码 `triton_mla.py:78`), 是唯一能在 SM89 上运行的 MLA decode backend。FlashMLA 限制 SM90+, FlashAttnMLA 限制 SM9 (不含 SM89 9.x 子版本的实际 FA3 MLA kernel 支持), 其余均 SM100 only。
+MLA Attention:
+  KV Cache 只存储压缩的 latent: [seq_len, kv_lora_rank] + [seq_len, qk_rope_head_dim]
+  需要从 latent 恢复/投影 K, V → 不同的 attention 计算路径
+  关键: 不需要显式恢复完整 K/V（矩阵吸收）
+```
 
-### 1.2 Sparse MLA Backend
+★★★★★★★ MLA decode 是 compute-bound: h_q=128 时 compute-memory ratio ≈ 256!
+  和标准 MHA decode (memory-bound) 不同! MLA 的压缩让 compute 变成瓶颈
+  → DeepSeek-V3 decode 需要专门 kernel 优化
 
-| Backend | 目标 SM | KV Cache | 特点 |
-|---------|--------|----------|------|
-| **FlashMLA Sparse** | SM9, SM10 | fp8_ds_mla / BF16 | DeepSeek-V3.2 Sparse Attention, FP8 Crossover dequant |
-| **FlashInfer MLA Sparse** | SM10 | FP8 (标准) | Blackwell 专用 |
-| **XPU MLA Sparse** | XPU (Intel) | - | Intel GPU |
-| **ROCm Aiter MLA Sparse** | ROCm | - | AMD |
-| **V4 FlashMLA Sparse** | SM9, SM10 | fp8_ds_mla (584B/token) | ★★★ DeepSeek-V4 专用, C128A compress_ratio=128 |
+  ★★★★★ DeepSeek-V3 MLA 维让 decode 重新变成 compute-bound!
 
-### 1.3 Prefill Backend
-
-| Backend | 类名 | 目标 SM | 特点 |
-|---------|------|--------|------|
-| **FlashAttn Prefill** | `FlashAttnPrefillBackend` | All CUDA | 主力, padding 处理不同 head dim |
-| **FlashInfer Prefill** | `FlashInferPrefillBackend` | SM100 only | DeepSeek R1 维度 (128,64,128) |
-| **TRTLLM Ragged Prefill** | `TrtllmRaggedPrefillBackend` | SM100 only | Triton-based ragged attention |
-| **Tokenspeed MLA Prefill** | `TokenspeedMLAPrefillBackend` | SM100 only | CuTe DSL, FP8 Q+KV prefill |
+因此 MLA 需要专门 kernel 实现来:
+1. 处理压缩的 KV cache 格式
+2. 优化两条计算路径（prefill 和 decode 不同）
+3. 支持解耦 RoPE（separate content 和 position 分支）
 
 ---
 
-## 2. ★★★★★ SM89 (RTX 4090) MLA Backend 选择路径
+## 2. MLA Backend 体系结构
 
-### 2.1 Backend Priority 逻辑 (源码 `platforms/cuda.py:79-130`)
+### 2.1 Decode Backend 优先级 (cuda.py L78-130)
 
-```
-SM89 (capability.major == 9, 非 10):
-  MLA decode backend 优先级:
-    1. FLASH_ATTN_MLA   — SM9 only, 但 FA3 MLA kernel 实际上仅在 SM90 hopper 上可用
-    2. FLASHMLA          — SM90 only (is_flashmla_dense_supported 检查 family==90)
-    3. FLASHINFER_MLA    — SM100 only
-    4. TRITON_MLA        — All CUDA (supports_compute_capability=True) ← 最终选中!
-    5. FLASHMLA_SPARSE   — SM90+ only
+★★★★★★★ SM89 (RTX 4090) 的 MLA backend 选择是**由 hardware capability 严格决定**:
 
-  → 当 FLASH_ATTN_MLA 和 FLASHMLA 都因 SM 限制被拒绝后,
-    TRITON_MLA 自动成为 SM89 上唯一可用的 MLA decode backend
-```
+SM100 (Blackwell) 优先级:
+  1. FlashInfer MLA ( — head ≤ 16 时最优, FP8 KV cache 优先选 FlashInfer)
+  2. Tokenspeed MLA — FP8 KV cache + DeepSeek R1 维度专用, CuTe DSL 优化
+  3. Cutlass MLA — CUTLASS SM100 kernel, block_size=128
+  4. FlashAttn MLA — SM9 only
+  5. FlashMLA — SM90 Hopper 主力
+  6. Triton MLA — **通用 fallback, 所有 CUDA SM**
 
-★★★★★ **RTX 4090 影响**: SM89 上的 DeepSeek-V2/V3 MLA 推理 **必须走 TritonMLA decode 路径**。FlashMLA dense kernel 的 `is_flashmla_dense_supported()` 明确检查 `is_device_capability_family(90)` (源码 `ops/flashmla.py:58`), 即 RTX 4090 的 SM89 不满足条件。FlashAttnMLA 的 FA3 MLA kernel 同样依赖 Hopper (SM90) TMA + WGMMA 特性。
+SM90 (Hopper) 优先级:
+  1. FlashAttn MLA — FA3 scheduler, 支持 batch invariance
+  2. FlashMLA — SM90 主力, FP8 dense decode
+  3. FlashInfer MLA — SM10 only, SM90 不支持
+  4. Triton MLA — 通用 fallback
+  5. FlashMLA Sparse — SM90+SM100, FP8 sparse decode
 
-### 2.2 TritonMLA 在 SM89 上的关键特性
+★★★★★★★ SM89 (RTX 4090) 唯一可用 backend: **Triton MLA**
+  FlashMLA: SM90-only → RTX 4090 不可用!
+  FlashAttn MLA: SM9-only → RTX 4090 的 SM89 属于 SM9 家族但不支持 FA3 MLA
+  FlashInfer MLA: SM100-only → RTX 4090 不可用
+  Cutlass MLA: SM100-only → RTX 4090 不可用!
+  Tokenspeed MLA: SM100-only → RTX 4090 不可用!
 
-| 特性 | TritonMLA 实现 | 源码位置 |
-|------|----------------|----------|
-| **FP8 KV Cache** | Mode 1: BF16 query + kernel 内 dequant FP8→BF16 | `triton_mla.py:128-132` |
-| **supports_quant_query_input** | FP8 KV 时设为 False (不量化 Q 到 FP8) | `triton_mla.py:131-132` |
-| **batch invariance** | `supports_batch_invariance()` → True | `triton_mla.py:65-66` |
-| **VLLM_BATCH_INVARIANT 行为** | num_kv_splits=1, 确保确定性 reduction | `triton_mla.py:158-159` |
-| **prefix caching + BI** | **被禁用!** (enable_prefix_caching=False) | `mla_attention.py:428-438` |
-| **KV split 计算** | max_seq_len//512 → power_of_2, 限制 SM×2 | `triton_mla.py:160-175` |
-| **Kernel** | 2-stage decode_attention_fwd (stage1: Q@K+softmax, stage2: merge splits) | `ops/triton_decode_attention.py` |
+### 2.2 Sparse Backend 优先级
 
-### 2.3 ★★★★★ TritonMLA + VLLM_BATCH_INVARIANT + Prefix Caching 交互
+SM90+SM100 优先级:
+  - FP8 KV cache: FlashInfer MLA Sparse > FlashMLA Sparse
+  - BF16 KV cache: num_heads ≤ 16 → FlashInfer MLA Sparse; num_heads > 16 → FlashMLA Sparse
 
-```python
-# 源码 mla_attention.py:426-438 — 关键交互!
-if (
-    cache_config is not None
-    and cache_config.enable_prefix_caching
-    and envs.VLLM_BATCH_INVARIANT
-    and (
-        self.attn_backend.get_name() == "TRITON_MLA"    # ← SM89 落入这个!
-        or self.attn_backend.get_name() == "FLASHINFER"  # 非 MLA 的 FlashInfer
-    )
-):
-    logger.warning_once(
-        "Disabling prefix caching for TRITON_MLA / FLASHINFER "
-        "with batch invariance, as it is not yet supported.",
-    )
-    cache_config.enable_prefix_caching = False
-```
+  - XPU MLA Sparse (Intel GPU), ROCm Aiter MLA Sparse (AMD)
 
-★★★★★ **RTX 4090 MLA + batch invariant = prefix caching 被禁用**! 这意味着:
-- SM89 上 TritonMLA + VLLM_BATCH_INVARIANT 模式下, prefix caching 自动关闭
-- 原因: TritonMLA 的 num_kv_splits=1 路径与 prefix cache block 的共享逻辑冲突 (split=1 确保确定性, 但 prefix block 共享需要 ref_cnt 保护, 当前 Triton decode kernel 不支持这个交互)
-- FlashMLA 的 `VLLM_BATCH_INVARIANT` 路径则手动构造 tile_scheduler_metadata (源码 `flashmla.py:275-303`), 并不与 prefix caching 冲突 — 但 FlashMLA 在 SM89 上不可用
+### 2.3 Prefill Backend 优先级 (selector.py L64-75)
 
----
-
-## 3. 各 MLA Backend 详细源码分析
-
-### 3.1 FlashMLA (SM90 主力)
-
-```
-源码: vllm/v1/attention/backends/mla/flashmla.py
-核心: FlashMLABackend → FlashMLAImpl → forward_mqa()
-
-关键点:
-  1. supports_compute_capability: capability.major ∈ {9, 10} (line 74-75)
-  2. 实际 dense kernel 限制: is_flashmla_dense_supported() → family==90 (ops/flashmla.py:58)
-     → SM89 (RTX 4090) 被拒绝, 即使 major==9 也通过, 但 family check 更严格
-  3. FP8 KV Cache 路径:
-     - is_quantized_kv_cache → flash_mla_with_kvcache_fp8 (line 305-318)
-     - 需要 get_mla_metadata_dense_fp8 预计算 tile scheduler metadata (line 172-194)
-     - CUDA graph 时把 FP8 metadata 拷入持久 buffer (line 180-191)
-  4. VLLM_BATCH_INVARIANT + FlashMLA:
-     - 非 FP8 KV 时: 手动构造 tile_scheduler_metadata (line 275-303)
-     - 单 partition, begin_idx=0, end_idx=B-1, end_block_idx=topk//B_TOPK
-     - num_splits = zeros of length B+1 (line 300-301)
-     - FP8 KV 时: 使用 get_mla_metadata_dense_fp8 预计算, 然后拷入 CG buffer
-  5. reorder_batch_threshold = 128 (line 112) — 小 prefill 可以走 decode 路径
-  6. query_len_support = UNIFORM (line 111) — 支持 spec decode
-```
-
-### 3.2 FlashAttnMLA (SM9, Hopper FA3)
-
-```
-源码: vllm/v1/attention/backends/mla/flashattn_mla.py
-核心: FlashAttnMLABackend → FlashAttnMLAImpl → forward_mqa()
-
-关键点:
-  1. supports_compute_capability: capability.major == 9 (line 72-73)
-     ★★★ 但 FA3 MLA kernel 实际需要 SM90 hopper 特性 (TMA, WGMMA)
-     → 在 SM89 上 likely 被 flash_attn_supports_mla() 检查拒绝
-  2. supports_batch_invariance: True (line 59-61) ← SM89 上唯一 BI-capable 的 MLA 选项
-     但如果 FA3 kernel 在 SM89 不可用, TritonMLA 接替 (也支持 BI)
-  3. FP8 KV Cache: **不支持!** (line 304-307, 326-327)
-     → raise NotImplementedError("FlashAttnMLA V1 with FP8 KV cache not yet supported")
-  4. VLLM_BATCH_INVARIANT + FA MLA:
-     - max_num_splits = 1 (line 157-158, 214-215)
-     - FA3 AOT schedule: get_scheduler_metadata 预计算 (line 170-186)
-     - CUDA graph 时拷入持久 scheduler_metadata buffer (line 227-240)
-  5. query_len_support = VARLEN (line 108) ← 比 FlashMLA 更灵活!
-  6. reorder_batch_threshold = 512 (line 109) — 更宽容的 decode→prefill 转换阈值
-  7. 支持 DCP (Decode Context Parallel) with varlen (line 118-126)
-```
-
-### 3.3 ★★★★★ TritonMLA (All CUDA, SM89 唯一 MLA 选项)
-
-```
-源码: vllm/v1/attention/backends/mla/triton_mla.py
-核心: TritonMLABackend → TritonMLAImpl → forward_mqa()
-Kernel: vllm/v1/attention/ops/triton_decode_attention.py (2-stage)
-
-关键点:
-  1. supports_compute_capability: True (line 77-78)
-     → ★★★★★ 在 SM89 上是唯一可选的 MLA decode backend
-  2. supported_kv_cache_dtypes: FP16/BF16/FP8/FP8_e4m3 (line 38-44)
-     → 支持 FP8 KV Cache!
-  3. FP8 KV 实现: "Mode 1" — BF16 query, kernel 内 dequant FP8 KV→BF16
-     → supports_quant_query_input = False when FP8 KV (line 131-132)
-     → 告知上游 pipeline 不要将 Q 量化为 FP8, kernel 自行处理
-  4. ★★★★★ VLLM_BATCH_INVARIANT:
-     - supports_batch_invariance(): True (line 65-66)
-     - num_kv_splits = 1 (line 158-159) ← 确定性 reduction, 无 split 合并误差
-     - 但 prefix caching 被禁用! (mla_attention.py:428-438)
-  5. 正常模式 KV split 计算:
-     - min_work_per_split = 512 (line 163)
-     - ideal_splits = next_power_of_2(max_seq_len // 512) (line 165-168)
-     - max_splits = SM_count × 2 (line 173-174)
-     - num_kv_splits = min(ideal_splits, max_splits) (line 175)
-  6. attn_logits 中间缓冲区:
-     - shape: [B, q_num_heads, num_kv_splits, kv_lora_rank+1] (line 178-189)
-     - +1 存 LogSumExp (LSE), 供 stage2 kernel 合并 splits
-  7. Kernel 调用: decode_attention_fwd(..., is_mla=True) (line 198-213)
-     - k_scale/v_scale 从 layer._k_scale 获取 (line 210-211)
-     - FP8 KV: kernel 内 k_scale 做 dequant scale
-  8. head_size 兼容性: 320, 576 (MLACommonBackend line 1197-1198)
-     - Mistral Small 4 kv_lora_rank=256 + rope=64 → 320 ✓ (已通过 #41119 修复)
-```
-
-### 3.4 FlashInferMLA (SM100, Blackwell)
-
-```
-源码: vllm/v1/attention/backends/mla/flashinfer_mla.py
-核心: FlashInferMLABackend → FlashInferMLAImpl → forward_mqa()
-
-关键点:
-  1. supports_compute_capability: capability.major == 10 (line 65-66) ← Blackwell only
-  2. required_kv_cache_layout: "HND" (line 94-96) ← 需要 Head-Number-Dim layout
-  3. supports_combination 检查: qk_nope_head_dim ∈ {64, 128, 192} (line 86-92)
-     → 不满足维度则被拒绝
-  4. FP8 KV Cache: 支持, bmm1_scale 和 bmm2_scale 包含 q/k scale (line 182-188)
-  5. 使用 trtllm_batch_decode_with_kv_cache_mla (FlashInfer API) (line 190-202)
-  6. 不返回 LSE (line 207-209) ← pending FlashInfer API support
-```
-
-### 3.5 CutlassMLA (SM100, Blackwell CUTLASS)
-
-```
-源码: vllm/v1/attention/backends/mla/cutlass_mla.py
-核心: CutlassMLABackend → CutlassMLAImpl → forward_mqa()
-
-关键点:
-  1. supports_compute_capability: capability.major == 10 (line 65-66) ← Blackwell only
-  2. block_size 固定 128 (line 49-50, 75)
-  3. q_pad_num_heads = MAX_HEADS = 128 (line 101, 133-134)
-  4. workspace: g_sm100_workspace 128MB (line 99)
-  5. num_kv_splits: 默认 -1 (auto), 可用 FORCE_NUM_KV_SPLITS 覆盖 (line 152-160)
-     ★★★ 当前限制 16 splits 避免挂起! 如遇挂起可设 FORCE_NUM_KV_SPLITS=1
-  6. FP8 KV: NotImplementedError "CutlassMLAImpl does not support scaling for q and kv_latent yet" (line 258-261)
-     → 实际上不支持 FP8 KV cache!
-  7. 输出: MAX_HEADS padding + slice back (line 241-244)
-```
-
-### 3.6 ★★★ TokenspeedMLA (SM100, Blackwell FP8-Only)
-
-```
-源码: vllm/v1/attention/backends/mla/tokenspeed_mla.py
-核心: TokenspeedMLABackend → TokenspeedMLAImpl → forward_mqa()
-
-关键点:
-  1. supports_compute_capability: capability.major == 10 (line 82-83) ← Blackwell only
-  2. ★★★ supported_kv_cache_dtypes: FP8/FP8_e4m3 ONLY (line 61-64)
-     → **必须 FP8 KV cache** (不支持 BF16 KV!)
-  3. supports_combination: DSR1 专用维度 (qk_nope=128, rope=64, v=128) (line 118)
-  4. required_kv_cache_layout: "HND" (line 127-128)
-  5. FP8 Q input: supports_quant_query_input=True, 要求 q dtype=float8_e4m3fn (line 224-228)
-     → 上游 pipeline 通过 _DecodeConcatQuantFP8 量化 Q 到 FP8
-  6. softmax_scale = scale × q_scale × k_scale (line 247-249)
-     output_scale = k_scale (line 250)
-  7. tokenspeed_mla_decode CuTe DSL kernel, workspace = SM×heads×max_q_len×(kv_lora_rank+1)×4
-  8. 性能: 在 Blackwell 上比 trtllm 快 2-4× (PR #41778 benchmark)
-```
-
----
-
-## 4. MLA Prefill Backend 选择
-
-### 4.1 Prefill 优先级 (源码 `prefill/selector.py:54-76`)
-
-```
 SM100 (Blackwell):
-  1. FLASH_ATTN    ← 主力
-  2. TRTLLM_RAGGED ← Triton ragged
-  3. FLASHINFER    ← 需要 DSR1 维度
-  4. TOKENSPEED_MLA ← CuTe DSL, FP8 Q+KV
+  1. FlashAttn — 簡单可靠, 任意维度
+  2. TRT-LLM Ragged — 变长序列, 支持 FP8 prefill quant
+  3. FlashInfer — SM100 only, 需要 DeepSeek R1 维度
+  4. Tokenspeed MLA — FP8 prefill + decode, Blackwell 专用
 
-SM90 (Hopper) 及更低:
-  1. FLASH_ATTN    ← 只有这一个选项!
-```
+SM90 (Hopper):
+  1. FlashAttn — 仅支持 FA3 (需要 flash_attn_supports_mla())
+  其他 CUDA (SM89 等):
+  1. FlashAttn — 需要 FA 支持检查
 
-★★★★★ **SM89 prefill 只有 FlashAttn**: SM89 的 MLA prefill 只能走 FlashAttention (FA3/FA4) prefill 路径。FA3 MLA prefill 使用 padding 处理不同 head dim (将 MLA 的 MQA 转换为 MHA 格式)。
+### 2.4 各 Backend 详细对比
 
----
-
-## 5. MLA KV Cache 格式与压缩比
-
-### 5.1 标准 Attention vs MLA KV Cache 大小对比
-
-```
-标准 MHA KV Cache (per token, per layer):
-  K: [num_kv_heads, head_dim]     = 128 × 128 = 16,384 elements
-  V: [num_kv_heads, head_dim]     = 128 × 128 = 16,384 elements
-  总计: 32,768 elements × 2 bytes  = 65,536 bytes
-
-标准 GQA-8 KV Cache (per token, per layer):
-  K: [8, head_dim]    = 8 × 128 = 1,024 elements
-  V: [8, head_dim]    = 8 × 128 = 1,024 elements
-  总计: 2,048 elements × 2 bytes = 4,096 bytes
-
-DeepSeek-V2/V3 MLA KV Cache (per token, per layer):
-  kv_c: [kv_lora_rank]            = 512 elements (latent)
-  k_pe: [qk_rope_head_dim]        = 64 elements  (RoPE key)
-  总计: 576 elements × 2 bytes    = 1,152 bytes
-
-★★★★★ 压缩比对比:
-  MLA vs MHA:  65,536 / 1,152 = 56.9x ← 极端压缩!
-  MLA vs GQA-8: 4,096 / 1,152 = 3.6x ← 即使 vs GQA-8 也显著压缩
-  MLA vs GQA-1 (MQA): 1,152 / 1,152 = 1.0x ← MLA latent ≈ MQA 1 head 的 KV cache 大小
-
-核心差异: MLA 512 latent + 64 RoPE = 576 维度存储, vs GQA-8 需 8×(128+128)=2048 维度存储
-```
-
-### 5.2 fp8_ds_mla 格式详解
-
-★★★★★ **fp8_ds_mla 是 DeepSeek 专有的 MLA FP8 KV cache 格式**, 不是标准 FP8 KV cache。
-
-#### V3.2 fp8_ds_mla (656 bytes/token)
-
-```
-源码: flashmla_sparse.py:68-90 (module docstring)
-
-每个 token 的 FP8 KV cache = 656 bytes:
-  前 512 bytes: 512 × float8_e4m3 → 量化 NoPE 部分 (kv_lora_rank=512)
-  中间 16 bytes: 4 × float32 → tile-wise scale factors (每 128 FP8 值一组)
-  最后 128 bytes: 64 × bfloat16 → RoPE 部分 (不量化, 保持精度)
-
-比例: NoPE=512B / total=656B → NoPE 占 78%, RoPE 占 19.5%, scale 占 2.4%
-```
-
-#### ★★★ V4 fp8_ds_mla (584 bytes/token)
-
-```
-源码: flashmla_sparse.py:80-90 + nvidia/flashmla.py:107-109
-
-每个 token 的 FP8 KV cache = 584 bytes:
-  前 448 bytes: 448 × float8_e4m3 → 量化 NoPE 部分 (kv_lora_rank=448)
-  中间 128 bytes: 64 × bfloat16 → RoPE 部分 (不量化)
-  最后 8 bytes: 7 × ue8m0 + 1B pad → per-64-element scale factors (MX scale)
-
-★★★ 关键差异:
-  V3.2: NoPE=512 FP8 + 4×FP32 scale (tile-wise, 128 per group)
-  V4:   NoPE=448 FP8 + 7×ue8m0 scale (MX-style, 64 per group)
-  → V4 scale 更紧凑 (8B vs 16B), 但量化组更细 (64 vs 128)
-  → V4 RoPE 部分位置从尾部移到中间, 排列 [NoPE, RoPE, scale]
-```
-
-### 5.3 MLA KV Cache in MLAAttentionSpec
-
-```python
-# 源码 kv_cache_interface.py:337-367
-
-class MLAAttentionSpec(FullAttentionSpec):
-    cache_dtype_str: str | None = None
-    compress_ratio: int = 1           # DeepseekV4 only, default=1
-    model_version: str | None = None
-
-    @property
-    def storage_block_size(self) -> int:
-        return self.block_size // self.compress_ratio  # C128A: block_size//128
-
-    @property
-    def real_page_size_bytes(self) -> int:
-        if self.cache_dtype_str == "fp8_ds_mla":
-            if self.model_version == "deepseek_v4":
-                return self.storage_block_size * 584   # V4: 584B/token
-            return self.storage_block_size * 656       # V3.2: 656B/token
-```
+| Backend | SM Support | FP8 KV Cache | Batch Invariance | CUDA Graph | Block Size | KV Layout |
+|---------|-----------|----------------|-----------------|------------|------------|----------|
+| **Triton MLA** | **All CUDA** | **Mode 1 (dequant in kernel)** | **Yes** | UNIFORM_BATCH | MultipleOf(16) | N/A |
+| **FlashMLA** | SM90 | FP8 ds_mla format | Yes | UNIFORM_BATCH | 64 | N/A |
+| **FlashAttn MLA** | SM9 | **NOT SUPPORTED** | **Yes** | UNIFORM_BATCH | MultipleOf(16) | N/A |
+| **FlashInfer MLA** | SM100 | FP8 standard | No LSE return | 32, 64 | **HND** |
+| **Cutlass MLA** | SM100 | FP8 (未实现) | No | UNIFORM_SINGLE_TOKEN_DECODE | 128 | N/A |
+| **Tokenspeed MLA** | SM100 | **FP8 ONLY** | No LSE return | 32, 64 | **HND** |
+| **Aiter Triton MLA** | ROCm | FP8 BMM | No | UNIFORM_BATCH | MultipleOf(16) | N/A |
 
 ---
 
-## 6. ★★★★★ MLA INT8 KV Cache 支持状态
+## 3. Triton MLA — SM89 的唯一选择
+★★★★★★★ RTX 4090 (SM89) 运行 MLA 模型时， **Triton MLA 是唯一可用的 backend**
 
-### 6.1 各 Backend 的 INT8/FP8 KV 支持矩阵
+原因分析:
+- FlashMLA 需要 SM90 (Hopper TMA + WGMMA 特性) → RTX 4090 不可用
+- FlashAttn MLA 需要 SM9 (即 SM90), 不是 SM89 → 不可用
+- FlashInfer MLA / Cutlass MLA / Tokenspeed MLA 需要 SM100 → 不可用
+- Triton MLA `supports_compute_capability` 返回 `True` → **所有 CUDA 设备可用**
 
-| Backend | BF16 KV | FP8 KV (标准) | fp8_ds_mla KV | INT8 KV |
-|---------|---------|---------------|---------------|---------|
-| **FlashMLA** | ✓ | ✓ (fp8_e4m3) | ✓ (sparse only) | ✗ 无 INT8 dtype |
-| **FlashAttnMLA** | ✓ | **✗ NotImplementedError** | ✗ | ✗ |
-| **TritonMLA** | ✓ | ✓ (Mode1: BF16 Q+kernel dequant) | ✗ | ✗ |
-| **FlashInferMLA** | ✓ | ✓ (FP8 Q+KV) | ✗ | ✗ |
-| **CutlassMLA** | ✓ | **✗ NotImplementedError** (scaling not supported) | ✗ | ✗ |
-| **TokenspeedMLA** | ✗ (仅 FP8) | ✓ (FP8 Q+KV mandatory) | ✗ | ✗ |
+### 3.1 Triton MLA FP8 KV Cache: Mode 1 (dequant in kernel)
+★★★★★ Triton MLA 的 FP8 KV cache 夯现方式是 "Mode 1":
+- KV cache 存储 FP8, 在 Triton kernel 内部 dequantize 为 BF16
+- Query 保持 BF16, 不需要额外 FP8 量化
+- `supports_quant_query_input = False` (triton_mla.py L131-132)
 
-★★★★★ **SM89 MLA FP8 KV 状态**: TritonMLA 支持 FP8 KV, 但使用 "Mode 1" (BF16 query + kernel 内 dequant), 性能不如 FlashMLA 的 "Mode 2" (FP8 Q + FP8 KV + Crossover dequant)。TritonMLA 的 `supports_quant_query_input=False` 意味着 Q 不被量化到 FP8, 所有 FP8→BF16 转换在 Triton kernel 内完成。
+- 这样做的好处: 逻辑简单, SM89 可用; 不需要 Hopper 专用 dequant 猇令
+- 缺点: BF16 计算 → 相比 FlashMLA 的 FP8 ds_mla 献式性能较差
 
-★★★ **INT8 KV Cache**: vLLM 的 MLA backend 目前 **没有任何 INT8 KV Cache 支持**。vLLM 的量化系统只提供 FP8 (fp8_e4m3, fp8_e5m2) 和 fp8_ds_mla, 没有 INT8 per-token 或 INT8 block-wise quantization 路径。对于 SM89 (RTX 4090), 标准 FP8 KV cache 的 Triton FP8 path 和 FlashMLA Sparse 的 fp8_ds_mla path 都因 SM 限制不可用, 这使得 **SM89 上 MLA 的唯一 KV cache dtype 是 BF16/FP16**。
+★★★ FlashMLA 的 FP8 ds_mla format (V3.2):
+  每个 token 656 bytes:
+    - 前 512 bytes: 512 × float8_e4m3 (NoPE 部分)
+    - 中间 16 bytes: 4 × float32 scale factor (128 一组)
+    - 最后 128 bytes: 64 × bfloat16 (RoPE 部分, 不量化)
 
----
+★★★★★★★ DeepSeek-V4 fp8_ds_mla format:
+  每个 token 584 bytes:
+    - 前 448 bytes: 448 × float8_e4m3 (NoPE 部分)
+    - 中间 128 bytes: 64 × bfloat16 (RoPE 部分, 不量化)
+    - 最后 8 bytes: 7 × ue8m0 scale factor + 1B pad
+  压缩比: V3.2 576B → V4 512B → 11.3% 提升!
 
-## 7. MLA Backend 选择 — SM89 vs SM90 vs SM100
+★★★ FlashMLA Sparse 的 FP8 decode 使用 Crossover 共享 dequantize (flashmla-reading.md):
+  2 CTA 组成 cluster, 各负责 64 query heads
+  CTA 0 dequantize 前半 → CTA 1 dequantize 后半
+  每个 CTA 只需 dequantize 一半 → 25 cycles < 34 cycles → dequantization 不再瓶颈
 
-### 7.1 完整 SM 兼容性矩阵
+### 3.2 Triton MLA + VLLM_BATCH_INVARIANT
+★★★★★ Triton MLA 设置 `VLLM_BATCH_INVARIANT` 时的行为:
+- `num_kv_splits = 1` → 禁用 split-KV,优化, 罚证 reduction (triton_mla.py L158-159)
+- 这样保证 attention 计算的确定性 (deterministic)
+- ★★★★★★ 但 prefix caching 会被禁用:
+  ```python
+  # mla_attention.py L428-438
+  if (
+      cache_config.enable_prefix_caching
+      and envs.VLLM_BATCH_INVARIANT
+      and (
+          self.attn_backend.get_name() == "TRITON_MLA"
+          or self.attn_backend.get_name() == "FLASHINFER"
+      )
+  ):
+      logger.warning_once(
+          "Disabling prefix caching for TRITON_MLA / FLASHINFER "
+          "with batch invariance, as it is not yet supported.",
+      )
+      cache_config.enable_prefix_caching = False
+  ```
+  ★★★★★★ 原因: `num_kv_splits=1` 时 Triton decode attention 的 split-reduce
+逻辑不支持变前缀共享的 KV block
 
-| SM | Decode Backend | Prefill Backend | Sparse Backend | FP8 KV | BI Support | Prefix Cache+BI |
-|----|----------------|----------------|----------------|--------|------------|-----------------|
-| **SM89 (RTX 4090)** | ★★★★★ TritonMLA only | FlashAttn | ✗ (SM90+ only) | Triton Mode1 | ✓ | ✗ (disabled!) |
-| **SM90 (H100/H800)** | FlashMLA > FlashAttnMLA > TritonMLA | FlashAttn | FlashMLA Sparse | FlashMLA FP8 | FlashMLA ✓, FlashAttn ✓ | FlashMLA ✓ |
-| **SM100 (B200/GB200)** | FlashInferMLA > Tokenspeed > Cutlass > FlashAttnMLA > FlashMLA > Triton | FlashAttn > TRTLLM > FlashInfer > Tokenspeed | FlashMLA Sparse, FlashInfer Sparse | FlashInfer FP8, Tokenspeed FP8, FlashMLA fp8_ds_mla | ✓ (most) | ✓ |
+  → **RTX 4090 上 Triton MLA + batch invariance = 无 prefix caching**
 
-### 7.2 ★★★★★ SM89 (RTX 4090) MLA 推理完整路径
+★★★ FlashAttn MLA 的 batch invariance (flashattn_mla.py L157-158, L214-215):
+  ```python
+  # MetadataBuilder
+  if envs.VLLM_BATCH_INVARIANT:
+      self.max_num_splits = 1  # 禁用 split
 
-```
-SM89 MLA 推理路径 (唯一):
+  # _build_decode
+  if envs.VLLM_BATCH_INVARIANT:
+      max_num_splits = 1  # 禁用 split
+  ```
+  ★★★★★ FlashAttn MLA 支持 batch invariance + prefix caching (SM90 only)
+  Triton MLA 支持 batch invariance 但不支持 prefix caching (SM89+)
 
-Decode: TritonMLA
-  → decode_attention_fwd(..., is_mla=True, num_kv_splits=1 when BI)
-  → FP8 KV: Mode1 (BF16 Q, kernel dequant)
-  → 无 FlashMLA Seesaw/Crossover 优化
-  → 性能: 理论上比 FlashMLA SM90 decode 低 2-3×
-
-Prefill: FlashAttn (FA3/FA4 MLA prefill)
-  → padding 将 MLA MQA 转换为 MHA 格式
-  → Chunked prefill with workspace
-  → 无 TRTLLM/Tokenspeed prefill 优化
-
-Sparse: ✗ 不可用
-  → FlashMLA Sparse 需要 SM90+ (is_flashmla_sparse_supported)
-  → DeepSeek-V3.2 Sparse Attention 在 RTX 4090 上不可用
-
-FP8 KV: TritonMLA Mode1 only
-  → 不如 FlashMLA fp8_ds_mla 的 Crossover 共享 dequant
-  → Q 不量化 (supports_quant_query_input=False)
-  → 单 token dequant: ~50 cycles, 无 Crossover (SM89 没有 Distributed Shared Memory)
-
-Prefix Cache + BI: ✗ 被禁用!
-  → TritonMLA + VLLM_BATCH_INVARIANT → enable_prefix_caching=False
-  → 这严重影响长上下文场景的 KV cache 重用效率
-```
-
----
-
-## 8. ★★★★★ DeepSeek-V4 MLA 扩展
-
-### 8.1 V4 MLA 核心创新
-
-```
-源码: models/deepseek_v4/attention.py + nvidia/flashmla.py
-
-DeepSeek-V4 MLA 相比 V2/V3 的关键扩展:
-
-1. Compress Ratio (压缩比):
-   - compress_ratio ∈ {1, 4, 128}
-   - C4A: compress_ratio=4 → 每 4 个 token 压缩为 1 个 compressed token
-   - C128A: compress_ratio=128 → 每 128 个 token 压缩为 1 个!
-   - storage_block_size = block_size / compress_ratio
-
-2. Sparse Windowed Attention (SWA):
-   - 每个请求有独立的 SWA cache (DeepseekV4SWACache)
-   - window_size 限制本地关注范围
-   - SWA-only 层 (compress_ratio≤1) 不分配主 KV cache
-
-3. Lightning Indexer (索引器):
-   - 稀疏注意力模式: indexer 选择每个 query 只关注的 compressed token
-   - topk_indices_buffer 存储索引结果
-   - 支持 FP8 和 MXFP4 indexer cache
-   - 3-way GEMM overlap: default stream (wq_b+kv_insert) + aux stream 0 (indexer) + aux stream 1 (compressor)
-
-4. FP8 O-projection (逆向 RoPE + FP8 einsum):
-   - fused_inv_rope_fp8_quant: O → 逆 RoPE → FP8 quant
-   - fp8_einsum: FP8 O × FP8 wo_a → BF16 z
-   - wo_b: BF16 z → 最终输出
-   - SM90 recipe: (1, 128, 128), SM100 recipe: (1, 1, 128)
-
-5. DeepseekCompressor (压缩器):
-   - 将 token 压缩为 compressed token
-   - rotate=True: 旋转位置编码处理
-   - fused_wkv_wgate: 合并 KV 投影 + gating score
-
-6. V4 FlashMLA Sparse Backend:
-   - DeepseekV4FlashMLASparseBackend (nvidia/flashmla.py:79-111)
-   - get_supported_head_sizes: [512] ← 448 NoPE + 64 RoPE = 512 (vs V3.2 的 576)
-   - get_kv_cache_shape: fp8_ds_mla → (num_blocks, block_size, 584)
-   - block_size=256 (vs V3.2 的 64)
-```
-
-### 8.2 V4 Sparse MLA Decode 路径
-
-```
-源码: models/deepseek_v4/nvidia/flashmla.py:130-286
-
-DeepseekV4FlashMLASparseImpl.forward_mqa():
-
-  1. Split prefill + decode
-  2. Decode:
-     - 获取 SWA indices + compressed topk indices
-     - C4A: compute_global_topk_indices_and_lens (per-layer)
-     - C128A: pre-computed during metadata build (attn_metadata.c128a_*)
-     - flash_mla_with_kvcache:
-       q + swa_cache + extra_k_cache (compressed) + extra_indices_in_kvcache
-       → SWA window + compressed KV 合并注意力!
-  3. Prefill:
-     - dequantize_and_gather_k_cache: 从 FP8 compressed KV gather + dequant
-     - dequantize_and_gather_k_cache: SWA KV gather
-     - combine_topk_swa_indices: 合并 topk + SWA indices
-     - flash_mla_sparse_fwd: 稀疏 prefill 注意力
-```
-
-### 8.3 ★★★ C128A compress_ratio=128 的含义
-
-```
-compress_ratio=128:
-  每 128 个 token → 1 个 compressed token
-  128K context → 128K/128 = 1K compressed tokens
-  → KV cache 大小从 128K×576 bytes = ~90MB → 1K×584 bytes = ~0.6MB
-
-★★★ 但 C128A 有 alignment 约束:
-  - _C128A_TOPK_ALIGNMENT = 128 (flashmla_sparse.py:360)
-  - c128a_max_compressed = cdiv(max_model_len, compress_ratio)
-  - cdiv(c128a_max_compressed, 128) × 128 ← 必须对齐到 128
-
-★★★★★ C128A 是 DeepSeek-V4 的革命性创新:
-  - 128 倍压缩 → 极端 KV cache 压缩
-  - Sparse Attention + Compression → 2 层筛选
-  - Indexer 先选 topk compressed tokens, 再在 SWA window 内精确定位
-  → 让 128K+ context 在有限 VRAM 上变得可行
-```
+  → **RTX 4090 只能同时使用 batch invariance + prefix caching 需要升级 SM90**
 
 ---
 
-## 9. MLA 两条计算路径详解
+## 4. MLA KV Cache 压缩比分析
 
-### 9.1 Compute-Friendly (Prefill → forward_mha)
+★★★★★★★ MLA 压缩比 vs GQA-8 vs MHA:
 
-```
-源码: mla_attention.py:66-86 (注释)
+  ```
+  标准 GQA-8 (per token, per layer):
+    K: 64 heads × 128 head_dim = 8192 elements
+    V: 64 heads × 128 head_dim = 8192 elements
+    总计: 16,384 × 2 bytes = 32,768 bytes
 
-Prefill 路径 (MHA 模式):
-  q_c      = h_t @ W_DQ    → [Sq, Lq]       (query 压缩)
-  q_nope   = q_c @ W_UQ    → [Sq, N, P]      (解压 content query)
-  q_pe     = RoPE(q_c @ W_QR) → [Sq, N, R]  (解压 RoPE query)
-  kv_c     = h_t @ W_DKV   → [Skv, Lkv]      (KV 压缩)
-  k_nope   = kv_c @ W_UK   → [Skv, N, P]     (解压 content key)
-  v        = kv_c @ W_UV   → [Skv, N, V]     (解压 value)
+  MLA (DeepSeek-V3) (per token, per layer):
+    kv_c: 512 elements (latent)
+    k_pe: 64 elements  (RoPE key)
+    总计: 576 × 2 bytes = 1,152 bytes
 
-  → 标准 MHA: Q=[q_nope;q_pe], K=[k_nope;k_pe], V=v
-  → Attention output: [Sq, N, V]
+  ★★★★★★★ 压缩比: 32,768 / 1,152 ≈ 28.4x!
+  (vs GQA-8)
 
-特点: 完全解压 → 计算量大但并行度高,适合 prefill 的 compute-bound 特性
-实现: Chunked prefill with workspace, merge_attn_states 合并 chunk 输出
-```
 
-### 9.2 ★★★★★ Data-Movement Friendly (Decode → forward_mqa)
+  MLA (DeepSeek-V4) (per token, per layer, fp8_ds_mla):
+    NoPE: 448 × float8_e4m3 = 448 bytes (FP8 量化)
+    RoPE: 64 × bfloat16 = 128 bytes (不量化)
+    scale: 7 × ue8m0 + 1B pad = 8 bytes
+    总计: 584 bytes
 
-```
-源码: mla_attention.py:94-118 (注释)
+  ★★★★★★★ 压缩比: 32,768 / 584 ≈ 56.1x (vs GQA-8, fp8)
+  压缩比: 1,152 / 584 ≈ 2.0x (vs V3 MLA bf16)
 
-Decode 路径 (MQA 模式):
-  q_nope   = h_t @ W_DQ @ W_UQ  → [Sq, N, P]
-  ql_nope  = einsum(q_nope, W_UK) → [Sq, N, Lkv]  ← ★★★ 矩阵吸收!
-  q_pe     = RoPE(q_c @ W_QR)    → [Sq, N, R]
-  kv_c     = [Skv, Lkv]            ← 直接用 latent, 不解压!
-
-  → MQA: Q=[ql_nope;q_pe], K=[kv_c;k_pe], V=kv_c
-  → Attention output: [Sq, N, Lkv] ← 在 latent 空间做 attention!
-  → 最终: einsum(output, W_UV) @ W_O → 完整输出
-
-★★★★★ 关键洞察:
-  1. ql_nope = q_nope @ W_UK: 将 Q 的 content 部分直接投影到 latent 空间
-     → 矩阵吸收: W_UK 被 "吸收" 到 Q 侧, K 不需要解压
-  2. KV cache 只存储 kv_c (latent) + k_pe (RoPE), 不存储完整 K/V
-  3. decode 时: MQA 模式, 所有 128 query head 共享 1 个 KV head
-  4. 这就是 MLA decode 的 "data-movement friendly" 特性:
-     不需要从 latent 恢复完整 K/V, 减少 memory bandwidth
+  V3 MLA bf16 → V4 MLA fp8: 从 576 bytes 降到 584 bytes → 2x 压缩
 ```
 
-### 9.3 Decode 路径的 v_up_proj 实现
+### 4.1 解耦 RoPE 的必要性
+★★★★★★★ MLA 的解耦 RoPE 是绝对必要的技术设计:
+  ```
+  如果对 kv_c 直接施加 RoPE:
+    RoPE(kv_c) → W_UK 和 RoPE 矩阵耦合
+    → 无法做矩阵吸收 (W_UK 不能被吸收到 W_Q)
+    → Decode 时必须从 latent 恢复完整 K → 丧失压缩优势
 
-```
-源码: mla_attention.py:972-994
-
-_v_up_proj(x, out):
-  # x shape: [B, N, Lkv] (latent 空间 attention output)
-  # → transpose to [N, B, Lkv]
-  # → bmm with W_UV [N, Lkv, V] → [N, B, V]
-  # → transpose back to [B, N, V]
-  # → out shape: [B, N×V]
-
-ROCm paths:
-  - aiter FP4 bmm: batched_gemm_a16wfp4 (MXFP4 W_V)
-  - aiter FP8 bmm: triton_fp8_bmm (FP8 W_V)
-  - Default: torch.bmm (BF16 W_UV)
-```
+  解决方案: 解耦 RoPE
+    content 部分 (q_nope, k_nope): 不带位置信息 → 可以做矩阵吸收
+    position 部分 (q_pe, k_pe): 独立处理 → 所有 head 共享一个 k_pe
+  → k_pe shape: [Skv, R] (只有 1 个 KV head, MQA)
+  → 每个 token 只额外存储 64 elements (qk_rope_head_dim)
+  ```
+  (来源: mla_attention.py L156-167, mla.py L156-167)
 
 ---
 
-## 10. 关键源码文件索引
+## 5. MLA INT8 KV Cache 支持状态
+
+### 5.1 各 Backend INT8/FP8 KV Cache 支持状态
+
+★★★★★ Triton MLA: 支持 FP8 KV cache (Mode 1)
+  - `supports_quant_query_input = False` → query 不量化 FP8
+  - Triton kernel 内部 dequantize FP8 KV → BF16
+  - 传入 `k_scale=layer._k_scale` (triton_mla.py L210-212)
+  - ★★★★★ SM89 可以用 FP8 KV cache (通过 Triton MLA)
+
+
+  ★★★ FlashMLA: 支持 FP8 KV cache (FP8 ds_mla format)
+  - Dense decode: `flash_mla_with_kvcache_fp8` (flashmla.py L306-318)
+  - SM90-only → RTX 4090 不支持
+ 这种 FP8 KV cache
+  - 需要 `get_mla_metadata_dense_fp8` 生成 tile scheduler 元数据
+
+  - FP8 decode 有独立的 tile scheduler metadata → 支持完整 CUDA Graph
+
+  ★★★ FlashAttn MLA: **不支持** FP8 KV cache
+  - `raise NotImplementedError("FlashAttnMLA V1 with FP8 KV cache not yet supported")` (flashattn_mla.py L304-307)
+  - ★★★★★ RTX 4090 不能通过 FlashAttn MLA 使用 FP8 KV cache
+
+  ★★ FlashInfer MLA: 支持 FP8 KV cache (标准 FP8)
+  - 使用 `trtllm_batch_decode_with_kv_cache_mla` (flashinfer_mla.py L190-202)
+  - SM100-only → RTX 4090 不支持
+  - 不返回 LSE → 不支持 speculative decoding 的 logit 禂率
+
+  - 需要 `qk_nope_head_dim ∈ {64, 128, 192}` 维度限制
+
+  ★★ Cutlass MLA: FP8 KV cache **未实现**
+  - `_num_kv_splits` 限制， 可能导致 hang (可用 `FORCE_NUM_KV_SPLITS=1`)
+  - SM100-only
+
+  ★★ Tokenspeed MLA: **FP8 KV cache ONLY**
+  - 不支持 BF16 KV cache (tokenspeed_mla.py L176-181)
+  - SM100-only
+  - 不返回 LSE
+  - 需要 DeepSeek R1 维度 (128, 64, 128)
+
+  ★★★★★★★ MLA INT8 KV Cache 总结: SM89 上只有 Triton MLA 支持 FP8 KV cache (但性能差)
+
+
+  ★★★★★ INT8 KV cache 是 RTX 4090 上唯一生产可行的 MLA KV 路径 (FlashInfer backend, MHA/GQA 用)
+
+---
+
+## 6. DeepSeek-V4 MLA 扩展
+★★★★★★★ DeepSeek-V4 引入了全新的 MLA 扩展机制:
+
+### 6.1 核心概念: Compress Ratio + Sliding Window Attention (SWA)
+★★★★★★★ DeepSeek-V4 的 `compress_ratio` 是革命性变化:
+  - `compress_ratio = 4` → C4A: 每 4 个 token 崋缩为 1 个 compressed token
+  - `compress_ratio = 128` → C128A: 每 128 个 token 压缩为 1 个
+  - `compress_ratio ≤ 1` → SWA-only: 只做滑动窗口注意力
+
+  KV cache block_size 被压缩: `storage_block_size = block_size // compress_ratio`
+
+  ★★★★★ C128A 的 Indexer 使用 Triton kernel `_build_c128a_topk_metadata_kernel`:
+  - Decode: position → block_table lookup → global slot ids + topk_lens
+  - Prefill: position → local indices [0, ..., n-1, -1, ...]
+  - Triton kernel 预计算 topk indices, 减少 CPU→GPU sync
+  (来源: flashmla_sparse.py L1083-1150)
+
+### 6.2 DeepSeek-V4 Sparse MLA Attention
+★★★★★★★ V4 使用专门的 `DeepseekV4MLAAttention` 类:
+  - 不使用 v1 framework 的 `forward_mqa` instance方法
+  - 而是 `forward_mqa` **classmethod** (Liskov override intentional)
+  - 由 layer (DeepseekV4MLAAttention) 而动而非 framework 调度
+  - 同时处理 SWA + compressed KV (双缓存机制)
+  - Prefill: dequantize + gather → combine topk + SWA indices → flash_mla_sparse_fwd
+  - Decode: SWA indices + C4A/C128A indices → flash_mla_with_kvcache (双缓存)
+  (来源: attention.py L616-623, nvidia/flashmla.py L130-302)
+
+### 6.3 V4 的 3-Way GEMM Overlap
+★★★★★★★ V4 attention 实现了 `attn_gemm_parallel_execute`:
+  - Default stream: fused_wqa_wkv (最重的 GEMM)
+  - Aux stream 0: compressor kv_score (compress_ratio > 1)
+  - Aux stream 1: indexer weights_proj + compressor kv_score (compress_ratio > 1 时)
+  - Aux stream 2: reserved
+  - 3-way overlap → 1x latency 隐藏 → 3x throughput
+  (来源: attention.py L305-363)
+
+### 6.4 V4 的 O 投影: inverse RoPE + FP8 quant
+★★★★★★★ V4 的 O 投影使用全新的方式:
+  - `fused_inv_rope_fp8_quant`: inverse RoPE + FP8 quantize O (attention.py L276-285)
+  - `fp8_einsum`: FP8 einsum for O 投影 (DeepGemm)
+  - SM90 recipe: (1, 128, 128) → FP32 block scales
+  - SM100 recipe: (1, 1, 128) → INT32 packed scales
+  - wo_a: FP8 + inverse RoPE → compressed O → wo_b → final output
+
+### 6.5 V4 的 KV Cache 格式
+★★★★★★★ DeepSeek-V4 fp8_ds_mla format (per token 584 bytes):
+  - 前 448 bytes: 448 × float8_e4m3 (NoPE 部分, FP8 量化)
+  - 中间 128 bytes: 64 × bfloat16 (RoPE 部分, 不量化)
+  - 最后 8 bytes: 7 × ue8m0 scale factor + 1B pad
+  - V3.2: 512 NoPE + 4 × fp32 scale + 64 bf16 RoPE = 656 bytes
+  - V4: 448 NoPE + 64 bf16 RoPE + 7 ue8m0 scale + 1 pad = 584 bytes
+  - ★★★★★★★ V3 → V4 压缩: 656 → 584 bytes (2x 提升!) + ue8m0 替代 fp32 scale
+
+  V3.2 scale: 4 × float32 (128-element 分组, 量化)
+  V4 scale: 7 × ue8m0 (64-element 分组, 量化) → 更细粒度 + 更紧凑
+
+### 6.6 V4 Indexer
+★★★★★★★ V4 的 Indexer (Lightning Indexer):
+  - 使用 `SparseAttnIndexer` 选择 top-K compressed tokens
+  - `use_fp4_cache`: 支持 FP4 (MXFP4) indexer cache
+  - indexer cache head_dim = 128 fp8 + 4 fp32 scale = 132 bytes
+  - `skip_topk = True`: 同一 Indexer 在不同 layer 间共享 top-K 结果
+  (来源: attention.py L667-807)
+
+---
+
+## 7. Triton MLA 内核架构深度分析
+
+★★★★★★★ Triton MLA 使用 `decode_attention_fwd` 内核:
+  - 来源: Lightllm GQA flash decoding (triton_decode_attention.py L1-8)
+  - SGLang → vLLM 的移植
+
+### 7.1 两阶段架构
+  ```
+  Stage 1 (_fwd_kernel_stage1):
+    Q @ K^T → per-head per-split 注意力得分
+    输出: attn_logits [B, H, S, kv_lora_rank + 1]
+    +1 位置存储 LSE (log-sum-exp)
+    支持 FP8 KV dequantize (k_scale, v_scale)
+    is_mla=True: 使用 kv_lora_rank 代替 head_dim
+
+  Stage 2 (_fwd_kernel_stage2):
+    跨 split 合并 partial attention outputs
+    softmax(attn_logits) → weighted sum → final output
+    ```
+
+### 7.2 Split-KV 优化
+★★★★★ Triton MLA 的 `num_kv_splits` 选择逻辑:
+  ```python
+  # triton_mla.py L157-175
+  if envs.VLLM_BATCH_INVARIANT:
+      num_kv_splits = 1  # 确定性 reduction
+  else:
+      min_work_per_split = 512  # 每个 split 最少工作量
+      ideal_splits = max(1, max_seq_len // min_work_per_split)
+      ideal_splits = triton.next_power_of_2(ideal_splits)  # 2 的幂
+      occupancy_multiplier = 2  # 每个 SM 2x blocks
+      max_splits = sm_count * occupancy_multiplier
+      num_kv_splits = min(ideal_splits, max_splits)
+  ```
+  ★★★★★★★ `VLLM_BATCH_INVARIANT` 时: num_kv_splits=1 → 禁用 split → 确定性但代价是性能下降
+  正常模式: 动态 splits → 平衡负载均衡和 性能优先
+
+  ★★★★★ 关键洞察: `num_kv_splits=1` 导致 prefix caching 不兼容
+ 见第 3.2 诂
+
+### 7.3 Triton MLA 的维度限制 (PR #41119)
+★★★★★★★ Triton MLA 的 `BLOCK_DMODEL` 和 `BLOCK_DV` 逻辑:
+  - 旧版 (v0.20.1): DuplicateEntry → 只支持 Lk=576 和 288 → Mistral kv_lora_rank=256 崩溃
+  - PR #41119 修复: `next_power_of_2(Lv)` 通用 fallback
+  - ★★★★★★★ Mistral Small 4 (kv_lora_rank=256) + 其他非 DeepSeek MLA 维度现在可以工作
+  - Issue #45031: Triton MLA grouped-decode fails for kv_lora_rank=256
+
+  - PR #41119: generalized dimension handling (merged 2026-05-11)
+
+
+  Triton MLA 支持的 KV cache dtype:
+  - fp8, fp8_e4m3: FP8 KV cache (Mode 1, dequant in kernel)
+  - auto, float16, bfloat16: BF16/FP16 KV cache
+
+---
+
+## 8. MLA 数据流总结
+
+### 8.1 Decode 数据流 (MQA 路径)
+★★★★★★★ MLA decode 完整数据流:
+  ```
+  hidden_states [Sq, H] → MLA wrapper
+
+  MLA Wrapper (mla.py):
+    1. 压缩: q_c = hidden_states @ W_DQ, kv_c = hidden_states @ W_DKV
+    2. 解压: q_nope = q_c @ W_UQ, q_pe = RoPE(q_c @ W_QR)
+    3. RoPE: q[..., qk_nope_head_dim:], k_pe = RoPE(hidden_states @ W_KR)
+    4. Indexer (sparse): indexer(hidden_states, q_c, positions) → top-K indices
+    5. Attention: mla_attn(q, kv_c_normed, k_pe) → attn_out
+
+  MLAAttention.forward_impl (mla_attention.py):
+    6. 矩阵吸收 (decode): ql_nope = q_nope @ W_UK_T → (N,B,P)×(N,P,L)
+    7. FP8 quant (if fp8): mqa_q = concat(ql_nope, q_pe) → FP8 quantize
+    8. forward_mqa: impl.forward_mqa(mqa_q, kv_cache, metadata, layer) → attn_out
+ lse
+    9. V 投影: attn_out @ W_UV → output
+
+  Output projection (mla.py):
+    10. o_proj(attn_out) → final output
+  ```
+
+### 8.2 Prefill 数据流 (MHA 路径)
+★★★★★★★ MLA prefill 完整数据流:
+  ```
+  Prefill 使用 "compute-friendly" MHA 路径:
+    1. kv_b_proj: kv_c → kv_nope (k_nope + v) (解压完整 K/V)
+    2. concat k_nope + k_pe → K
+    3. FlashAttn/FlashInfer: standard MHA attention
+    4. 输出 = softmax(Q @ K^T) @ V
+
+  Chunked prefill:
+    镱分 context 夘分块处理 → workspace
+    每个块: gather KV → compute attention → merge_attn_states 合并结果
+  ```
+
+---
+
+## 9. 源码文件索引
 
 | 文件 | 行数 | 功能 |
 |------|------|------|
-| `mla_attention.py` | ~2327 | ★★★★★ MLA 核心层 + MLACommonBackend/Impl/MetadataBuilder |
-| `mla/triton_mla.py` | ~216 | ★★★★★ TritonMLA (SM89 唯一 MLA decode) |
-| `mla/flashmla.py` | ~335 | FlashMLA decode (SM90 主力) |
-| `mla/flashattn_mla.py` | ~365 | FlashAttn MLA decode (SM9, FA3) |
-| `mla/flashinfer_mla.py` | ~210 | FlashInfer MLA decode (SM100) |
-| `mla/cutlass_mla.py` | ~286 | CUTLASS MLA decode (SM100) |
-| `mla/tokenspeed_mla.py` | ~278 | ★★★ Tokenspeed MLA decode (SM100, FP8 only) |
-| `mla/flashmla_sparse.py` | ~1150 | ★★★★★ FlashMLA Sparse (V3.2 + V4 FP8 KV) |
-| `ops/flashmla.py` | ~154 | FlashMLA op wrapper, SM support check |
-| `ops/triton_decode_attention.py` | ~400+ | ★★★ Triton 2-stage decode kernel |
-| `platforms/cuda.py` | ~80-130 | ★★★★★ MLA backend priority 逻辑 |
-| `mla/prefill/registry.py` | ~139 | Prefill backend 注册 |
-| `mla/prefill/selector.py` | ~185 | Prefill backend 自动选择 |
-| `models/deepseek_v4/attention.py` | ~807 | ★★★★★ DeepSeek-V4 MLA 层 |
-| `models/deepseek_v4/nvidia/flashmla.py` | ~425 | V4 FlashMLA Sparse impl |
-| `kv_cache_interface.py` | ~337-367 | MLAAttentionSpec + fp8_ds_mla layout |
-| `mla.py` (model_executor) | ~182 | MultiHeadLatentAttentionWrapper |
-| `mla/compressor_utils.py` | - | V4 compressed slot mapping |
+| `mla_attention.py` | 2327 | MLA 核心: CommonBackend/CommonImpl/MetadataBuilder |
+| `mla/triton_mla.py` | 216 | Triton MLA decode (通用 fallback) |
+| `mla/flashmla.py` | 335 | FlashMLA decode (SM90 主力) |
+| `mla/flashattn_mla.py` | 365 | FlashAttn MLA decode (SM9 only) |
+| `mla/flashinfer_mla.py` | 210 | FlashInfer MLA decode (SM100 only) |
+| `mla/cutlass_mla.py` | 286 | CUTLASS MLA decode (SM100 only) |
+| `mla/tokenspeed_mla.py` | 278 | Tokenspeed MLA decode (SM100 FP8 only) |
+| `mla/flashmla_sparse.py` | 1150 | FlashMLA Sparse (SM90+SM100) |
+| `mla/aiter_triton_mla.py` | 67 | Aiter Triton MLA (ROCm AMD) |
+| `mla/prefill/` | 目录 | Prefill 专用实现 |
+| `mla/prefill/registry.py` | 139 | Prefill backend 注册枚举 |
+| `mla/prefill/selector.py` | 185 | Prefill backend 自动选择 |
+| `mla/prefill/flash_attn.py` | ~100 | FlashAttn prefill (FA3) |
+| `mla/prefill/flashinfer.py` | ~100 | FlashInfer prefill (SM100) |
+| `mla/prefill/trtllm_ragged.py` | ~100 | TRT-LLM ragged prefill |
+| `mla/prefill/tokenspeed_mla.py` | ~100 | Tokenspeed prefill (SM100) |
+| `ops/flashmla.py` | 154 | FlashMLA ops 封装 (dense + FP8 + sparse) |
+| `ops/triton_decode_attention.py` | ~600 | Triton decode attention 内核 |
+| `mla.py` | 182 | MultiHeadLatentAttentionWrapper (MLA 外层) |
+| `deepseek_v4/attention.py` | 807 | DeepSeek-V4 MLA attention layer |
+| `deepseek_v4/nvidia/flashmla.py` | 425 | V4 FlashMLA Sparse impl |
 
 ---
 
-## 11. 环境变量与配置
+## 10. RTX 4090 (SM89) MLA 宐在总结
 
-| 变量 | 作用 | 相关 Backend |
-|------|------|--------------|
-| `VLLM_BATCH_INVARIANT` | 启用 batch invariant 模式 | TritonMLA (splits=1), FlashMLA, FlashAttnMLA |
-| `VLLM_MLA_DISABLE=1` | 禁用 MLA, 回退到标准 Attention | 所有 MLA backend (workaround) |
-| `FORCE_NUM_KV_SPLITS` | 覆盖 KV splits 数量 | CutlassMLA (解决挂起问题) |
-| `VLLM_FLASHINFER_WORKSPACE_BUFFER_SIZE` | FlashInfer workspace大小 | FlashInferMLA |
-| `VLLM_MULTI_STREAM_GEMM_TOKEN_THRESHOLD` | 多流 GEMM token阈值 | DeepSeek-V4 3-way overlap |
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+  RTX 4090 MLA 关键结论:
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
----
+  1. ★★★★★★★ **Triton MLA 是 SM89 唯一可用的 MLA decode backend**
+     - FlashMLA (SM90-only) / FlashAttn MLA (SM9-only) / FlashInfer MLA (SM100-only) 都不可用
+     - Triton MLA 性能显著低于 SM90/SM100 专用 kernel
 
-## 12. ★★★★★ RTX 4090 MLA 推理实战总结
+  2. ★★★★★★★ **FP8 KV cache: Triton MLA (Mode 1) 是 SM89 唯一路径**
+     - Triton MLA FP8 KV cache = de朴素 Mode 1 (dequant in kernel)
+     - 性能: BF16 计算 + 显式 dequant → 比 FlashMLA FP8 ds_mla 性能差
+     - INT8 KV cache (FlashInfer backend) 是生产可行路径 (但不适用于 MLA)
 
-```
-RTX 4090 (SM89) MLA 推理限制:
+  3. ★★★★★ **Batch invariance + Triton MLA = 无 prefix caching**
+     - Triton MLA 支持 batch invariance 但禁用 prefix caching
+     - FlashAttn MLA 支持 batch invariance + prefix caching (但需要 SM90)
+     - **RTX 4090 不能同时使用 batch invariance + prefix caching + MLA**
 
-Decode:
-  ✗ FlashMLA (SM90 only)
-  ✗ FlashAttnMLA (FA3 kernel 需要 SM90 TMA/WGMMA)
-  ✗ FlashInferMLA / CutlassMLA / TokenspeedMLA (SM100 only)
-  ✓ TritonMLA ← 唯一选项, 但性能不如 FlashMLA
+  4. ★★★★★ **DeepSeek-V4 MLA 在 RTX 4090 上完全不可用**
+     - V4 需要 FlashMLA Sparse (SM90+SM100) + fp8_ds_mla format
+     - V4 的 compress_ratio/C128A/Indexer 需要 SM90+ 特性
+     - RTX 4090 只能运行 DeepSeek-V3/V3.2 MLA (通过 Triton MLA)
 
-FP8 KV Cache:
-  ✗ FlashMLA fp8_ds_mla (SM90 only)
-  ✓ TritonMLA Mode1 (BF16 Q + kernel dequant) ← 性能更低
+  5. ★★★★★ **Triton MLA 维度限制已修复 (PR #41119)**
+     - v0.20.1 只支持 Lk=576/288 → Mistral kv_lora_rank=256 崩溃
+     - 主线版本: `next_power_of_2(Lv)` 通用 fallback
+     - Mistral Small 4 等非 DeepSeek MLA 维度现在可用
 
-Sparse Attention:
-  ✗ FlashMLA Sparse (SM90+ only)
-  → DeepSeek-V3.2 Sparse Attention 不可用
-
-Prefix Caching + Batch Invariant:
-  ✗ TritonMLA + BI → prefix caching 被禁用 (mla_attention.py:428-438)
-  → 长上下文场景 KV 重用效率大幅下降
-
-INT8 KV Cache:
-  ✗ 无任何 MLA backend 支持 INT8 KV
-
-★★★★★ 核心结论:
-  SM89 上 MLA 推理的实际可行配置:
-  1. KV cache dtype = BF16 (FP8 Mode1 性能不如 BF16, 因无 Crossover)
-  2. VLLM_BATCH_INVARIANT = 不建议开启 (会禁用 prefix caching)
-  3. 仅支持 DeepSeek-V2/V3 dense MLA (V4 sparse 需要 SM90+)
-  4. Triton decode kernel 性能瓶颈: 2-stage reduction, 无 WGMMA 优化
-  5. 最大希望: FlashAttnMLA 的 FA3 MLA kernel 如果能在 SM89 上启用
-     → 目前 FA3 MLA kernel 需要 SM90, 但 FA3 standard attention 在 SM89 可用
-```
+  6. ★★★★★★★ **升级建议: RTX 4090 MLA 的最优策略**
+     - 如果只跑 DeepSeek-V3 MLA → Triton MLA + BF16 KV cache (最稳定)
+     - 如果需要 FP8 KV → Triton MLA FP8 (Mode 1, 性能差)
+     - 如果需要 prefix caching + batch invariance → 忉须升级到 SM90
+     - DeepSeek-V4 MLA → 必须使用 SM90+ GPU
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
 ---
 
 ## 参考
 
+- vLLM 源码: `vllm/v1/attention/backends/mla/`
+- DeepSeek-V2 Paper: https://arxiv.org/abs/2405.04434
+- FlashMLA GitHub: https://github.com/deepseek-ai/FlashMLA
+- FlashInfer Project: https://github.com/flashinfer-ai/flashinfer
+- Tokenspeed MLA PR: https://github.com/vllm-project/vllm/pull/41778
+- Triton MLA 维度修复: https://github.com/vllm-project/vllm/pull/41119
+- Triton MLA kv_lora_rank bug: https://github.com/vllm-project/vllm/issues/45031
+- Batch invariance issue: https://github.com/vllm-project/vllm/issues/40173
+- DeepSeek-V4 PR: https://github.com/vllm-project/vllm/pull/43182
+- `notebook/fundamentals/mla.md` — MLA 理论笔记
 - `notebook/projects/flashmla-reading.md` — FlashMLA kernel 深度笔记
-- `notebook/projects/vllm-v1-triton-attention-reading.md` — Triton attention kernel 源码分析
-- [DeepSeek-V2 Paper](https://arxiv.org/abs/2405.04434) — MLA 原始论文
-- [FlashMLA GitHub](https://github.com/deepseek-ai/FlashMLA) — Seesaw Scheduling + Crossover
-- vLLM PR #41778 — TokenspeedMLA backend (Blackwell)
-- vLLM PR #41119 — Triton MLA generalize dimension (kv_lora_rank=256 fix)
-- vLLM Issue #45031 — TritonMLA Mistral Small 4 (kv_lora_rank=256)
-- vLLM Issue #40173 — Auto-select batch-invariant backend
-- DeepSeek-V4 paper: [arxiv:2603.12201](https://arxiv.org/abs/2603.12201) — C128A + Lightning Indexer
-- vLLM 源码: `vllm/v1/attention/backends/mla/`, `platforms/cuda.py`, `models/deepseek_v4/`
