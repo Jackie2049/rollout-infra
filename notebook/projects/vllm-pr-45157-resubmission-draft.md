@@ -25,10 +25,13 @@ What #45494 **misses** (our differentiator):
 
 ## Proposed Comment on PR #45494
 
+**Status**: Draft — NOT yet posted. User should review and post manually.
+
+**Comment text**:
 ```
 Thanks for this PR! The multi-rank clarification in NixlKVConnectorStats and the inline comment improvements are helpful.
 
-One suggestion: the most valuable documentation gap is the **KVConnectorLogging class-level docstring**. This class implements a 4-step pipeline (observe → aggregate → reduce → log + reset) that isn't documented anywhere, and understanding this flow is essential for anyone working with KV connector metrics. The current PR improves inline comments and method docstrings, but the class itself has no docstring.
+One suggestion: the most valuable documentation gap is the KVConnectorLogging class-level docstring. This class implements a 4-step pipeline (observe → aggregate → reduce → log + reset) that isn't documented anywhere, and understanding this flow is essential for anyone working with KV connector metrics. The current PR improves inline comments and method docstrings, but the class itself has no docstring.
 
 Would you consider adding a class docstring that describes the pipeline? Something like:
 
@@ -39,29 +42,32 @@ class KVConnectorLogging:
     Implements a 4-step pipeline for each logging interval:
 
     1. **observe**: Called when a connector syncs with the scheduler.
-       Receives ``transfer_stats_data``, a dict pre-aggregated across all
+       Receives transfer_stats_data, a dict pre-aggregated across all
        TP workers by the caller. Builds a connector-specific
-       ``KVConnectorStats`` instance via
-       ``connector_cls.build_kv_connector_stats``.
+       KVConnectorStats instance via connector_cls.build_kv_connector_stats.
 
-    2. **aggregate**: Each ``observe`` call merges the new stats into
-       ``transfer_stats_accumulator`` using
-       ``KVConnectorStats.aggregate``, accumulating observations across
-       the entire logging interval.
+    2. **aggregate**: Each observe call merges the new stats into
+       transfer_stats_accumulator using KVConnectorStats.aggregate,
+       accumulating observations across the entire logging interval.
 
-    3. **reduce**: At the end of the interval, ``log`` calls
-       ``transfer_stats_accumulator.reduce()`` to produce a compact
+    3. **reduce**: At the end of the interval, log calls
+       transfer_stats_accumulator.reduce() to produce a compact
        summary dict (averages, percentiles, totals) suitable for
        human-readable CLI output.
 
     4. **log + reset**: The summary is formatted and emitted via the
-       supplied ``log_fn``, then ``reset()`` clears the accumulator
+       supplied log_fn, then reset() clears the accumulator
        for the next interval.
     """
 ```
 
 This would complete the documentation coverage for issue #41230.
 ```
+
+**Note**: Per AGENTS.md, I should not post this without user review. The user must decide whether to:
+1. Post this comment on PR #45494
+2. Wait for #45494 to merge and then submit a follow-up PR with the class docstring
+3. Do both
 
 ## AGENTS.md Compliance Checklist
 - [ ] Duplicate-work check: ✅ PR #45494 found, approach materially different (class-level docstring vs inline comments)
