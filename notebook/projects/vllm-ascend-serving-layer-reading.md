@@ -90,22 +90,35 @@ class AscendAttentionBackend(AttentionBackend):
 ## 4. BudgetRefiner — SLO动态Batch
 
 ```
-★ ★ BudgetRefiner (scheduler_dynamic_batch.py): Ascend独有 → vLLM没有!
+★ ★ BudgetRefiner (scheduler_dynamic_batch.py:17-105): Ascend独有 → vLLM没有!
 
 核心: 根据SLO(Service Level Objective)限制动态调整batch大小
-  → profile_table.csv → 查表获得不同token数量下的延迟预估
-  → BudgetRefiner → 调整chunked prefill大小 → 确保decode不被延迟太久
+  → profile_table.csv → 查表: (ctx_len, num_decode) → max_chunk_size → 预profile延迟!
+  → BudgetRefiner.refine_budget(100): running→decode tokens→num_decode→查表→动态budget
+  → slo_limit > 0时启用 → 否则用静态max_num_batched_tokens
 
-★ SchedulerDynamicBatch:
+★ SchedulerDynamicBatch (134-195):
   → 继承vLLM V1 Scheduler → 但加Ascend专用修改
-  → Decode-first chunked prefills → decode优先 → prefill可以被打断
-  → Dynamic token budget → 不固定 → 根据SLO调整
+  → ★ Decode-first排序(134-150): d_lst=[req for req in self.running if decode] + p_lst=[prefill] → decode优先!
+  → Dynamic token budget → 不固定 → BudgetRefiner根据SLO调整
+  → Preemption: PRIORITY→max(priority) / FCFS→pop() → num_computed_tokens=0 → full reset
+
+★ ★ ProfilingChunkPredictor (profiling_chunk_predictor.py):
+  → 二次延迟模型: f(l) = a*l^2 + b*l + c → 给定target latency T → 预测chunk size x
+  → a*x^2 + (2aL+b)*x - T = 0 → 求解 → PP专用 → PP>1才启用
+
+★ RecomputeScheduler (recompute_scheduler.py:105-108):
+  → RecomputeSchedulerOutput(SchedulerOutput): recomputed_reqs字段 → PD分离!
+  → recomputed_reqs → 被抢占的prefill请求 → KV cache可以transfer到decode实例
+  → ★ vs vLLM V1: preempted→waiting queue → 无KV transfer → Ascend→recomputed_reqs→PD disaggregation!
 
 ★ ★ vs vLLM V1 Scheduler:
   → vLLM: 固定token_budget → 不考虑SLO → decode可能被长prefill阻塞
   → Ascend: BudgetRefiner → SLO-aware → decode优先保证 → prefill动态缩减
   → vLLM: FCFS/PRIORITY → 无SLO概念
   → Ascend: SLO → SLA保证 → 更适合生产环境!
+  → vLLM: preempted→waiting queue → 无KV transfer → 重新从头计算
+  → Ascend: recomputed_reqs → KV可transfer → PD disaggregation → 更高效
 ```
 
 ## 5. MultiGroupBlockTable — MLA/DSA多组KV
@@ -115,7 +128,7 @@ class AscendAttentionBackend(AttentionBackend):
 
 核心: 不同attention type → 不同KV cache组 → 共享block pool
   → MultiGroupBlockTable: 多个BlockTable实例 → 每组独立管理
-  → CompressAttentionManager: MLA compress_ratio → KV压缩 → 省内存!
+  → CompressAttentionManager(single_type_kv_cache_manager.py): MLA compress_ratio → block分配前num_tokens //= compress_ratio → compress_ratio=4 → 只1/4 blocks → admission cap = cdiv(max_compressed_tokens, block_size)+1
 
 ★ ★ vs vLLM HybridKVCacheCoordinator:
   → vLLM: fixed-point算法 → 多attention type共享block pool → 但每组相同block_size
@@ -202,9 +215,11 @@ class AscendAttentionBackend(AttentionBackend):
    → ★ 两者策略相同(无swap,recompute only) → 但Ascend有专门调度器!
 
 8. CaMemAllocator → Ascend CANN内存管理 → sleep/wake映射!
-   → vLLM: engine.sleep(level=1 KV/level=2全部) → 释放GPU
-   → Ascend: CaMemAllocator → CANN memcpy → 内存池管理 → NPU更细粒度
-   → ★ 两者都支持sleep/wake → 但实现不同 → CANN vs PyTorch内存管理!
+   → vLLM: engine.sleep(level=1 KV/level=2全部) → 释放GPU → CUDA malloc/free
+   → Ascend: CaMemAllocator → CANN virtual address unmap/map → 物理内存保留 → 极快wake!
+   → sleep: python_unmap_and_release(handle) → 释放NPU虚拟地址 → acl.rt.memcpy(D2H) → CPU备份
+   → wake: create_and_map(handle) → 重新映射NPU虚拟地址 → acl.rt.memcpy(H2D) → 恢复
+   → ★ vs CUDA: malloc/free需要重新分配 → CaMem只unmap/map → 物理内存不变 → wake极快!
 ```
 
 ---
