@@ -1,0 +1,57 @@
+{
+  "compare": {
+    "model_size_b": 7.0,
+    "gpu_count": 8,
+    "interconnect": "pcie4",
+    "strategies": [
+      {
+        "name": "DDP",
+        "comm_gb": 14.0,
+        "op": "AllReduce",
+        "latency_ms": 437.5
+      },
+      {
+        "name": "ZeRO-2",
+        "comm_gb": 12.25,
+        "op": "ReduceScatter",
+        "latency_ms": 382.8125
+      },
+      {
+        "name": "ZeRO-3",
+        "comm_gb": 49.0,
+        "op": "3\u00d7AG+RS",
+        "latency_ms": 1531.25
+      },
+      {
+        "name": "FSDP2(reshard=T)",
+        "comm_gb": 36.75,
+        "op": "2\u00d7AG+RS",
+        "latency_ms": 1148.4375
+      },
+      {
+        "name": "FSDP2(reshard=F)",
+        "comm_gb": 24.5,
+        "op": "1\u00d7AG+RS",
+        "latency_ms": 765.625
+      },
+      {
+        "name": "TP",
+        "comm_gb": 14.0,
+        "op": "2\u00d7AllReduce",
+        "latency_ms": 437.5
+      },
+      {
+        "name": "LoRA+DDP",
+        "comm_gb": 8e-18,
+        "op": "AllReduce(LoRA)",
+        "latency_ms": 2.5e-16
+      },
+      {
+        "name": "rLLM Tinker",
+        "comm_gb": 0,
+        "op": "0 (in-process)",
+        "latency_ms": 0
+      }
+    ]
+  }
+}

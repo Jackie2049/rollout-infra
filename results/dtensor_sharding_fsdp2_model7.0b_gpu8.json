@@ -1,0 +1,13 @@
+{
+  "fsdp2": {
+    "model_size_b": 7.0,
+    "dp_degree": 8,
+    "reshard": true,
+    "fwd_comm_gb": 24.5,
+    "bwd_comm_gb": 12.25,
+    "total_per_step_gb": 36.75,
+    "zero3_total_gb": 49.0,
+    "savings_vs_zero3": 25.0,
+    "latency_ms": 122.5
+  }
+}
