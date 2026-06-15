@@ -300,9 +300,94 @@ MindIE 的独特价值:
 
 → RTX 4090 个人实验最优; Ascend 企业级国产替代
 
-## 11. 下一步
+## 11. 2026最新发展 (★★★ 更新)
 
-- [x] 研究 vLLM-Ascend 源码, 对比 ATB ops vs CUDA ops → Section 8 已完成
+### 11.1 Ascend 910D Roadmap
+
+```
+★★★★ Ascend 910D (2025-2026 roadmap):
+  → 改进FP8/INT8推理性能 → 对抗NVIDIA FP8推理优势
+  → 增强内存带宽 → LLM serving优化
+  → 更好多芯片互联(HCCS link) → 多NPU通信改善
+  → 预期: 大幅提升inference-heavy workloads性能
+  → ★★★ RTX 4090用户不相关 → 昇腾专用 → 但了解行业趋势重要
+```
+
+### 11.2 MindIE新模型支持
+
+```
+★★★ MindIE 2025-2026新增模型:
+  → DeepSeek-V2/V3/R1 (★★★ MoE inference → Ascend expert parallelism)
+  → Qwen2/Qwen2.5 series
+  → LLaMA 3/3.1
+  → Baichuan2, GLM-4, Yi
+  → ★★★ 华为Pangu系列 → 自家模型最优适配
+
+  ★★★ MoE inference优化: DeepSeek-V3 (256 experts)
+  → Ascend多核架构 → expert parallelism → 专用路径
+  → vs NVIDIA: DeepEP需要SM90 → Ascend有自己的MoE路径
+```
+
+### 11.3 FP8量化支持
+
+```
+★★★★ MindIE FP8 (W8A8) 支持:
+  → Ascend 910B/910C原生FP8 → 硬件加速
+  → ★★★ vs NVIDIA RTX 4090: SM89 FP8推理也可用 → 但KV cache FP8 crash (#44879)
+  → Ascend FP8路径更完整 → 无SM89 crash问题 → 华为解决了自己的FP8适配
+  → 但: Ascend生态不如NVIDIA → 性能可能不如TensorRT-LLM
+```
+
+### 11.4 vLLM-Ascend集成进展
+
+```
+★★★ vLLM-Ascend (vllm-project/vllm-ascend):
+  → 社区驱动: 将vLLM移植到昇腾 → 使用ATB ops替代CUDA ops
+  → ★★★ 关键差异: ATB ops ≠ CUDA ops → kernel适配层 → 性能可能不同
+  → 目标: 让vLLM的PagedAttention/连续批处理/LoRA serving在Ascend上运行
+  → ★★★ 如果成功 → RTX 4090用户的知识可直接迁移到Ascend → 跨平台价值!
+
+  ★★★ MindIE vs vLLM-Ascend:
+  → MindIE: 官方昇腾方案 → 全栈优化 → 但不开源核心 → 配置难
+  → vLLM-Ascend: 社区方案 → 开源 → 但性能可能不如MindIE → 生态弱
+  → ★★★ 两者互补 → 选择取决于: 开源可控性 vs 性能优化
+```
+
+### 11.5 MindIE-Service与MindIE-LLM
+
+```
+★★★★ MindIE最新架构组件:
+  → MindIE-Service: 高性能模型服务 → 多模型并发部署 → 类似NVIDIA Triton
+    → Kubernetes集成 → 弹性扩展 → 企业级部署
+  → MindIE-LLM: 专用LLM推理加速 → PagedAttention(Ascend版) → 连续批处理
+    → Tensor并行 → 多Ascend芯片 → Speculative decoding → 降低延迟
+  → MindIE-Torch: PyTorch兼容层 → torch_npu → 让PyTorch模型在昇腾上运行
+
+  ★★★ vs NVIDIA stack:
+  → MindIE-Service ≈ Triton Inference Server → 但昇腾专用
+  → MindIE-LLM ≈ TensorRT-LLM → 但昇腾专用
+  → MindIE-Torch ≈ torch.cuda → 但torch_npu → Ascend
+```
+
+### 11.6 CANN 8.0.x
+
+```
+★★★ CANN (Compute Architecture for Neural Networks) 8.0.x:
+  → 昇腾驱动/运行时层 → 类似NVIDIA CUDA → 但不完全兼容
+  → ★★★ HCCL vs NCCL: 昇腾用HCCL → 不兼容NCCL → 但提供类似AllReduce
+  → HCCL缺BF16 → ★★★ 影响训练精度 → MindIE主要用于推理 → 训练用MindSpore
+  → CANN更新频繁 → 8.0.x修复了多个910B/C bug → 稳定性改善
+```
+
+## 12. 下一步
+
+- [x] 研究 vLLM-Ascend 源码 → Section 8 已完成
+- [x] MindIE 2026最新发展 → Section 11 已完成 (910D, FP8, MoE, vLLM-Ascend)
+- [ ] 研究 openMind 开源子集 → notebook/projects/openmind-architecture-reading.md
+- [ ] 关注 Ascend 910D 发布 → 性力规格 → 与RTX 5090对比
+- [ ] 评估 vLLM-Ascend vs MindIE-LLM 性能对比 → 何时选择哪个
+- [ ] 研究 ATB 融合算子实现 → FlashAttention-Ascend kernel detail
+- [ ] HCCL vs NCCL 通信 → RoCE vs NVLink → 多NPU vs 多GPU
 - [ ] 研究 openMind 开源子集 → notebook/projects/openmind-architecture-reading.md 已创建
 - [ ] 关注 MindIE FP8 和 PD 分离 roadmap
 - [ ] 评估 Ascend 910B 上 MindIE vs vLLM-Ascend 性能对比
