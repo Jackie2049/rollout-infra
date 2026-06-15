@@ -156,8 +156,169 @@ compilation_config = {
 5. **内存池是关键**: 全局图池避免 OOM 和碎片化
 6. **Decode 是最大受益者**: 每步 shape 不变，kernel 多但小
 
+## 11. PyTorch CUDA Graph 深层机制 (C++ Level)
+
+```
+★ ★ ★ CUDA Graph C++层5步生命周期:
+
+1. capture_begin(pool, capture_mode)
+   → cudaStreamBeginCapture → 进入stream capture
+   → CUDA caching allocator → private memory pool(MempoolId_t)
+   → RNG generators → checkpoint state
+
+2. User runs model
+   → All CUDA work recorded into graph → not executed
+   → Memory allocations → private pool → zero-allocation replay!
+
+3. capture_end()
+   → cudaStreamEndCapture → cudaGraph_t
+   → Allocator pool redirect ends
+   → If keep_graph=False → instantiate immediately → destroy cudaGraph_t
+
+4. instantiate()
+   → cudaGraphInstantiateWithFlags(AutoFreeOnLaunch | UseNodePriority)
+   → ★ AutoFreeOnLaunch → handle cudaMallocAsync allocator scenarios
+   → ★ UseNodePriority → priority-aware scheduling within graph
+
+5. replay()
+   → cudaGraphLaunch(graph_exec_, getCurrentCUDAStream())
+   → ★ Can replay on ANY stream (not just capture stream)
+   → RNG generators → offset increment → prologue before launch
+
+★ ★ ★ No cudaGraphExecUpdate in PyTorch!
+  → Always destroy + recapture → no incremental update
+  → ★ Makes recompilation expensive → vLLM captures multiple sizes at startup
+```
+
+### torch.cuda.make_graphed_callables()
+
+```
+★ ★ ★ PyTorch primary user-facing CUDA graph API:
+
+1. Creates static_input_surface → flattened args + parameters → permanent addresses
+2. Warmup: num_warmup_iters(=3) fwd+bwd on separate stream → cuDNN autotuning + lazy init
+3. Forward capture: torch.cuda.graph(fwd_graph, pool=mempool)
+4. Backward capture (in reverse order) → memory pool consistency
+5. Creates Graphed autograd.Function:
+   Forward: static_input_surface[i].copy_(inputs[i]) → fwd_graph.replay()
+   Backward: static_grad_outputs.copy_(grads) → bwd_graph.replay()
+
+★ ★ Key: static_input_surface includes parameters → assumed unchanged → not copied!
+★ ★ Only user args copied via copy_() → minimize transfer overhead
+```
+
+### CUDAGraphTreeManager in Inductor (120KB!)
+
+```
+★ ★ ★ Most sophisticated CUDA graph system → torch.compile reduce-overhead!
+
+Source: torch/_inductor/cudagraph_trees.py (120KB!)
+
+Tree structure (not just sequences):
+  → Previously: graphed callables replay in strict order A, B
+  → Now: arbitrary trees → after A, can record/replay different B'
+  → Memory sharing: max(mem(A,B), mem(A,B')) → pool reuse!
+
+CUDAGraphNode:
+  → parent + children → tree structure
+  → first recording → reflect all live tensors in pool
+  → checkpoint allocator state → subsequent recordings resume accurately
+
+★ ★ Pool lifecycle:
+  → TreeManagerContainer → tracks live functions + storages
+  → All references die → tree manager + private pool deallocated
+  → Prevents pool leaking memory indefinitely!
+
+★ ★ Warmup in pool (not default pool):
+  → Warmup runs happen inside cudagraph memory pool
+  → ★ Critical: warmup in default pool + recording in private = double allocation!
+  → clear_cublass_cache() → clear workspaces before/after warmup
+
+★ ★ static_input_idxs:
+  → Some inputs (parameters) = "static" → same address → not copied
+  → Other inputs = "dynamic" → static_input() allocation + copy_()
+  → cudagraphify tells which inputs are static
+```
+
+### torch.cond + CUDA Graphs (PyTorch 2.12)
+
+```
+★ ★ ★ Landmark feature → CUDA 12.4+ → data-dependent control flow IN graph!
+
+1. ControlFlowOpWarmupDispatchMode → warmup both branches
+2. CUDAGraphCaptureControlFlowOpDispatchMode → during capture → dispatch to if_else_node
+3. if_else_node(pred, true_fn, false_fn, operands):
+   → ★ Two conditional if-nodes (CUDA 12.8 lacks native if-else!)
+   → First evaluates pred → second evaluates !pred
+   → Else branch output → copy_() into if branch output buffer → fixed addresses!
+
+C++ begin_capture_to_if_node:
+   → cudaGraphConditionalHandleCreate → handle
+   → cudaGraphNodeTypeConditional node → child stream capture inside body
+
+★ RTX 4090 (SM 8.9): cudaGraphConditionalHandle needs CUDA driver 12.4+
+   → SM无关 → 运行时/驱动层feature → SM 8.9应该支持!
+   → ★ 但目前PyTorch实验性 → 需验证!
+```
+
+### GRPO cudagraph memory regression (Megatron)
+
+```
+★ ★ Megatron PR #5280 → GRPO CUDA graph memory regression:
+
+Regression: exponential distribution + mixed-prefill grid → +13.6% peak memory!
+  → Exponential sizing: [1,2,4,8,...] vs linear [1,2,3,...]
+  → More graphs at low end → each allocates pool memory → compounding overhead
+  → Mixed-prefill grid: 16 extra batch size graphs → each pool allocation!
+
+★ Fix: --inference-dynamic-batching-cuda-graph-sizing-distribution: linear
+  → ★ ★ GRPO → linear sizing → 省内存!
+  → ★ ★ ★ RTX 4090: capture sizes少 → [1,2,4,8] → 内存可控!
+
+★ ★ vLLM sleep/wake + CUDA graphs:
+  → Sleep: offload weights → pool memory stays on GPU!
+  → Wake: restore weights → same addresses → graph replay still works
+  → ★ Graph pool persists across sleep/wake → replay valid after wake!
+```
+
+## 12. RTX 4090 CUDA Graph Summary
+
+```
+★ ★ ★ RTX 4090 CUDA Graph capability:
+
+Works (SM 8.9 Ada):
+  ✓ Basic CUDA graphs → cudaStreamCaptureBegin/End/Launch → 全支持
+  ✓ Private memory pools → MempoolId_t → 不依赖SM
+  ✓ torch.cuda.CUDAGraph → full support
+  ✓ torch.cuda.make_graphed_callables() → full support
+  ✓ torch.accelerator.Graph (v2.12) → CUDA backend✓
+  ✓ vLLM FULL CUDA graphs → FA2(UNIFORM_BATCH) on SM 8.9✓
+  ✓ vLLM PIECEWISE → FlashInfer(UNIFORM_SINGLE_TOKEN_DECODE)✓
+  ✓ Breakable CUDA graphs → SM无关 → stream capture technique✓
+  ✓ torch.cond + CUDA graphs → CUDA driver 12.4+ → RTX 4090✓(需验证)
+
+Not available (SM 8.9 vs SM 9.0):
+  ✗ NVLS → SM 9.0 (Hopper) → multimem_all_gatherv_3tensor ✗
+  ✗ FlashAttention v3 → SM 9.0+ → FA2 only on RTX 4090
+  ✗ TMA → SM 9.0+ → DeepEP hybrid ✗
+  ✗ FP8 E5M2 → SM 8.9不支持 → E4M3 only for inference
+
+Memory estimation (7B INT4 on RTX 4090 24GB):
+  INT4 weights ~3.5GB + KV cache ~5GB + graph pool ~2GB + buffers ~10MB + overhead ~0.5GB
+  = ~11GB total → ~13GB headroom → ✓ plenty of room!
+
+★ ★ Performance gains on RTX 4090:
+  Decode: ~10-15% throughput improvement (eliminate CPU launch overhead)
+  Training: ~5-10% speedup with reduce-overhead mode (LoRA+compile)
+  Warmup: ~30-60s for all batch sizes → amortized over session
+```
+
 ## 参考资料
 
-- 源码: `vllm/v1/cudagraph_dispatcher.py`, `vllm/compilation/cuda_graph.py`
+- 源码: `vllm/v1/cudagraph_dispatcher.py`, `vllm/compilation/cuda_graph.py`, `vllm/compilation/breakable_cudagraph.py`
+- PyTorch: `aten/src/ATen/cuda/CUDAGraph.cpp`, `torch/cuda/graphs.py`, `torch/_inductor/cudagraph_trees.py`
+- PyTorch conditional: `torch/_higher_order_ops/cudagraph_conditional_nodes.py`
+- vLLM: `vllm/v1/worker/gpu/cudagraph_utils.py`, `vllm/v1/utils.py` (CpuGpuBuffer)
+- Megatron: PR #5242 + PR #5280 (GRPO cudagraph regression)
 - 相关: [CUDA Graphs 基础](cuda-graphs.md), [V1 Executor](vllm-v1-executor-reading.md)
 - `tools/cuda_graph_demo.py` — CUDA Graph 实测数据
