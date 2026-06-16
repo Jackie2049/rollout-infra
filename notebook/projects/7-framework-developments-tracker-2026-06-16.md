@@ -188,3 +188,96 @@ selected_prompt_uids = sampleable_keys[:batch_size]
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ MONITOR vLLM #45731 PyTorch 2.13.0 → Triton 3.7.1 may affect SM89 batch invariance root cause!
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ DeepSpeed OPSD = #1 OPD framework on single GPU (ZeRO-3 CPU-offload + TeacherLogitCache) → OPD + LoRA gap = opportunity
 ★★★★★★★★★★★★★★★★★★★★★★★★ Monitor verl off_policy metrics → integrate into RTX 4090 async GRPO guide
+
+---
+
+## Late Scan Update (2026-06-16 ~02:00 UTC)
+
+### vLLM
+
+### #45743 Tune Triton Indexer Score Decode for Spec-Decode (OPEN, 2026-06-15)
+★★★★ Reland of #45665 → batch decode tokens per request instead of per token in Triton indexer score kernel
+★★★★ Before: 1 CTA per token → After: 1 CTA per request (batched decode_query_len x num_idx_heads)
+★★★ Uses max_decode_query_len as constexpr → avoids recompilation → batch-invariant design choice!
+★★★★★ RTX 4090: spec-decode throughput improvement up to -48.7% latency at high batch/context → Triton constexpr approach = consistent with SGLang deterministic philosophy → relevant to batch invariance discussion
+
+### SGLang
+
+### #28363 Gate Overlap WAR Barrier on Forward Reads (OPEN, 2026-06-16)
+★★★★★★★ Recover decode throughput regressed by #26380 overlap WAR barrier on Blackwell
+★★★★★★ Gate barrier on read-done event from replay_prepare instead of whole forward → lets compute overlap schedule prep
+★★★★★ RTX 4090: SGLang decode scheduling architecture improving → relevant to BudgetRefiner design philosophy (compute-time-aware scheduling)
+★★★★ Also makes min_new_tokens penalizer non-synchronizing (torch.where instead of boolean-mask indexing)
+
+### #28355 FlashInfer Cutlass FP8 Block-Scale MoE Backend for Qwen3.5 (OPEN, 2026-06-16)
+★★★★★★ FlashInfer cutlass grouped GEMM for FP8 [128x128] block-scale MoE → +3-5% throughput at EP8 concurrency≥16
+★★★★★ EP1 low concurrency: REGRESSES -43~50% (tile padding overwhelms useful work at ~1 token/expert)
+★★★★ Requires FlashInfer #3650 fix for NaN rows under sparse routing
+★★★ SwiGLU gate/up weight swap at load for cutlass convention
+★★★★★ RTX 4090: FP8 block-scale MoE = SM90+ path → NOT applicable → Triton MoE runner remains RTX 4090 choice → but EP1 regression data confirms Triton MoE is correct choice for low-concurrency single-GPU MoE
+
+### #28362 AMD MoE Shared-Expert Sigmoid Gate + Residual Add (OPEN, 2026-06-16)
+★★★ AMD-specific Triton kernel fusion → ~75 us/layer savings → Qwen3.5-397B-MXFP4 validated
+★★★ RTX 4090: AMD MI300 specific → not applicable directly → but pattern (sigmoid_gate + residual fuse) portable to NVIDIA Triton
+
+### #28361 AMD GatedDeltaNet Q/K L2Norm Fusion (OPEN, 2026-06-16)
+★★★ AMD-specific Triton kernel → fuse 2 l2norm launches → ~24 us/layer → validates GatedDeltaNet SSM support
+★★★★★ RTX 4090: GatedDeltaNet SSM architecture = future hybrid model direction → SGLang now supports it → relevant to Megatron #5274 generic SSM interface
+
+### PyTorch (Inductor)
+
+### #187275 Fix Combo Kernel Crash with Dynamic Persistent Reduction Dimensions (OPEN, 2026-06-14)
+★★★★★★★★★★★★★★★★★★★★★★★★★★ DIRECTLY RELEVANT to our Inductor Fusion Guard PR!
+★★★★★★★ Fix: reuse TritonKernel._get_persistent_RBLOCK() for dynamic reduction numels in combo kernels
+★★★★★★★★★ Root cause: persistent reduction RBLOCK was hardcoded/autotuned → dynamic reduction numel change → crash
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ CONFIRMS: persistent reduction RBLOCK handling is a KNOWN PROBLEM in Inductor → our RMSNorm batch invariance root cause (autotuned XBLOCK vs constexpr RBLOCK) is part of the SAME class of issues!
+★★★★★★★★★ RTX 4090: This fix = for combo kernel crash, not for batch invariance → BUT proves persistent reduction dimension handling is fragile → strengthens our case for Inductor SM<90 Fusion Guard
+
+### #187368 Inductor Input Validation for normal/bernoulli Decompositions (OPEN, 2026-06-15)
+★★★ torch.compile silently accepted invalid inputs → garbage instead of RuntimeError matching eager
+★★★ Pattern same as #183762/#187321 → Inductor decompositions skip eager validation
+★★★ RTX 4090: no direct impact → but confirms Inductor decomposition layer is where bugs accumulate → our Fusion Guard fits this pattern
+
+### #187357 Convert _scaled_grouped_mm_v2 to Structured Operator (OPEN, 2026-06-15)
+★★★★★★ MXFP4/NVFP4 grouped matmul → structured op conversion + validation centralization
+★★★★★★ Device-capability gate stays in CUDA kernel → meta only does shape inference
+★★★★★ RTX 5090: MXFP4/NVFP4 grouped matmul infrastructure maturing → NEXT-PHASE contribution window confirmed
+★★★★★ Pattern: SM capability gating in kernel (not scheduler) → different from our approach (scheduler-level guard) → both valid
+
+### DeepSpeed
+
+### #8061 ZeRO Stage 1/2 overlap_comm Multi-Stream Bug (OPEN, 2026-06-12)
+★★★★★★★★ CRITICAL BUG: torch.compile + overlap_comm + contiguous_gradients → NaN from step 1!
+★★★★★★ Root cause: gradient bucket copy_ issued on multiple streams (compiled autograd) → average_tensor() only waits current_stream → reduction reads IPG before all writes complete
+★★★★★★★★★ DeepSpeed assumes single stream → torch.compile breaks this assumption → stream A writes slice A, stream B writes slice B, stream C calls average_tensor → only waits stream C!
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ RTX 4090 impact: HIGH — if using DeepSpeed ZeRO-1/2 + torch.compile + overlap_comm → training CRASHES! Must disable overlap_comm when compiling on single GPU, or this must be fixed
+★★★★ Fix direction: record IPG copy streams per bucket → reduction_stream waits all recorded producer streams
+
+### verl
+
+### #6737 VeOmni Fused Top-K Distillation Outputs (OPEN, 2026-06-15)
+★★★★★ Wire fused top-k distillation for VeOmni → teacher_topk_ids + teacher_topk_log_probs → OPD infrastructure
+★★★★★ Handles jagged NestedTensor and pre-rmpad teacher tensors
+★★★★★ Fails closed if fused_linear_aux missing distillation outputs
+★★★★★★★★ RTX 4090: OPD (On-Policy Distillation) path maturing → DeepSpeed OPD #8027 + verl VeOmni #6737 = two OPD implementations → convergence likely
+
+### #6713 Megatron LoRA Adapter Export for Rollout (OPEN, DRAFT, 2026-06-12)
+★★★★ Export adapter-only Megatron LoRA tensors for rollout engines → gather EP-local MoE LoRA → rewrite local→global expert IDs
+★★★★ Pack Qwen3-Omni 3D MoE LoRA into vLLM-compatible layout
+★★★★★ RTX 4090: Megatron LoRA export for vLLM rollout → bridges training→inference → but still Draft → track
+
+### rLLM
+
+### #654 R2E-Gym Sandbox Dataset (MERGED, 2026-06-15)
+★★★★ Add R2E-Gym as native rLLM sandbox dataset → agent RL environment expansion
+★★★ RTX 4090: more training datasets available → cookbook expansion
+
+### #656 Sandbox Dockerfile Fix (MERGED, 2026-06-15)
+★★★ Fix RUN-continuation mangling + replay_dockerfile toggle → Harbor sandbox reliability
+
+## Late Scan Key Insights
+
+★★★★★★★★★★★★★★★★★★★★★ DeepSpeed #8061 overlap_comm + torch.compile = NaN! RTX 4090 ZeRO-1/2 users MUST disable overlap_comm when compiling until fixed!
+★★★★★★★★★★★★★★★★★ PyTorch #187275 persistent reduction RBLOCK fix CONFIRMS our batch invariance root cause class → strengthens Inductor Fusion Guard case
+★★★★★★ SGLang #28355 cutlass FP8 MoE EP1 regression data validates Triton MoE runner as correct RTX 4090 choice
+★★★★★ verl VeOmni #6737 + DeepSpeed OPD #8027 = two OPD paths converging → RTX 4090 distillation landscape evolving
