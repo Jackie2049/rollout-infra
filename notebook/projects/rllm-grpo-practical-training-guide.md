@@ -803,6 +803,21 @@ UI地址: https://ui.rllm-project.com
 | `batch/steps_per_traj` | 每轨迹步数 | — =1是健康的 |
 | `batch/action_token_ratio` | action token比例 | — =1是单步 |
 
+### 11.5 ★★★ Async GRPO Staleness Monitoring (NEW, verl #6736 inspired)
+
+★★★★★★★★★ verl #6736 introduced off_policy metrics — trajectory staleness monitoring for async training.
+★★★★★★★★★ rLLM Tinker Async Trainer has similar staleness via SyncCoordinator → can track these metrics:
+
+| 指标 | 含义 | 期望值 |
+|------|------|--------|
+| `trajectory_spans` | 轨迹跨越多少model version | 1 = fully on-policy |
+| `trajectory_staleness` | 轨迹落后当前policy多少步 | 0 = fresh; <3 acceptable |
+| `trajectory_staleness_worst` | 最坏case落后步数 | <5 acceptable |
+| `global_steps - min_global_steps` | rollout weights oldest version lag | 小值 = 低staleness |
+
+★★★★★★★★★ RTX 4090 single GPU: staleness minimal (0 network latency) → trajectory_spans≈1 → nearly on-policy
+★★★★★★★★★ Key: TinkerAsyncTrainer.staleness_threshold=0 → sync every step → min staleness
+
 ---
 
 ## 12. Checkpoint 管理
