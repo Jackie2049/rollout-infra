@@ -285,3 +285,4 @@ Source reading: notebook/projects/deepspeed-overlap-comm-compile-nan-source-read
 ★★★★★★★★★★★★★★★★★ PyTorch #187275 persistent reduction RBLOCK fix CONFIRMS our batch invariance root cause class → strengthens Inductor Fusion Guard case
 ★★★★★★ SGLang #28355 cutlass FP8 MoE EP1 regression data validates Triton MoE runner as correct RTX 4090 choice
 ★★★★★ verl VeOmni #6737 + DeepSpeed OPD #8027 = two OPD paths converging → RTX 4090 distillation landscape evolving
+★★★★★★★★ MindIE Turbo source-level reading completed → compose-level fusion + MLA native kernel + spec decode in latent space → 5 portable lessons for RTX 4090 (notebook/projects/mindie-turbo-deepseek-inference-source-reading.md)
