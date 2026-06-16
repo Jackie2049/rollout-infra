@@ -106,7 +106,7 @@ cat > "$DS_CONFIG" << 'JSONEOF'
             "pin_memory": true
         },
         "all_contiguous_gradients": true,
-        "overlap_comm": true,
+        "overlap_comm": false,
         "reduce_bucket_size": 5e6
     },
     "fp16": {
