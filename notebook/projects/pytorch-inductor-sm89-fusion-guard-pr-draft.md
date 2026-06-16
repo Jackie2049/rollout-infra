@@ -155,7 +155,7 @@ def test_pointwise_only_unaffected():
 - vLLM #39096 — Batch invariance bug on SM89 (this PR fixes the root cause)
 - PyTorch #185814 — XBLOCK derivation for RMSNorm backward (complementary bandwidth fix)
 - vLLM #43914 — Triton FP8 KV SM89 ALLOWED (related SM89 compatibility)
-- Non-TMA PRs #177781/#179095 — SM89 persistent Triton templates (merged, complementary)
+- Non-TMA PRs #177781/#179095 — SM89 persistent Triton templates (CLOSED without merging — AMD-focused, NOT SM89 batch invariance fix → confirms our approach is independent and necessary)
 
 ### Performance Impact
 
