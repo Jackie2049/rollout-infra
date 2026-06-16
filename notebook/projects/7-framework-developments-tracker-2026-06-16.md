@@ -54,6 +54,7 @@
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Not compatible with: router_fusion, group-limited routing, fused top-k
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ RTX 4090 impact: QB + AutoEP + LoRA = simplified MoE training → no aux loss tuning needed → -20% hyperparameter complexity!
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ But: QB requires training + torch.is_grad_enabled() → only during training, not inference
+Source reading: notebook/projects/megatron-quantile-balancing-routing-source-reading.md (259 lines)
 
 Key code from qb_dual_update (moe_utils.py):
 ```python
@@ -112,7 +113,7 @@ if self.routing_type == "quantile_balancing":
 
 ## verl (v0.8.0 latest)
 
-### #6736 Off-Policy Metrics + Replay Buffer Staleness (OPEN, 2026-06-15) ★★★★★★★★★ NEW!
+### #6736 Off-Policy Metrics + Replay Buffer Staleness (OPEN, 2026-06-15) ★★★★★★★★★ NEW! SOURCE-LEVEL
 ★★★★★★★★★★★★★★★★★★★★★★★★★ 3 changes: off_policy metrics + replay_buffer staleness reduction + retry fix
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ trajectory_spans: how many distinct model versions a single trajectory spans (1 = fully on-policy)
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ trajectory_staleness: how many training steps the trajectory lags behind current policy
@@ -146,6 +147,8 @@ sampleable_keys = sorted(finished_keys.union(failure_keys),
                          key=lambda key: prompt_global_steps.get(key, 0))
 selected_prompt_uids = sampleable_keys[:batch_size]
 ```
+
+Source reading: notebook/projects/verl-off-policy-staleness-metrics-source-reading.md (171 lines)
 
 ### #6738 SGLang Weight Sync OOM Fix (OPEN, already tracked)
 ★★★★★★ get_named_tensor_buckets skip redundant clone → doubles peak → PR #6738 fix
@@ -246,12 +249,13 @@ selected_prompt_uids = sampleable_keys[:batch_size]
 
 ### DeepSpeed
 
-### #8061 ZeRO Stage 1/2 overlap_comm Multi-Stream Bug (OPEN, 2026-06-12)
+### #8061 ZeRO Stage 1/2 overlap_comm Multi-Stream Bug (OPEN, 2026-06-12) SOURCE-LEVEL
 ★★★★★★★★ CRITICAL BUG: torch.compile + overlap_comm + contiguous_gradients → NaN from step 1!
 ★★★★★★ Root cause: gradient bucket copy_ issued on multiple streams (compiled autograd) → average_tensor() only waits current_stream → reduction reads IPG before all writes complete
 ★★★★★★★★★ DeepSpeed assumes single stream → torch.compile breaks this assumption → stream A writes slice A, stream B writes slice B, stream C calls average_tensor → only waits stream C!
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ RTX 4090 impact: HIGH — if using DeepSpeed ZeRO-1/2 + torch.compile + overlap_comm → training CRASHES! Must disable overlap_comm when compiling on single GPU, or this must be fixed
 ★★★★ Fix direction: record IPG copy streams per bucket → reduction_stream waits all recorded producer streams
+Source reading: notebook/projects/deepspeed-overlap-comm-compile-nan-source-reading.md (254 lines)
 
 ### verl
 
