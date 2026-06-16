@@ -23,9 +23,22 @@ This is the root cause of vLLM issue #39096 and affects any model using torch.co
 
 1. `torch.compile(model)` → Dynamo captures FX graph → `rms_norm(x).mean(dim=-1)`
 2. Inductor Lowering: `mean` lowered to `sum + divide` (NOT `aten::mean.dim` dispatch!)
-3. Scheduler fusion: `can_fuse_vertical` returns `True` unconditionally → fuses `pow2 + sum + divide + rsqrt + mul` into ONE kernel
-4. Triton codegen: persistent_reduction kernel → RBLOCK=constexpr (fixed) but XBLOCK=autotuned (varies!)
-5. `tl.sum()` inline → accumulation order varies with XBLOCK → batch-dependent results on SM<90
+3. ★★★★★★★★ Scheduler THREE-LAYER fusion gate architecture:
+   - **Layer 0**: `V.choices.can_fuse` (common heuristic, `shared_data_score`) — shared across all
+   - **Layer 1**: `Scheduler.can_fuse_vertical` (structural legality, dependency matching) — hard rules
+   - **Layer 2**: `V.choices.can_fuse_vertical` (profitability heuristic) — ← OUR INSERTION POINT ← currently returns True unconditionally!
+   - **Layer 3**: `Backend.can_fuse_vertical` (tiling legality) — Triton-specific checks
+4. ★★★★★★★★ Both vertical fusion paths intercepted by our guard:
+   - Direct path: node→producer→Layer 0→Layer 1→Layer 2(OUR GUARD)→Layer 3→fuse
+   - Reindex path: node→reindex→producer→Layer 0→Layer 1→Layer 2(OUR GUARD)→Layer 3→fuse
+5. Scheduler fusion: `can_fuse_vertical` returns `True` unconditionally → fuses `pow2 + sum + divide + rsqrt + mul` into ONE kernel
+6. Triton codegen: persistent_reduction kernel → RBLOCK=constexpr (fixed) but XBLOCK=autotuned (varies!)
+7. `tl.sum()` inline → accumulation order varies with XBLOCK → batch-dependent results on SM<90
+
+★★★★★★★★★ Layer 2 architecturally superior to Layer 3 because:
+  - can_fuse_vertical hook is INTENTIONALLY empty (designed for users to fill)
+  - can_fuse_horizontal has actual heuristics (MixOrderReduction + score threshold + distance)
+  - Our guard fills the empty hook legitimately, just like reduction_split_factor does with props.major>=10
 
 ### Solution
 
