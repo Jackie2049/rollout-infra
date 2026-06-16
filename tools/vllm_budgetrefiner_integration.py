@@ -26,18 +26,68 @@ Reference:
 
 import argparse
 import csv
-import io
-import json
-import math
 import os
 import sys
 import tempfile
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+
 # ============================================================
-# Section 1: BudgetRefiner Class (95%+ GPU-generic)
+# Section 1: BudgetRefinerInfo Dataclass (Observability)
+# ============================================================
+# Must be defined BEFORE BudgetRefiner since BudgetRefiner references it
+
+
+@dataclass
+class BudgetRefinerInfo:
+    """Observability data for BudgetRefiner decisions.
+
+    Captures every refine_budget() call for logging, metrics, and debugging.
+    This enables:
+    - Monitoring how often BudgetRefiner throttles prefill
+    - Tracking which fallback paths are used most
+    - Verifying SLO compliance over time
+    - Debugging unexpected budget adjustments
+    """
+    enabled: bool                     # Whether BudgetRefiner was active
+    original_budget: int              # Static max_num_scheduled_tokens
+    refined_budget: int               # Budget after refinement (<= original)
+    num_running: int                  # Total running requests
+    num_running_decode: int           # Running decode requests
+    avg_decode_ctx_len: int           # Average decode context length
+    lookup_key: Optional[Tuple[int, int]]  # (ctx_len, d_num) used for lookup
+    fallback_path: str                # "exact_match", "aligned_match",
+                                      # "default_fallback", "no_decode", or "disabled"
+
+    def budget_reduction_pct(self) -> float:
+        """Percentage reduction from original to refined budget."""
+        if self.original_budget == 0:
+            return 0.0
+        return (1.0 - self.refined_budget / self.original_budget) * 100.0
+
+    def is_throttling(self) -> bool:
+        """Whether BudgetRefiner actually reduced the budget."""
+        return self.enabled and self.refined_budget < self.original_budget
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dict for JSON logging."""
+        return {
+            "enabled": self.enabled,
+            "original_budget": self.original_budget,
+            "refined_budget": self.refined_budget,
+            "budget_reduction_pct": round(self.budget_reduction_pct(), 1),
+            "num_running": self.num_running,
+            "num_running_decode": self.num_running_decode,
+            "avg_decode_ctx_len": self.avg_decode_ctx_len,
+            "lookup_key": list(self.lookup_key) if self.lookup_key else None,
+            "fallback_path": self.fallback_path,
+            "is_throttling": self.is_throttling(),
+        }
+
+
+# ============================================================
+# Section 2: BudgetRefiner Class (95%+ GPU-generic)
 # ============================================================
 # Ported from vllm-ascend/core/scheduler_dynamic_batch.py
 # Original: 58 lines core logic, 100% GPU-generic
@@ -320,7 +370,9 @@ class BudgetRefiner:
             return budget
 
         # Compute effective context length
-        ctx_len = avg_decode_ctx_len if avg_decode_ctx_len > 0 else min(self.context_keys) if self.context_keys else 128
+        ctx_len = avg_decode_ctx_len if avg_decode_ctx_len > 0 else (
+            min(self.context_keys) if self.context_keys else 128
+        )
 
         # Lookup and refine
         refined = self._get_max_budget(ctx_len, num_running_decode)
@@ -357,61 +409,9 @@ class BudgetRefiner:
 
         return refined
 
-    def get_last_info(self) -> "BudgetRefinerInfo":
+    def get_last_info(self) -> Optional[BudgetRefinerInfo]:
         """Return observability info from the last refine_budget call."""
         return self._last_info
-
-
-# ============================================================
-# Section 2: BudgetRefinerInfo Dataclass (Observability)
-# ============================================================
-
-
-@dataclass
-class BudgetRefinerInfo:
-    """Observability data for BudgetRefiner decisions.
-
-    Captures every refine_budget() call for logging, metrics, and debugging.
-    This enables:
-    - Monitoring how often BudgetRefiner throttles prefill
-    - Tracking which fallback paths are used most
-    - Verifying SLO compliance over time
-    - Debugging unexpected budget adjustments
-    """
-    enabled: bool                     # Whether BudgetRefiner was active
-    original_budget: int              # Static max_num_scheduled_tokens
-    refined_budget: int               # Budget after refinement (<= original)
-    num_running: int                  # Total running requests
-    num_running_decode: int           # Running decode requests
-    avg_decode_ctx_len: int           # Average decode context length
-    lookup_key: Optional[Tuple[int, int]]  # (ctx_len, d_num) used for lookup
-    fallback_path: str                # "exact_match", "aligned_match",
-                                      # "default_fallback", "no_decode", or "disabled"
-
-    def budget_reduction_pct(self) -> float:
-        """Percentage reduction from original to refined budget."""
-        if self.original_budget == 0:
-            return 0.0
-        return (1.0 - self.refined_budget / self.original_budget) * 100.0
-
-    def is_throttling(self) -> bool:
-        """Whether BudgetRefiner actually reduced the budget."""
-        return self.enabled and self.refined_budget < self.original_budget
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dict for JSON logging."""
-        return {
-            "enabled": self.enabled,
-            "original_budget": self.original_budget,
-            "refined_budget": self.refined_budget,
-            "budget_reduction_pct": round(self.budget_reduction_pct(), 1),
-            "num_running": self.num_running,
-            "num_running_decode": self.num_running_decode,
-            "avg_decode_ctx_len": self.avg_decode_ctx_len,
-            "lookup_key": list(self.lookup_key) if self.lookup_key else None,
-            "fallback_path": self.fallback_path,
-            "is_throttling": self.is_throttling(),
-        }
 
 
 # ============================================================
@@ -843,6 +843,9 @@ def run_unit_tests() -> List[Dict[str, Any]]:
     8. Watermark-BudgetRefiner compatibility
     9. Budget reduction behavior under increasing decode load
     10. CSV loading from file
+    11. _align_key correctness
+    12. count_decode_requests helper
+    13. BudgetRefinerInfo.is_throttling correctness
     """
     results = []
 
@@ -858,7 +861,6 @@ def run_unit_tests() -> List[Dict[str, Any]]:
 
     # ---- Test 2: Enabled with exact lookup ----
     br = BudgetRefiner(default_budget=1024, slo_limit=50.0)
-    # With mock data at slo_limit=50ms, certain (ctx_len, d_num) combos should have entries
     budget2 = br.refine_budget(num_running=10, num_running_decode=4, budget=1024,
                                avg_decode_ctx_len=128)
     test2 = {
@@ -870,7 +872,6 @@ def run_unit_tests() -> List[Dict[str, Any]]:
     results.append(test2)
 
     # ---- Test 3: Enabled with aligned key ----
-    # Use a ctx_len that may not be in the table exactly
     budget3 = br.refine_budget(num_running=10, num_running_decode=3, budget=1024,
                                avg_decode_ctx_len=300)  # 300 -> align UP to 512
     test3 = {
@@ -881,7 +882,6 @@ def run_unit_tests() -> List[Dict[str, Any]]:
     results.append(test3)
 
     # ---- Test 4: Fallback to default budget ----
-    # Use extreme values that should miss all lookups
     budget4 = br.refine_budget(num_running=10, num_running_decode=100, budget=1024,
                                avg_decode_ctx_len=4096)  # way beyond table range
     test4 = {
@@ -902,11 +902,11 @@ def run_unit_tests() -> List[Dict[str, Any]]:
 
     # ---- Test 6: Decode-first reorder ----
     mock_reqs = [
-        MockRequest(num_computed_tokens=50, num_prompt_tokens=100),   # prefill
-        MockRequest(num_computed_tokens=200, num_prompt_tokens=100),  # decode
-        MockRequest(num_computed_tokens=80, num_prompt_tokens=100),   # prefill
-        MockRequest(num_computed_tokens=300, num_prompt_tokens=100),  # decode
-        MockRequest(num_computed_tokens=150, num_prompt_tokens=100),  # decode
+        MockRequest(num_computed_tokens=50, num_prompt_tokens=100),   # prefill (P)
+        MockRequest(num_computed_tokens=200, num_prompt_tokens=100),  # decode (D)
+        MockRequest(num_computed_tokens=80, num_prompt_tokens=100),   # prefill (P)
+        MockRequest(num_computed_tokens=300, num_prompt_tokens=100),  # decode (D)
+        MockRequest(num_computed_tokens=150, num_prompt_tokens=100),  # decode (D)
     ]
     reordered = reorder_decode_first(mock_reqs)
     # Decode requests should come first, maintaining relative order
@@ -914,7 +914,7 @@ def run_unit_tests() -> List[Dict[str, Any]]:
                        if r.num_computed_tokens >= r.num_prompt_tokens)
     prefill_count = sum(1 for r in reordered
                         if r.num_computed_tokens < r.num_prompt_tokens)
-    # Verify decode before prefill
+    # Verify all decode come before all prefill
     first_prefill_idx = None
     last_decode_idx = None
     for i, r in enumerate(reordered):
@@ -922,11 +922,15 @@ def run_unit_tests() -> List[Dict[str, Any]]:
             first_prefill_idx = i
         if r.num_computed_tokens >= r.num_prompt_tokens:
             last_decode_idx = i
+    reorder_correct = (
+        decode_count == 3
+        and prefill_count == 2
+        and (last_decode_idx is None or first_prefill_idx is None
+             or last_decode_idx < first_prefill_idx)
+    )
     test6 = {
         "name": "decode_first_reorder",
-        "passed": (decode_count == 3 and prefill_count == 2 and
-                   (last_decode_idx is None or first_prefill_idx is None or
-                    last_decode_idx < first_prefill_idx)),
+        "passed": reorder_correct,
         "detail": f"decode_count={decode_count}, prefill_count={prefill_count}, "
                   f"last_decode_idx={last_decode_idx}, first_prefill_idx={first_prefill_idx}",
     }
@@ -941,7 +945,7 @@ def run_unit_tests() -> List[Dict[str, Any]]:
         "passed": (info is not None and info.enabled and
                    isinstance(info.to_dict(), dict) and
                    "fallback_path" in info.to_dict()),
-        "detail": f"info_dict={info.to_dict()}",
+        "detail": f"info_dict_keys={sorted(info.to_dict().keys())}",
     }
     results.append(test7)
 
@@ -949,14 +953,14 @@ def run_unit_tests() -> List[Dict[str, Any]]:
     compat1 = verify_watermark_budgetrefiner_compatibility(0.05, 50.0)
     compat2 = verify_watermark_budgetrefiner_compatibility(0.0, 50.0)
     compat3 = verify_watermark_budgetrefiner_compatibility(0.05, -1.0)
-    compat4 = verify_watermark_budgetrefinitmore_compatibility = verify_watermark_budgetrefiner_compatibility(0.0, -1.0)
+    compat4 = verify_watermark_budgetrefiner_compatibility(0.0, -1.0)
     test8 = {
         "name": "watermark_compatibility",
         "passed": (compat1["compatible"] and compat2["compatible"] and
                    compat3["compatible"] and compat4["compatible"] and
                    compat1["watermark_enabled"] and compat1["budget_refiner_enabled"]),
-        "detail": f"both_enabled={compat1['recommendation'][:50]}, "
-                  f"br_only={compat2['recommendation'][:50]}",
+        "detail": f"both_enabled_rec={compat1['recommendation'][:50]}, "
+                  f"br_only_rec={compat2['recommendation'][:50]}",
     }
     results.append(test8)
 
@@ -1026,12 +1030,17 @@ def run_unit_tests() -> List[Dict[str, Any]]:
     br.refine_budget(num_running=20, num_running_decode=32, budget=1024,
                      avg_decode_ctx_len=512)
     info_throttle = br.get_last_info()
+    # Check if throttling happened (budget reduced)
+    throttling_did_happen = info_throttle.refined_budget < 1024
     br.refine_budget(num_running=5, num_running_decode=0, budget=1024)
     info_no_throttle = br.get_last_info()
+    no_throttle_correct = not info_no_throttle.is_throttling()
     test13 = {
         "name": "info_is_throttling",
-        "passed": (info_throttle.is_throttling() if info_throttle.refined_budget < 1024
-                   else True) and not info_no_throttle.is_throttling(),
+        "passed": (
+            (info_throttle.is_throttling() if throttling_did_happen else True)
+            and no_throttle_correct
+        ),
         "detail": f"throttle={info_throttle.is_throttling()}, "
                   f"no_throttle={info_no_throttle.is_throttling()}",
     }
@@ -1171,7 +1180,7 @@ def show_profile_template() -> None:
     print(PROFILE_TABLE_TEMPLATE_CSV)
 
 
-def show_tests() -> None:
+def show_tests() -> bool:
     """Run and display unit test results."""
     print("=" * 70)
     print("BudgetRefiner Unit Tests (mock profile data)")
