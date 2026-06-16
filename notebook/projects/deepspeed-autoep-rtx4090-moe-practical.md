@@ -180,7 +180,111 @@ Step 5: EAGLE speculative → 可能不支持MoE → ★ 需要确认
   → → ★★★ INT4 MoE inference on RTX 4090 → Triton fallback → 部分layer slower → 但可行!
 ```
 
-## 8. 与rLLM Tinker对比
+## 8. ★★★★★★★★ 2026-06-16 最新更新: ZenFlow + gradient_clipping + QB routing
+
+### ★★★★★★★★ ZenFlow #8058 — RTX 4090 MoE训练内存革命!
+
+```
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+★★★★★★★★★ ZenFlow = RTX 4090 MoE训练内存革命!
+★★★★★★★★★ GPU spike: 2944MiB → 256MiB = 11.5x reduction
+★★★★★★★★★ headroom: 3GB → 5.7GB = TRANSFORMATIVE!
+
+★★★★★★★★★ 之前(旧CPU_Adam copyback):
+  → Qwen3-MoE AutoEP: 18GB base + 2.94GB spike = 20.94GB → 3GB headroom → OOM风险!
+  → 小memory压力 → 就OOM! → 不可靠!
+
+★★★★★★★★★ 之后(ZenFlow native process):
+  → Qwen3-MoE AutoEP: 18GB base + 0.256GB spike = 18.256GB → 5.7GB headroom!
+  → 从"勉强可以" → "舒服可以" → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ MoE训练可靠!
+
+★★★★★★★★★ ZenFlow核心机制:
+  → native C++ CPU optimizer process → POSIX semaphore → shared-memory control block
+  → fused multi-tensor CPU Adam → C++ SIMD AVX512 → 消除Python loop和clone()
+  → chunked copyback → 128MB fp32 chunk → streaming → 256MiB peak → 11.5x reduction
+  → NUMA-local optimizer state → separate process allocates on own NUMA → 消除remote access
+  → Linux only → RTX 4090工作站Ubuntu/CentOS → 无影响!
+
+★★★★★★★★★ RTX 4090推荐ZenFlow配置:
+```json
+{
+    "zero_optimization": {
+        "stage": 2,
+        "offload_optimizer": {
+            "device": "cpu",
+            "pin_memory": true
+        },
+        "overlap_comm": true
+    },
+    "zenflow_config": {
+        "overlap_step": true,
+        "pt_reserved_cores_perc": 0.5,
+        "full_warm_up_rounds": 2,
+        "offload": true
+    },
+    "gradient_clipping": 1.0,  // ★★★ #8068 default → GRPO稳定!
+    "auto_ep_enable": true,
+    "auto_ep_preset": "Qwen3-MoE"
+}
+```
+
+★★★★★★★★★ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+★★★★★★★★★ DeepSpeed = RTX 4090 MoE训练最优框架!
+★★★★★★★★★ AutoEP(MoE架构) + LoRAOptimizedLinear(内存优化) + ZenFlow(optimizer spike) + gradient_clipping=1.0(稳定性)
+★★★★★★★★★ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+```
+
+### ★★★★★★★★ gradient_clipping=1.0 (#8068) — RTX 4090 GRPO稳定性!
+
+```
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+★★★★★★★★★ GRADIENT_CLIPPING_DEFAULT: 0.0(旧) → 1.0(新)
+★★★★★★★★★ 大多数RL/LLM训练clip at 1.0 → 旧default = silently unclipped → 训练不稳定风险!
+★★★★★★★★★ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ RTX 4090 GRPO STABILITY!
+★★★★★★★★★ override: gradient_clipping: 0.0仍然禁用 → 显式控制
+★★★★★★★★★ aligns with FSDP2 reference → cross-framework一致!
+
+★★★★★★★★★ RTX 4090 MoE GRPO推荐:
+  → gradient_clipping: 1.0 → 防止gradient爆炸 → 训练稳定
+  → 对LoRA尤其重要 → 小trainable params → gradient波动更大
+  → ★★★★★★★★ 之前omit → unclipped → risk → 现在default 1.0 → safe!
+```
+
+### ★★★★★★★★ QB Routing (#5349) — MoE aux loss替代方案 (Megatron)
+
+```
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+★★★★★★★★★ Megatron QB routing = dual coordinate-descent per-expert bias → REPLACES aux loss!
+★★★★★★★★★ RTX 4090影响: QB思想未来可能迁移到DeepSpeed → 简化MoE config!
+
+★★★★★★★★★ QB核心:
+  → qb_dual_update: (S - beta).topk(k+1) → biased scoring
+  → beta per-expert → column quantile → drives each expert toward ~m*k/n tokens
+  → EMA blend + re-center → smooth adaptation → no oscillation
+  → aux loss MUST be 0 → QB handles load balance entirely!
+  → ★★★★★★★★ -20% hyperparameter complexity!
+
+★★★★★★★★★ DeepSpeed尚未有QB → 但思想可以应用:
+  → DeepSpeed MoE aux loss tuning → 复杂! → 需要moe_aux_loss_coeff调参
+  → 如果QB迁移到DeepSpeed → AutoEP + QB = 最简MoE config → 零aux loss tuning!
+  → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ 中期贡献机会!
+```
+
+### ★★★★★★★★ OPD #8027 — RTX 4090新市场: 蒸馏!
+
+```
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+★★★★★★★★★ OPD = On-Policy Distillation → 小student GPU + 大teacher CPU → RTX 4090新市场!
+★★★★★★★★★ Qwen2.5-0.5B student ~1GB GPU → teacher 7B CPU ~16.5GB → ZeRO-2+CPU_Adam ~3-7GB GPU
+★★★★★★★★★ DRAFT PR #8027 → 32 new files + 87 tests → validated on 2xH200
+★★★★★★★★★ 3-phase: student rollout → teacher CPU logit cache → student streamed divergence
+
+★★★★★★★★★ RTX 4090 OPD = 消费级GPU蒸馏市场 → DeepSpeed独有!
+  → 其他框架(verl/Megatron/FSDP2) = 无蒸馏支持 on RTX 4090
+  → DeepSpeed OPD = 第一个 → ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ NEW market!
+```
+
+## 9. 与rLLM Tinker对比
 
 ```
 ★ ★ ★ DeepSpeed AutoEP vs rLLM Tinker — RTX 4090 MoE:
@@ -207,5 +311,9 @@ Step 5: EAGLE speculative → 可能不支持MoE → ★ 需要确认
 - DeepSpeed 0.19 features: notebook/projects/deepspeed-0.19-features-reading.md
 - INT4 Triton fallback: notebook/projects/vllm-int4-triton-fallback-reading.md
 - MoE serving patterns: notebook/projects/moe-serving-architecture-patterns-reading.md
+- ZenFlow source-level: notebook/projects/deepspeed-zenflow-source-reading.md (NEW)
+- OPD source-level: notebook/projects/deepspeed-opd-trainer-source-reading.md (NEW)
+- QB routing source-level: notebook/projects/megatron-quantile-balancing-moe-routing-source-reading.md (NEW)
+- 7-framework developments tracker: notebook/projects/7-framework-developments-tracker-2026-06-16.md (NEW)
 - RTX 4090 config card: notebook/fundamentals/rtx4090-grpo-training-config-card.md
 - RTX 4090 decision tree: notebook/fundamentals/rtx4090-rl-training-decision-tree.md
