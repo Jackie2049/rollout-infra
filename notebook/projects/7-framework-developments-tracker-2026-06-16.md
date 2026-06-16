@@ -136,6 +136,16 @@ selected_prompt_uids = sampleable_keys[:batch_size]
 ### #6738 SGLang Weight Sync OOM Fix (OPEN, already tracked)
 ★★★★★★ get_named_tensor_buckets skip redundant clone → doubles peak → PR #6738 fix
 
+### #6735 Cap Micro-Batch Tokens at max_token_len (OPEN, 2026-06-15) ★★★★★★★★★ NEW!
+★★★★★★★★★ Karmarkar-Karp balancing → squared-workload → individual micro-batch can exceed max_token_len → OOM
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Fix: re-partition until every micro-batch fits within max_token_len
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ RTX 4090: prevents gradient accumulation OOM → critical!
+
+### #6729 Prepare Actor Weights Before Rollout Wakeup (OPEN, 2026-06-14) ★★★★★★★★★ NEW!
+★★★★★★★★★ BEFORE: resume rollout weights → get_per_tensor_param → peak overlap → higher memory
+★★★★★★★★★ AFTER: get_per_tensor_param → aggressive_empty_cache → resume rollout weights → lower peak!
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ RTX 4090: reduces peak memory during weight sync → 24GB constraint relief!
+
 ## rLLM
 
 ### #653 SWE-RL Recipe (OPEN, already tracked)
