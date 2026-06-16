@@ -157,6 +157,15 @@ def test_pointwise_only_unaffected():
 - vLLM #43914 — Triton FP8 KV SM89 ALLOWED (related SM89 compatibility)
 - Non-TMA PRs #177781/#179095 — SM89 persistent Triton templates (CLOSED without merging — AMD-focused, NOT SM89 batch invariance fix → confirms our approach is independent and necessary)
 
+### ★★★★★★★★ Model-Size Dependency Evidence (vLLM #39096 comments)
+
+YM2132 (2026-04-17) tested batch invariance on SM86 (RTX 3090) without enforce_eager:
+- **Qwen3-1.7B**: PASSED with torch.compile on SM86
+- **Key insight**: vLLM's `torch.mean` override WORKS when the reduction stays as a SEPARATE kernel
+- **Problem**: Inductor FUSES the reduction for SOME model configurations → override bypassed → fails
+- **This is model-size-dependent**: smaller models may not trigger the fusion → larger models do
+- **Our guard**: prevents fusion for ALL models on SM<90 → consistent fix → no model-specific workaround needed
+
 ### Performance Impact
 
 Expected: Minimal. On SM89, vertical reduction fusions were already producing incorrect results, so blocking them is a correctness fix. Separate reduction kernels have deterministic behavior. On SM90+, no change — fusions proceed as before.
