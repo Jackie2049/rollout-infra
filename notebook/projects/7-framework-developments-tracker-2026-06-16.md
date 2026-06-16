@@ -83,7 +83,21 @@ if self.routing_type == "quantile_balancing":
 ★★★★★ RTX 4090: Muon single GPU viable (no ZeRO needed) → but multi-node = future consideration
 
 ### #5348 Mamba Prefix Caching Memory Safety (OPEN, 2026-06-15)
-★★★ Expand Mamba prefix caching to include scratch space buffers → memory safety for SSM models
+★★★★ Expand Mamba prefix caching to include scratch space buffers → fixes OOMs when scratch exceeds buffer
+★★★★ Adds warning when hybrid models use prefix caching without mamba-prefix-caching-buffer-size
+★★★★★ RTX 4090: Mamba SSM state caching MUCH smaller than transformer KV cache → hybrid models can extend context with less memory → long-context inference viable on 24GB!
+
+### #5309 Mamba SSM States Dtype Configurable (OPEN, Approved!, 2026-06-11)
+★★★★ Add --mamba-training-ssm-states-dtype argument → configurable precision for SSM states
+★★★★★ RTX 4090: bf16 states → memory savings → fp32 states → stability → choice between memory and quality!
+
+### #5274 Mamba Dynamic Inference Generic Interface (OPEN, 2026-06-10)
+★★★★ Refactor Mamba dynamic inference → generic SSM interface → support arbitrary SSM variants
+★★★★★ Enables GatedDeltaNet, RWKV, and other SSM architectures beyond Mamba → future RTX 4090 hybrid models!
+
+### #5188 Disag KV/Mamba Reshard Planners (OPEN, 2026-06-05)
+★★★ Heterogeneous KV/Mamba reshard planners for disaggregated inference → multi-GPU only
+★★★ RTX 4090: not applicable (single GPU) → but shows Megatron's hybrid architecture direction
 
 ## SGLang
 
