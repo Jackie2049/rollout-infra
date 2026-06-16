@@ -74,7 +74,7 @@ FRAMEWORK_CONFIGS = {
         fits_vram=True,
         viability="★★★★ #2",
         ranking=2,
-        notes="bypass save 14GB ref; detach_metrics prevent OOM; INT8 KV; VLLM_USE_V2_MODEL_RUNNER=0 fallback",
+        notes="bypass save 14GB ref; detach_metrics prevent OOM; INT8 KV; VLLM_USE_V2_MODEL_RUNNER=0 fallback; off_policy staleness metrics (#6736)",
         config_cmd="verl train --algorithm grpo --bypass_mode True --detach_metrics True",
     ),
     "verl_cppo": FrameworkConfig(
@@ -142,7 +142,7 @@ FRAMEWORK_CONFIGS = {
         fits_vram=True,
         viability="★★★★ #4",
         ranking=4,
-        notes="ZeRO-2+CPU_Adam+LoRAOptimizedLinear(offload=0.5)+coalesce_grad; ZenFlow #8058 chunked copyback 2944→256MiB; Muon optimizer alternative",
+        notes="ZeRO-2+CPU_Adam+LoRAOptimizedLinear(offload=0.5)+coalesce_grad; gradient_clipping=1.0 default (#8068); ZenFlow #8058 chunked copyback; Muon optimizer alternative",
         config_cmd="deepspeed train_config.json --zero_stage 2 --offload_optimizer cpu",
     ),
     "deepspeed_autoep_moe": FrameworkConfig(
@@ -159,7 +159,7 @@ FRAMEWORK_CONFIGS = {
         fits_vram=True,
         viability="★★★★★★ MoE #1 NEW!",
         ranking=1,
-        notes="AutoEP MERGED #7938; EP=1 singleton MoE 15x faster; LoRA+CPU_Adam+coalesce_grad; RTX 4090唯一MoE可行路径!",
+        notes="AutoEP MERGED #7938; EP=1 singleton MoE 15x faster; LoRA+CPU_Adam+coalesce_grad; gradient_clipping=1.0 (#8068); QB routing (#5349) simplifies MoE aux loss!",
         config_cmd="deepspeed train_config.json --zero_stage 2 --offload_optimizer cpu --autoep_enable True",
     ),
     "deepspeed_opd_distill": FrameworkConfig(
@@ -411,6 +411,12 @@ OSS CONTRIBUTIONS:
   1. BudgetRefiner SLO -> vLLM upstream (#1 priority)
   2. Inductor SM<90 Fusion Guard -> PyTorch upstream (#2)
   3. QuantKey refactor -> vLLM foundation for SM89 guard
+
+LATEST DEVELOPMENTS (2026-06-16):
+  - DeepSpeed #8068: gradient_clipping default 0->1.0 -> GRPO stability!
+  - Megatron #5349: Quantile Balancing MoE -> replaces aux loss -> simpler MoE config
+  - verl #6736: off_policy metrics + replay_buffer staleness reduction -> async GRPO quality
+  - SGLang #28354: NVFP4 MoE -> RTX 5090 next-phase contribution window
 """)
 
 
@@ -487,6 +493,8 @@ def run_gaps(args):
         ("SGLang MAGI adapter", "prefix-tree KV dedup saves 7/8 prefix; currently Megatron only", "★★★★", "Medium-term contribution"),
         ("INT4 Triton SM89 test", "INT4 Triton fallback merged; need SM89 comprehensive testing", "★★★", "Testing contribution"),
         ("MoE small model", "Megatron Lite MoE too big; need LoRA+INT8+small model protocol", "★★★", "Future exploration"),
+        ("MoE QB routing", "Megatron #5349 QB replaces aux loss; dual coordinate-descent per-expert bias", "★★★★★", "Track for AutoEP+QB combo"),
+        ("verl off_policy metrics", "#6736 trajectory staleness monitoring; replay_buffer smallest global_steps priority", "★★★★", "RTX 4090 async GRPO quality"),
     ]
 
     print(f"{'Gap':<22} {'Description':<55} {'Priority':<16} {'Action':<22}")
