@@ -83,6 +83,22 @@ Provides RTX 4090-specific training, inference, and optimization recommendations
 | torch.compile (B≥16) | 1.01x only | FlashInfer (inference) |
 | Python INT4 dequant | 0.05x (20x slower!) | AWQ/Marlin fused kernel |
 | Full FT checkpointing | Only 1% memory saving | Use LoRA instead |
+| DeepSpeed ZeRO-3 (single GPU) | Pure overhead, no benefit (dp=1) | ZeRO-2 + CPU_Adam |
+| overlap_comm=True (single GPU) | NaN with torch.compile (#8061) + no benefit (dp=1) | overlap_comm=False |
+| gradient_clipping=0.0 | Silently disabled → gradient explosion (#8068) | gradient_clipping=1.0 |
+
+## RTX 4090 DeepSpeed ZeRO Safety Checklist
+
+CRITICAL: Run `python3 tools/deepspeed_zero_safety_checker.py --mode check --config <path>` before ANY ZeRO training.
+
+5 most common pitfalls:
+1. **overlap_comm=True + torch.compile = NaN** (#8061) → Fix: overlap_comm=False (zero penalty on single GPU)
+2. **gradient_clipping=0.0 (default)** (#8068) → Fix: set gradient_clipping=1.0 explicitly
+3. **ZeRO-3 on single GPU** → Fix: Use ZeRO-2 + CPU_Adam (partition_size=full anyway with dp=1)
+4. **FP8 on SM89** → Fix: Use INT8 KV (FlashInfer) or Triton FP8 (#43914), NOT compressed-tensors
+5. **bf16+fp16 both enabled** → Fix: Choose bf16 only (SM89 native)
+
+Generated safe configs: configs/lora-grpo_rtx4090.json, configs/moe-autoep_rtx4090.json, configs/opd-distill_rtx4090.json, configs/muon_lora_zero2_rtx4090.json
 
 ## Files Reference
 
