@@ -1,0 +1,39 @@
+{
+    "train_batch_size": 8,
+    "train_micro_batch_size_per_gpu": 2,
+    "gradient_accumulation_steps": 4,
+    "gradient_clipping": 1.0,
+    "optimizer": {
+        "type": "Muon",
+        "params": {
+            "lr": 0.02,
+            "momentum_beta": 0.95,
+            "ns_steps": 5,
+            "ns_method": "gram",
+            "nesterov": true,
+            "weight_decay": 0.0,
+            "muon_lr_scale": 0.1,
+            "aux_adam_lr": 1e-5
+        }
+    },
+    "zero_optimization": {
+        "stage": 2,
+        "offload_optimizer": {
+            "device": "cpu",
+            "pin_memory": true
+        },
+        "all_contiguous_gradients": true,
+        "overlap_comm": true,
+        "reduce_bucket_size": 5e6
+    },
+    "fp16": {
+        "enabled": false
+    },
+    "bf16": {
+        "enabled": true
+    },
+    "gradient_accumulation_steps": 4,
+    "data_types": {
+        "grad_accum_dtype": "fp32"
+    }
+}
