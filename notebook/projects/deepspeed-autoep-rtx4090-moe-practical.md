@@ -180,7 +180,23 @@ Step 5: EAGLE speculative → 可能不支持MoE → ★ 需要确认
   → → ★★★ INT4 MoE inference on RTX 4090 → Triton fallback → 部分layer slower → 但可行!
 ```
 
-## 8. ★★★★★★★★ 2026-06-16 最新更新: ZenFlow + gradient_clipping + QB routing
+## 8. ★★★★★★★★ 2026-06-16 最新更新: #8061 NaN bug + ZenFlow + gradient_clipping + QB routing
+
+### ★★★★★★★★ CRITICAL: #8061 overlap_comm NaN bug — MUST overlap_comm=False!
+
+```
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+★★★★★★★★★ overlap_comm=True + torch.compile = NaN from step 1! (#8061)
+★★★★★★★★★ Root cause: average_tensor() stage_1_and_2.py:1234 only waits current_stream()
+★★★★★★★★★ torch.compile compiled autograd → multi-stream copy_ → incomplete IPG buffer → NaN
+★★★★★★★★★ RTX 4090 MUST: overlap_comm=False (zero penalty on single GPU anyway!)
+★★★★★★★★★ overlap_comm=False = dp=1 → reduce_scatter identity → no cross-GPU overlap benefit
+★★★★★★★★★ ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ SAFER + SAME PERFORMANCE!
+★★★★★★★★★ Verify: python3 tools/deepspeed_zero_safety_checker.py --mode check --config <path>
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+```
+
+Source reading: notebook/projects/deepspeed-overlap-comm-compile-nan-source-reading.md (254 lines)
 
 ### ★★★★★★★★ ZenFlow #8058 — RTX 4090 MoE训练内存革命!
 
@@ -214,7 +230,7 @@ Step 5: EAGLE speculative → 可能不支持MoE → ★ 需要确认
             "device": "cpu",
             "pin_memory": true
         },
-        "overlap_comm": true
+        "overlap_comm": false  // ★★★ MUST be false! #8061 NaN bug + zero benefit on single GPU
     },
     "zenflow_config": {
         "overlap_step": true,
@@ -317,3 +333,6 @@ Step 5: EAGLE speculative → 可能不支持MoE → ★ 需要确认
 - 7-framework developments tracker: notebook/projects/7-framework-developments-tracker-2026-06-16.md (NEW)
 - RTX 4090 config card: notebook/fundamentals/rtx4090-grpo-training-config-card.md
 - RTX 4090 decision tree: notebook/fundamentals/rtx4090-rl-training-decision-tree.md
+- overlap_comm NaN bug: notebook/projects/deepspeed-overlap-comm-compile-nan-source-reading.md (NEW)
+- ZeRO safety checker: tools/deepspeed_zero_safety_checker.py (NEW)
+- ZeRO quick reference: notebook/fundamentals/rtx4090-deepspeed-zero-quick-reference.md (NEW)
