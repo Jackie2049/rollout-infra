@@ -1,6 +1,6 @@
 # verl Off-Policy Metrics + Replay Buffer Staleness — Source-Level Analysis
 
-> 2026-06-16 | PR #6736 (OPEN) | RTX 4090 impact: async GRPO staleness MONITORING and CONTROL
+> 2026-06-16 | PR #6736 (MERGED 2026-06-16!) | RTX 4090 impact: async GRPO staleness MONITORING and CONTROL
 > Key: trajectory_spans/staleness metrics + replay_buffer prioritizes oldest prompts
 
 ---
@@ -154,12 +154,12 @@ Both approaches are complementary: verl monitors, rLLM controls. Combined = opti
 
 ## Key Findings Summary
 
-★★★★★★★★★ trajectory_spans: how many model versions a trajectory spans (1 = on-policy)
-★★★★★★★★★ trajectory_staleness: how many steps trajectory lags behind current policy
-★★★★★★★★★ Replay buffer: prioritize smallest global_steps → oldest first → reduces staleness!
+★★★★★★★★★ trajectory_spans: model versions per trajectory (1 = on-policy) — MERGED 2026-06-16!
+★★★★★★★★★ trajectory_staleness: steps lag behind current policy — MERGED!
+★★★★★★★★★ Replay buffer: prioritize smallest global_steps → oldest first → reduces staleness! — MERGED!
 ★★★★★★★★★ OPD terminology clarified: "one-policy distillation" → "on-policy distillation"
 ★★★★★★★★★ RTX 4090: async GRPO staleness MONITORING → critical for training quality
-★★★★★★★ Combine verl monitoring (#6736) with rLLM staleness control → optimal async GRPO
+★★★★★★★ Combine verl monitoring (#6736 MERGED) with rLLM staleness control → optimal async GRPO
 
 ---
 

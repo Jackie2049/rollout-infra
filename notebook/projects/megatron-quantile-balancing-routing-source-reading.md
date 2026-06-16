@@ -242,9 +242,13 @@ QB is the best option for RTX 4090 MoE training because:
 
 ★★★★★★★★★ QB routing REPLACES aux loss → moe_aux_loss_coeff MUST be 0
 ★★★★★★★★★ Dual coordinate-descent: beta (per-expert bias) → converges toward balanced distribution
-★★★★★★★★★ qb_beta fp32 registered buffer → updated per global batch → inference uses fixed values
+★★★★★★★★★ qb_beta fp32 registered buffer (PERSISTENT) → updated per global batch → inference uses fixed values
+★★★★★★★★★ qb_beta_accum + qb_beta_count: NON-PERSISTENT (reset each global batch, not saved in state_dict)
 ★★★★★★★★★ qb_dual_update: top-k from (S-beta) → alpha threshold → quantile-based beta update
 ★★★★★★★★★ NOT compatible with: router_fusion, group-limited routing, fused top-k
+★★★★★★★★★ EMA default = 0.0 (NOT 0.9!) → qb_beta fully replaced each step, no memory
+★★★★★★★★★ Re-centering: beta -= beta.mean() → zero-sum bias → no systematic score shift
+★★★★★★★★★ Routing decision (torch.no_grad, detached logits) SEPARATE from prob computation (differentiable)
 ★★★★★★★★★ RTX 4090: QB + AutoEP + LoRA → 3 fewer hyperparameters → -20% complexity!
 ★★★★★★★★★ Training only (torch.is_grad_enabled()) → inference uses converged beta
 
