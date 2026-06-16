@@ -166,11 +166,13 @@ selected_prompt_uids = sampleable_keys[:batch_size]
 ★★★★★ swe-rl cookbook → SWE-bench Verified → rLLM-SWESmith
 
 ## PyTorch (v2.12.0 latest)
-- No new RTX 4090-relevant PRs detected today (Inductor Fusion Guard still our priority)
+### #45731 PyTorch 2.13.0 Proposed (OPEN, vLLM, 2026-06-15) ★★★★★★★★★★ MONITOR!
+★★★★★★★ torch→2.13.0, triton→3.7.1 — TEST CHANNEL build
+★★★★★★★ Triton 3.7.1 may change autotuning behavior → POTENTIAL IMPACT on SM89 batch invariance root cause!
+★★★★★ If merged: CachingAutotuner XBLOCK selection may change → batch invariance bug #39096 may shift → our Inductor Fusion Guard approach still needed but parameters may change
+★★★★★★★ MONITOR: This PR is the #1 risk factor for our Inductor Fusion Guard PR — if Triton changes fix the bug at kernel level, our scheduler-level guard becomes unnecessary → but if Triton changes exacerbate it, our guard becomes MORE important
 
----
-
-## ★★★★★★★★ Today's Key Insights for RTX 4090
+## ★★★★★★★★ Today's Key Insights for RTX 4090 (Updated)
 
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ DeepSpeed #8068 gradient_clipping default 0→1.0 = RTX 4090 GRPO training STABILITY improvement!
 ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ Megatron #5349 Quantile Balancing = aux loss replacement → simpler MoE training → RTX 4090 with AutoEP benefits!
@@ -182,4 +184,7 @@ selected_prompt_uids = sampleable_keys[:batch_size]
 ★★★★★★★★★ When GPU online: BudgetRefiner profile_table.csv (P10 UNIQUE) remains #1 priority!
 ★★★★★★★★★★★★ Update RTX 4090 GRPO configs: add gradient_clipping=1.0 (DeepSpeed #8068 aligned)
 ★★★★★★★★★★★★★★★★★★★ Track Megatron QB routing → could simplify RTX 4090 MoE training pipeline
+★★★★★★★★★★★★★★★★★★★★★★★★★ Monitor verl off_policy metrics → integrate into RTX 4090 async GRPO guide
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ MONITOR vLLM #45731 PyTorch 2.13.0 → Triton 3.7.1 may affect SM89 batch invariance root cause!
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ DeepSpeed OPSD = #1 OPD framework on single GPU (ZeRO-3 CPU-offload + TeacherLogitCache) → OPD + LoRA gap = opportunity
 ★★★★★★★★★★★★★★★★★★★★★★★★ Monitor verl off_policy metrics → integrate into RTX 4090 async GRPO guide
