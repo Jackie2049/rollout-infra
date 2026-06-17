@@ -311,6 +311,11 @@ VALIDATION_RULES = {
         "message": "CPPO requires bypass_mode → mathematical necessity → divergence measured against μ",
         "severity": "CRITICAL",
     },
+    "lora_rank_over_32": {
+        "check": lambda c: c.get("lora_rank") is not None and c.get("lora_rank") > 32,
+        "message": "LoRA rank>32 breaks EOS generation in vLLM rollout (#6782) → MUST lora_rank<=32 for GRPO!",
+        "severity": "CRITICAL",
+    },
 }
 
 
