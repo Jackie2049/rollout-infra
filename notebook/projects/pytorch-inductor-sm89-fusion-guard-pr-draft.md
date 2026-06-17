@@ -191,7 +191,28 @@ Before submitting, we need to validate on an actual RTX 4090 (SM89) that:
 ## 参考
 - Source analysis: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-approach.md
 - Root cause: notebook/fundamentals/pytorch-inductor-sm89-fusion-reading.md
+- Triton codegen pipeline: notebook/projects/pytorch-inductor-triton-codegen-pipeline-reading.md
 - vLLM issue: github.com/vllm-project/vllm/issues/39096
 - PyTorch issue: github.com/pytorch/pytorch/issues/185814
 - Repro script: tools/sm89_batch_invariance_repro.py
 - Diagnostic: tools/sm89_batch_invariance_diagnostic.py
+
+### ★★★★★★★★ Additional Evidence from Triton Codegen Pipeline Analysis
+
+CachingAutotuner persistent_reduction mechanism (triton_heuristics.py line 4882):
+- RBLOCK = next_power_of_2(rnumel) → tl.constexpr → FIXED across all batch sizes
+- XBLOCK → autotuned → varies with input shape (different for batch=1 vs batch=8)
+- SM89 shared memory: 100KB (vs SM80=164KB, SM90=228KB) → forces different XBLOCK selections
+- Result: tl.sum() accumulates over different numbers of rows → non-associative FP addition → batch-dependent!
+
+Combo kernel PR #187275 (opened 2026-06-14) confirms our root cause class:
+- "Fix Combo Kernel Crash with Dynamic Persistent Reduction Dimensions"
+- Same architectural weakness: persistent reduction block sizes not properly handled across dynamic dimension changes
+- Our issue = numerical correctness (different results per batch size)
+- Their issue = crash correctness (hardcoded RBLOCK invalid when rnumel changes)
+- Both stem from persistent reduction dimension handling → CONFIRMS our diagnosis is part of a known problem class!
+
+v2.12 max_autotune for combo kernels (#177715/#178936/#179317):
+- Extension of autotuning to combo kernels → more kernels undergo autotuning
+- May EXACERBATE SM89 batch-dependent behavior → more kernels = more autotuned configs = more variability
+- Our guard protects regardless: ALL reduction fusions blocked on SM<90 → no autotuned reductions
