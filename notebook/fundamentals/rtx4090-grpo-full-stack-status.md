@@ -3,7 +3,10 @@
 > 2026-06-18 | Cross-framework status check | Where does each framework stand for RTX 4090 GRPO training?
  What gaps remain? What's ready?
  What contribution opportunities?
-> ★★★★★★★★ Comprehensive synthesis from 248+ project notes across 7 frameworks
+> ★★★★★★★★ Comprehensive synthesis from 263+ project notes across 7 frameworks
+> ★★★★★★★★ NEW: vLLM batch_invariant.py SM89 gap — RMSNorm NOT aten override → P9 fills gap
+> ★★★★★★★★ NEW: verl #6572 validates VLLM_BATCH_INVARIANT as production mechanism
+> ★★★★★★★★ NEW: PyTorch #187435 no_fuse_region per-op fusion barrier → complementary to P9
 
  Complements PR tracker and decision guides
 
@@ -57,9 +60,10 @@ rLLM Tinker:
   → PR #576 MergedSegment OPEN → track for merge → enable backend swap
 
 verl HYBRID:
-  → vLLM batch invariance SM89 → enforce_eager fallback → ~2x slower
-  → Fusion Guard NOT yet merged → must wait or use enforce_eager
-  → SGLang integration (#6117) → check stability → may be alternative
+  → vLLM batch invariance SM89 → vLLM batch_invariant.py EXISTS but has RMSNorm gap
+  → P9 Fusion Guard fills SM89 gap → makes #6572 work on SM89
+  → verl #6572 (full determinism) validates VLLM_BATCH_INVARIANT production use
+  → CPPO #6731 + bypass + GRPO = RTX 4090 best trust region
 
 DeepSpeed ZeRO-2:
   → #8061 overlap_comm+compile NaN → MUST overlap_comm=False → zero penalty on single GPU
@@ -77,9 +81,12 @@ SGLang:
   → Recommendation: SGLang for RTX 4090 GRPO rollout
 
 vLLM:
-  → Batch invariance bug SM89 → needs Fusion Guard or enforce_eager
+  → Batch invariance SM89 → vLLM batch_invariant.py (984 lines) EXISTS but has RMSNorm gap
+  → RMSNorm: Triton kernel defined but NOT registered as aten override → Inductor can fuse
+  → On SM89: matmul only CUBLASLt workspace config → NO Triton override
   → BudgetRefiner P10 → unique RTX 4090 profile data → highest contribution priority
   → Triton swiglu P6 → complementary to Fusion Guard
+  → P9 + vLLM batch_invariant.py + verl #6572 = complete SM89 determinism
 ```
 
 ---
@@ -121,8 +128,12 @@ P9 Fusion Guard:
   → [x] Issue draft ready (pytorch-inductor-sm89-fusion-guard-issue-draft.md)
   → [ ] Filed on GitHub (need to file BEFORE PR)
   → [x] PR draft ready (5-line choices.py guard)
+  → [x] vLLM SM89 gap analysis confirmed (RMSNorm NOT aten override, matmul only CUBLASLt)
+  → [x] verl #6572 validates VLLM_BATCH_INVARIANT as production mechanism
+  → [x] PyTorch #187435 no_fuse_region complementary mechanism identified
+  → [x] Integration path synthesis (P9 + #187435 + #6572) documented
   → [ ] GPU validation (need RTX 4090 to reproduce bug)
-  → [ ] Triton 3.7.1 check (need to verify if fixes)
+  → [x] Triton 3.7.1 check → vLLM #45731 OPEN → REVIEW_REQUIRED → makes P9 MORE needed
 
 P6 Triton swiglu:
   → [x] Kernel prototype ready (triton_dequant_swiglu_quant_prototype.py)
@@ -179,3 +190,6 @@ Tier 2 DeepSpeed:
 - DeepSpeed ZeRO: notebook/fundamentals/single-gpu-ddp-vs-zero-architecture-comparison.md
 - FSDP2 analysis: notebook/projects/pytorch-fsdp2-single-gpu-analysis.md
 - RTX 4090 decision: notebook/fundamentals/rtx4090-grpo-training-decision-flowchart.md
+- vLLM batch_invariant SM89 gap: notebook/projects/vllm-batch-invariant-source-reading.md
+- verl #6572 full determinism: notebook/projects/verl-6572-full-determinism-source-reading.md
+- P9 integration path: notebook/projects/p9-fusion-guard-integration-path-synthesis.md
