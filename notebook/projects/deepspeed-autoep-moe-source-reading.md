@@ -1,184 +1,212 @@
-# DeepSpeed AutoEP MoE Source Reading — EP=1 RTX 4090 Branch + RouterReplay Gap
+# DeepSpeed AutoEP MoE Source Reading — RTX 4090 RouterReplay Gap Analysis
 
-> 2026-06-18 | DeepSpeed AutoEP MoE implementation source analysis | RTX 4090 EP=1 + RouterReplay gap
-> ★★★★★★★★ EP=1 confirmed: auto_ep_layer.py:563-574 explicit ep_size==1 branch → no AllToAll
-> ★★★★★★★★ RouterReplay gap: TokenChoiceTopKRouter always computes top-k dynamically → no caching
+> 2026-06-18 | Source-level analysis of DeepSpeed AutoEP MoE implementation | TokenChoiceTopKRouter + AutoEPMoELayer + GroupedExperts
+> ★★★★★★★★ Confirmed: EP=1 branch has no AllToAll, dynamic routing (no RouterReplay), freeze router = 0 LOC deterministic
 
 ---
 
-## AutoEPMoELayer — EP=1 Branch (Lines 563-574)
+## Architecture Overview
 
 ```
-★★★★★★★★★ Source: deepspeed/module_inject/auto_ep_layer.py
+★★★★★★★★★ DeepSpeed AutoEP MoE architecture (3 key components):
 
-EP=1 branch (lines 563-574):
+  1. TokenChoiceTopKRouter (ep_router.py, 188 lines)
+     → Dynamic token-choice routing
+     → gate(x) → scores → topk → selected_experts + top_scores
+     → NO RouterReplay → every forward computes routing afresh
+
+  2. AutoEPMoELayer (auto_ep_layer.py, ~600 lines)
+     → Drop-in replacement for HF MoE blocks
+     → EP=1 branch (lines 563-574): no AllToAll, local computation only
+     → EP>1 branch (lines 576-593): AllToAll dispatch/combine
+
+  3. GroupedExperts (ep_experts.py, ~200 lines)
+     → Sequential for-loop OR torch._grouped_mm
+     → SwiGLU expert MLP: w1(w3*x) * w2 → gate * up * down
+```
+
+---
+
+## 1. TokenChoiceTopKRouter — Dynamic Routing Analysis
+
+```
+★★★★★★★★★ TokenChoiceTopKRouter source code analysis (ep_router.py):
+
+  __init__ (lines 49-74):
+    → gate = nn.Linear(dim, num_experts, bias=gate_bias)
+    → key params: num_experts, top_k, score_func, route_norm, route_scale
+    → group-limited routing: num_expert_groups, num_limited_groups
+    → e_score_correction_bias = None (DeepSeek-V3 noaux_tc)
+
+  forward() (lines 134-187):
+    → Step 1: gate projection → scores = self.gate(x)
+    → Step 2: scoring → sigmoid or softmax (float32 for stability)
+    → Step 3: expert_bias addition (if provided)
+    → Step 4: e_score_correction_bias (if set)
+    → Step 5: node-limited routing (if num_expert_groups configured)
+    → Step 6: topk selection → selected_experts_indices
+    → Step 7: score gathering → top_scores = scores.gather(dim=1, index=selected_experts_indices)
+    → Step 8: optional normalization → top_scores / denominator
+    → Step 9: route_scale application
+    → Returns: (top_scores, selected_experts_indices, num_tokens_per_expert)
+
+★★★★★★★★★ KEY FINDINGS — NO RouterReplay:
+
+  → Every forward pass recomputes routing from scratch
+  → torch.topk() is DYNAMIC — results vary per input
+  → NO caching of routing decisions across iterations
+  → This is the1.8-2.3x throughput gap for CUDA graph mode
+
+★★★★★★★★★ freeze_moe_router = 0 LOC immediate solution:
+
+  → self.gate.weight.requires_grad = False
+  → Same input = same gate output = same routing
+  → Deterministic by design — no variability across batches
+  → Works in eager mode (no torch.compile needed)
+  → DOES NOT help CUDA graph (routing still recomputed each iteration)
+```
+
+---
+
+## 2. AutoEPMoELayer — EP=1 Branch Analysis
+
+```
+★★★★★★★★★ AutoEPMoELayer EP=1 branch (lines 563-574):
+
   if self.ep_size == 1:
       # No AllToAll needed - local computation only
       local_counts = count_tokens_per_expert(
-          ro.selected_experts,
-          self.num_local_experts,
-          out_dtype=torch.int32,
-      )
+          ro.selected_experts, self.num_local_experts, out_dtype=torch.int32)
 
-      routed_input_permuted, perm_indices, aligned_counts, n_tokens = permute_by_local_expert(
-          routed_input, local_counts
-      )
+      routed_input_permuted, perm_indices, aligned_counts, n_tokens = \
+          permute_by_local_expert(routed_input, local_counts)
       expert_output = self.experts(routed_input_permuted, aligned_counts)
       expert_output = unpermute_by_local_expert(expert_output, perm_indices, n_tokens)
 
-★★★★★★★★★ EP=1 = NO AllToAll → RTX 4090 optimal:
-  → All experts on single GPU → no communication needed
-  → permute_by_local_expert → local reorder → same GPU
-  → experts → GroupedExperts → for-loop or grouped_mm
-  → unpermute_by_local_expert → local unsort → same GPU
-  → → No NCCL → no latency → no NaN (#8061 avoided)
+★★★★★★★★★ EP=1 KEY INSIGHTS:
 
-★★★★★★★★★ EP>1 branch (lines 575-593):
-  → compute_split_plan → determines input/output splits
-  → _AllToAllV.apply → sends tokens to expert-owning GPUs
-  → permute_by_local_expert → reorder received tokens
-  → experts → compute on received tokens
-  → unpermute_by_local_expert → unsort output
-  → _AllToAllV.apply → send output back to token-owning GPUs
-  → → NOT applicable to single GPU RTX 4090
+  → No AllToAll communication → single GPU → no cross-rank dispatch
+  → count_tokens_per_expert → histogram for local expert assignment
+  → permute_by_local_expert → sort tokens by expert for sequential/grouped computation
+  → self.experts → GroupedExperts → for-loop or grouped_mm computation
+  → unpermute_by_local_expert → restore original token order
+
+★★★★★★★★★ EP>1 branch (lines 576-593):
+
+  → compute_split_plan → AllToAll dispatch plan
+  → _AllToAllV.apply → dispatch tokens to remote experts
+  → permute + expert compute + unpermute → local expert computation
+  → _AllToAllV.apply → combine results from remote experts
+  → NOT viable on single GPU (requires ep_size GPUs)
 ```
 
 ---
 
-## TokenChoiceTopKRouter — Dynamic Routing (No RouterReplay)
+## 3. GroupedExperts — SwiGLU Computation
 
 ```
-★★★★★★★★★ Source: deepspeed/moe/ep_router.py
+★★★★★★★★★ GroupedExperts (ep_experts.py):
 
-Router architecture:
-  1. self.gate(x) → Linear(dim, num_experts) → compute logits per token
-  2. score_func: "softmax" or "sigmoid" → convert logits to scores
-  3. scores_for_choice = scores + expert_bias (optional load-balancing)
-  4. torch.topk(scores_for_choice, k=self.top_k) → select top-k experts
-  5. Route normalization: softmax → divide by sum, or just scale
+  Two computation paths:
 
-★★★★★★★★★ KEY: Router is ALWAYS dynamic:
-  → Every forward pass: gate(x) → compute logits → topk → select experts
-  → NO caching of routing decisions → NO RouterReplay equivalent
-  → Same input = same routing ONLY if gate weights unchanged (freeze router)
-  → Different input = different routing → expected behavior
+  _run_experts_for_loop (lines 31-80):
+    → Sequential for-loop over experts
+    → Each expert: w3 * x → gate, w1 * x → up, SwiGLU = gate * up, w2 * SwiGLU → down
+    → Works on all PyTorch versions → reference implementation
 
-★★★★★★★★★ RouterReplay gap significance:
-  → For GRPO training: NOT blocking → training works in eager mode
-  → For CUDA graph: HIGH significance → CUDA graph requires static routing
-  → freeze_moe_router = 0 LOC immediate solution → same input = same routing
-  → Full RouterReplay (~300 LOC) → needed when CUDA graph support added to AutoEP
-```
+  _run_experts_grouped_mm (lines ~):
+    → torch._grouped_mm → batched grouped matrix multiply
+    → Single kernel for all experts → faster for large expert counts
+    → Requires torch._grouped_mm support (PyTorch 2.5+)
 
----
-
-## GroupedExperts — Expert Computation
-
-```
-★★★★★★★★★ Source: deepspeed/moe/ep_experts.py
-
-Two computation modes:
-
-  1. _run_experts_for_loop (sequential, always available):
-     → Iterate over each expert → SwiGLU MLP → concatenate
-     → Works on all PyTorch versions → fallback path
-     → Slower for many experts → but reliable
-
-  2. torch._grouped_mm (fast path, if available):
-     → Single grouped matmul call → batched expert computation
-     → Requires PyTorch grouped_mm support → may not be available
-     → Fail-fast RuntimeError if unavailable → falls back to for-loop
-
-★★★★★★★★★ RTX 4090 implications:
-  → For-loop path = reliable = always works
-  → LoRA on experts: works in both paths → lora_target_modules: expert_mlp
-  → MoE SwiGLU: gate + down + up weights per expert → our Triton fusion target
+★★★★★★★★★ SwiGLU formula:
+    → gate = silu(w3 * x)  → sigmoid linear unit activation
+    → up = w1 * x           → up projection
+    → SwiGLU = gate * up    → gated linear unit output
+    → down = w2 * SwiGLU    → down projection → final output
 ```
 
 ---
 
-## Token Reordering — Permute/Unpermute Pattern
+## 4. RTX 4090 Implications — RouterReplay Gap
 
 ```
-★★★★★★★★★ Source: deepspeed/moe/ep_repack.py
+★★★★★★★★★ RouterReplay gap analysis for RTX 4090:
 
-Two helper functions:
+  Current state (no RouterReplay):
+    → Every forward: gate(x) → topk → routing recomputed
+    → Dynamic routing = correct behavior but NO caching
+    → freeze_moe_router = 0 LOC → immediate deterministic routing
+    → BUT: CUDA graph requires static routing indices → NOT compatible
 
-  permute_by_local_expert(routed_input, counts):
-    → Reorder tokens so each expert's tokens are contiguous
-    → Returns: permuted_input, perm_indices, aligned_counts, n_tokens
-    → Essential for grouped computation → experts need contiguous input
+  RouterReplay needed for:
+    → CUDA graph mode → static routing → replay cached decisions
+    → ~1.8-2.3x throughput improvement (from Megatron RouterReplay benchmarks)
+    → 3 modes: RECORD → REPLAY_FORWARD → REPLAY_BACKWARD
 
-  unpermute_by_local_expert(expert_output, perm_indices, n_tokens):
-    → Undo the permutation → restore original token order
-    → Returns: output in original token order
-    → Combine with top_scores → weighted sum of expert outputs
+  RouterReplay-equivalent design for DeepSpeed (~200-300 LOC):
+    → RECORD mode: cache routing decisions per layer during first forward
+    → REPLAY_FORWARD: reuse cached routing during subsequent forwards
+    → REPLAY_BACKWARD: reuse cached routing during backward pass
+    → Implementation: hook into TokenChoiceTopKRouter.forward()
+    → Cache: selected_experts_indices + top_scores per layer per iteration
 
-★★★★★★★★★ EP=1 optimization:
-  → permute/unpermute are local GPU operations → no inter-GPU communication
-  → On RTX 4090: same GPU → fast → no bottleneck
-  → LoRA-compatible: LoRA applied after permute → per-expert LoRA
-```
+★★★★★★★★★ RTX 4090 action items:
 
----
+  Immediate (0 LOC):
+    → freeze_moe_router = True → deterministic routing → eager mode OK
 
-## Combine Mechanism — Expert Output Merging
-
-```
-★★★★★★★★★ Source: deepspeed/module_inject/auto_ep_layer.py:594-601
-
-combine_from_routed:
-  → Merge expert outputs using routing scores as weights
-  → top_scores → softmax normalization → multiply each expert output
-  → Result: weighted sum of top-k expert outputs per token
-
-★★★★★★★★★ RTX 4090 implications:
-  → combine = local operation → no communication → fast
-  → Deterministic IF routing is deterministic (freeze router)
-  → → combine weights = top_scores → same router = same weights = deterministic
+  Short-term (when CUDA graph needed, ~200-300 LOC):
+    → Implement RouterReplay-equivalent in DeepSpeed AutoEP
+    → Hook into AutoEPMoELayer.forward() → cache routing
+    → Enable CUDA graph capture with static routing indices
+    → Expected throughput: 1.8-2.3x improvement
 ```
 
 ---
 
-## Complete AutoEP Forward Flow on RTX 4090 (EP=1)
+## 5. Source File Reference
 
 ```
-★★★★★★★★★ 10-step forward flow on single GPU:
+★★★★★★★★★ Key source files in _temp_deepspeed/:
 
-  1. x → gate(x) → compute logits for each token
-  2. logits → score_func (softmax/sigmoid) → routing scores
-  3. scores → torch.topk → select top_k experts per token
-  4. scores → softmax normalization → combine weights
-  5. x[token_indices_sorted] → reorder by expert assignment
-  6. permute_by_local_expert → contiguous per-expert groups
-  7. experts(for_loop or grouped_mm) → compute expert outputs
-  8. unpermute_by_local_expert → restore original order
-  9. combine_from_routed → weighted sum using routing scores
-  10. output → next layer
+  deepspeed/moe/ep_router.py (188 lines)
+    → TokenChoiceTopKRouter class
+    → forward() method → dynamic routing computation
 
-★★★★★★★★★ ALL 10 steps on single GPU:
-  → No AllToAll → no NCCL → no communication → fast
-  → freeze router → step 1-4 deterministic → entire pipeline deterministic
-  → LoRA on attention + expert_mlp → trainable params = 0.2% → ~3.8GB optimizer
+  deepspeed/module_inject/auto_ep_layer.py (~600 lines)
+    → AutoEPMoELayer class
+    → EP=1 branch (lines 563-574) → no AllToAll
+    → EP>1 branch (lines 576-593) → AllToAll dispatch/combine
+
+  deepspeed/moe/ep_experts.py (~200 lines)
+    → GroupedExperts class
+    → _run_experts_for_loop → sequential computation
+    → _run_experts_grouped_mm → batched grouped computation
+
+  deepspeed/moe/ep_count.py
+    → count_tokens_per_expert → histogram computation
+
+  deepspeed/moe/ep_kernels.py
+    → TokenReorderer → token reorder/unreorder operations
 ```
 
 ---
 
 ## Key Findings Summary
 
-★★★★★★★★★ EP=1 explicit branch (auto_ep_layer.py:563-574) → no AllToAll → RTX 4090 optimal
-★★★★★★★★★ TokenChoiceTopKRouter dynamic → no RouterReplay → freeze router = 0 LOC solution
-★★★★★★★★★ GroupedExperts: for-loop (always) + grouped_mm (fast path, may not be available)
-★★★★★★★★★ permute/unpermute pattern → local reorder → fast on single GPU
-★★★★★★★★★ combine_from_routed → local weighted sum → deterministic if routing deterministic
-★★★★★★★★★ 10-step forward flow ALL on single GPU → no inter-GPU communication needed
+★★★★★★★★★ TokenChoiceTopKRouter = dynamic routing → no caching → no RouterReplay → every forward recomputes
+★★★★★★★★★ EP=1 branch (lines 563-574) confirmed → no AllToAll → single GPU viable
+★★★★★★★★★ freeze_moe_router = 0 LOC → same input = same routing → deterministic by design
+★★★★★★★★★ RouterReplay gap: CUDA graph needs static routing → 1.8-2.3x throughput missed
+★★★★★★★★★ RouterReplay-equivalent: ~200-300 LOC → hook into forward() → cache routing decisions
+★★★★★★★★★ GroupedExperts: for-loop OR grouped_mm → SwiGLU computation path
 
 ---
 
 ## References
 
 - RouterReplay design: notebook/projects/deepspeed-router-replay-equivalent-design.md
-- AutoEP analysis: notebook/fundamentals/deepspeed-autoep-moe-practical.md
+- AutoEP config: notebook/projects/deepspeed-autoep-moe-reading.md
 - ZeRO safety: tools/deepspeed_zero_safety_checker.py
-- Config generator: tools/deepspeed_config_generator.py
-- GRPO config reference: tools/rtx4090_grpo_config_reference.py
+- MoE config generator: tools/deepspeed_config_generator.py
