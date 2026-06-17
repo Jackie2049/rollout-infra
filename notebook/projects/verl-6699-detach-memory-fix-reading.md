@@ -158,6 +158,38 @@ With #6699 fix:
   → FSDP path (most common for RTX 4090) → FIXED → safe
   → Automodel/Megatron/TorchTitan paths → NOT fixed → same leak risk
   → ★★★★★★★★ For RTX 4090 GRPO: ALWAYS use FSDP path → other paths will OOM with LoRA
+
+★★★★★★★★★ Fix locations for unfixed backends (verified from source):
+  → AutomodelEngine: automodel/transformer_impl.py → between lines 705 and 707 (after metrics={})
+  → MegatronEngine: megatron/transformer_impl.py → between lines 1007 and 1009 in postprocess_micro_batch_func
+    ★★★★★★★★ IMPORTANT: MUST detach AFTER dynamic_cp_merge_output block (lines 998-1007)!
+    Detaching BEFORE would break CP merge → merge operates on tensors with grad_fn
+  → TorchTitanEngine: torchtitan/transformer_impl.py → between lines 727 and 729 (after metrics={})
+  → ★★★★★★★★ Same 11-line pattern for all 3 → but Megatron has CP merge ordering nuance
+```
+
+---
+
+## 6. OSS Contribution Opportunity
+
+```
+★★★★★★★★★ verl unfixed backends = HIGH quality OSS contribution:
+
+Why it's excellent:
+  1. Proven fix pattern (#6699 validated end-to-end, 4x memory reduction)
+  2. No existing PRs for the other 3 backends → no duplicate risk
+  3. Behavior-neutral → detached tensors only for metrics → no functional change
+  4. Low code volume → 3 x 11 lines = 33 lines (one small nuance for Megatron)
+  5. High impact → same OOM root cause → LoRA GRPO users will hit same leak
+
+★★★★★★★★★ Recommendation: single PR covering all 3 backends:
+  → Title: [engine] fix: detach model_output to stop per-micro-batch graph retention
+  → Covers automodel + megatron + torchtitan backends
+  → ★★★★★★★★ Must note: Megatron CP merge ordering → detach AFTER merge, not before
+
+★★★★★★★★★ Test strategy:
+  → Adapt existing test_engine_forward_step_detach_on_cpu.py (114 lines from #6699)
+  → Or create parametrized test covering all 4 backends
 ```
 
 ---
