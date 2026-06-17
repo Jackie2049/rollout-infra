@@ -182,7 +182,7 @@ MEMORY_ESTIMATES = {
 
 def estimate_memory(model_name, framework_key):
     """Estimate peak memory for a model + framework combination."""
-    if model_name not in MEMORY_ESTIMATES:
+    if model_name in MEMORY_ESTIMATES:
         m = MEMORY_ESTIMATES[model_name]
     else:
         return None
@@ -254,6 +254,11 @@ VALIDATION_RULES = {
     "moe_ep_size_gt1": {
         "check": lambda c: c.get("ep_size") and c.get("ep_size") > 1,
         "message": "ep_size>1 on single GPU → requires AllToAll → NOT viable → MUST ep_size=1",
+        "severity": "CRITICAL",
+    },
+    "muon_cpu_offload_blocked": {
+        "check": lambda c: c.get("optimizer") == "muon" and c.get("zero_stage") == 2,
+        "message": "Muon+ZeRO-2 CPU offload BLOCKED (#7939 closed without merge) → MUST use cpu_adam instead",
         "severity": "CRITICAL",
     },
     "cppo_without_bypass": {
