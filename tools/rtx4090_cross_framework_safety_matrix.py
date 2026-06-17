@@ -526,7 +526,7 @@ def print_summary():
     print("★★★★★★★★★ Recommended immediate actions:")
     print("  1. DeepSpeed: overlap_comm=False + gradient_clipping=1.0")
     print("  2. vLLM: enforce_eager=True (or Inductor Fusion Guard when merged)")
-    print("  3. verl: bypass_mode=True + detach_metrics=True")
+    print("  3. verl: bypass_mode=True + detach_metrics=True + lora_rank<=32!")
     print()
     print("★★★★★★★★★ GPU needed for:")
     print("  1. BudgetRefiner profile_table.csv (P10 UNIQUE)")
