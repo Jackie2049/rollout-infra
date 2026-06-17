@@ -251,6 +251,17 @@ MATRIX = {
                 "title": "Separate async trainer — colocated group never switches",
                 "fix": "MERGED June 17 → enables separate rollout+training memory optimization",
             },
+            {
+                "id": "#6782",
+                "title": "LoRA rank>32 breaks EOS in vLLM rollout — MUST rank<=32!",
+                "fix": "CRITICAL → lora_rank=64/alpha=128 never emits EOS → MUST lora_rank=32/alpha=64",
+                "severity": "CRITICAL",
+            },
+            {
+                "id": "#6512",
+                "title": "Per-unit LoRA summon — peak memory bounded by largest FSDP unit",
+                "fix": "OPEN → reduces peak LoRA sync memory → RTX 4090 benefit",
+            },
         ],
     },
     "megatron": {
@@ -424,6 +435,11 @@ MATRIX = {
                 "id": "#187435",
                 "title": "no_fuse_region per-op fusion barrier — complementary to P9",
                 "fix": "804 LOC per-op barrier + 5 LOC P9 global = complete solution",
+            },
+            {
+                "id": "#184119",
+                "title": "SM89 fp8→bf16 prologue fusion guard → VALIDATES P9 thesis!",
+                "fix": "Blocks fp8-to-bf16 fusion into mm template on pre-sm90 → same Inductor SM89 class",
             },
             {
                 "id": "Non-TMA",
