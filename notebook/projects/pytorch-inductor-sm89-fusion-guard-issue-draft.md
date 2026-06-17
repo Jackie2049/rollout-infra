@@ -64,6 +64,16 @@ When Inductor's scheduler fuses a reduction (`mean`) vertically with pointwise o
 
 The unconditional `True` at Layer 2 means ANY vertical reduction fusion passes, regardless of SM capability or batch invariance implications.
 
+### Additional Evidence (June 2026 Update)
+
+5. **PyTorch #187435**: `no_fuse_region` per-op fusion barrier — `mark_no_fuse_region(graph, [ops])` → `annotations["no_fuse_region"]` → scheduler requires exact region-set equality for fusion. Complementary fine-grained mechanism to P9's global approach. P9 covers ALL ops universally; #187435 gives per-op control. Both needed eventually, but P9 first = simplest, fastest path.
+
+6. **verl #6572** (OPEN, June 2026): 5-layer full determinism for vLLM rollout — PRODUCTION VALIDATES VLLM_BATCH_INVARIANT=1 as the mechanism for batch-invariant inference. Key finding: on SM89, vLLM's batch_invariant.py does NOT override RMSNorm at aten level (only SM80 matmul Triton overrides). verl's determinism layer REQUIRES a working batch-invariant backend → P9 fills the SM89 gap that vLLM leaves.
+
+7. **vLLM batch_invariant.py source analysis** (984 lines): SM89 only gets CUBLASLt workspace config for matmuls — no Triton overrides. RMSNorm `_rms_norm_kernel` (lines 775-881) uses `tl.constexpr` BLOCK_SIZE but is NOT registered as aten override on SM89. This means vLLM's batch_invariant on RTX 4090 still has Inductor's RMSNorm fusion problem → P9 is REQUIRED for full determinism.
+
+8. **SGLang #24459** (MERGED May 6): Added `aten::rms_norm` + `aten::mm.dtype` overrides → KERNEL-level now has MORE overrides than originally counted (7 → 9+). This STRENGTHENS the KERNEL-level position and proves that aten overrides work — P9's guard makes these overrides more effective by preventing Inductor from bypassing them.
+
 ### Evidence
 
 1. **vLLM #39096**: Multiple reports of batch-dependent results on SM89/SM86 with `torch.compile`
@@ -125,6 +135,10 @@ def can_fuse_vertical(scheduler, node1, node2, shared_data_score) -> bool:
 - vLLM #39096 — Batch invariance bug on SM89 (this issue addresses root cause)
 - PyTorch #185814 — XBLOCK derivation for RMSNorm backward (complementary)
 - PyTorch #187275 — Combo kernel crash (same root cause class)
+- PyTorch #187435 — `no_fuse_region` per-op fusion barrier (complementary mechanism)
+- verl #6572 — 5-layer full determinism validates VLLM_BATCH_INVARIANT=1 production use
+- SGLang #24459 — aten::rms_norm + mm.dtype override strengthens KERNEL-level
+- vLLM batch_invariant.py — SM89 RMSNorm gap (not registered as aten override)
 
 ### Labels
 
@@ -136,6 +150,23 @@ def can_fuse_vertical(scheduler, node1, node2, shared_data_score) -> bool:
 - [ ] Include reproducible example that works on SM89 GPU
 - [ ] Wait for PyTorch team feedback before submitting PR
 - [ ] Once feedback positive → submit PR with 5-line guard
+
+### Integration Path with Complementary Mechanisms
+
+**P9 is the simplest first step, but two complementary mechanisms strengthen the long-term solution:**
+
+1. **P9 (this issue) — GLOBAL SM<90 policy**: 5 lines, blocks ALL reduction fusions on SM<90 universally. Zero config, zero per-op maintenance. Works immediately with existing vLLM/verl/VLLM_BATCH_INVARIANT. When SM90+ gets deterministic TMA/WGMMA → guard passes → no regression.
+
+2. **PyTorch #187435 — PER-OP `no_fuse_region`**: Fine-grained control, ops annotated individually. Useful for SM90+ where some fusions ARE safe but others aren't. Also useful for expert users who want to selectively block fusions without disabling all reductions. 804 LOC → larger change → can follow P9 as Phase 2.
+
+3. **verl #6572 — DEPLOYMENT layer**: VLLM_BATCH_INVARIANT=1 + deterministic scheduling + RM max_num_seqs=1 serialization. Validates that batch-invariant inference IS production-viable for GRPO. On SM89, requires P9 (or vLLM fixing their RMSNorm gap) to achieve full determinism.
+
+**Complete SM89 deterministic GRPO stack** (all 5 components needed):
+- P9 Inductor Fusion Guard (5 LOC) → prevents reduction fusions
+- VLLM_BATCH_INVARIANT=1 (env var) → enables vLLM aten overrides
+- verl #6572 5-layer determinism → production deployment
+- SGLang KERNEL-level overrides → gold standard baseline
+- Triton constexpr BLOCK_SIZE → deterministic accumulation order
 
 ## 参考
 

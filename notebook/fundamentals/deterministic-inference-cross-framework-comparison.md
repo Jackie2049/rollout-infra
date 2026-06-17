@@ -1,11 +1,12 @@
 # Deterministic Inference Cross-Framework Comparison — SM89 Batch Invariance
 
 > 2026-06-18 | Cross-framework analysis | How each framework achieves batch-invariant inference on SM<90 GPUs
-> ★★★★★★★★ 4 implementations now: SGLang (7 overrides tl.constexpr) + vLLM (5+ overrides tl.constexpr) + vLLM-Ascend (AscendC/Triton dual-tier) + MindIE Turbo (compose-level)
+> ★★★★★★★★ 5 implementations now: SGLang (9+ overrides tl.constexpr) + vLLM (984-line batch_invariant.py SM89 GAPS) + vLLM-Ascend (AscendC/Triton dual-tier) + MindIE Turbo (compose-level) + verl #6572 (5-layer deployment)
 > ★★★★★★★★ ROOT CAUSE: Triton CachingAutotuner XBLOCK varies per batch size → non-associative FP addition
 > ★★★★★★★★ Triton tl.constexpr BLOCK_SIZE = gold standard → our Fusion Guard + Triton swiglu kernel both use this
-> ★★★★★★★★ vLLM MAIN already has batch_invariant.py (984 lines)! — Triton overrides for matmul/bmm/softmax/mean/rms_norm
-> ★★★★★★★★ vLLM-Ascend #10034: batch_invariant_ops for RL — SAME torch.library.Library pattern as SGLang
+> ★★★★★★★★ vLLM MAIN has batch_invariant.py (984 lines)! — BUT SM89 GAP: RMSNorm NOT aten override, matmul only CUBLASLt workspace
+> ★★★★★★★★ vLLM-Ascend #10034: batch_invariant_ops for RL — SAME torch.library.Library pattern as SGLang — add_rms_norm SPLIT into add+rms_norm!
+> ★★★★★★★★ verl #6572: 5-layer deployment validates VLLM_BATCH_INVARIANT=1 production use → BUT SM89 requires P9 for full determinism
 
 ---
 
@@ -39,19 +40,24 @@ Triton CachingAutotuner selects different XBLOCK sizes for different input shape
 ```
 ★★★★★★★★★ SGLang achieves batch invariance at the KERNEL level:
 
-7 aten overrides with tl.constexpr BLOCK_SIZE:
-  1. rms_norm: BLOCK_SIZE = tl.constexpr → no autotuning → deterministic
-  2. silu: BLOCK_SIZE = tl.constexpr → same
-  3. sigmoid: BLOCK_SIZE = tl.constexpr → same
-  4. mul: BLOCK_SIZE = tl.constexpr → same
-  5. mm (matmul): BLOCK_SIZE = tl.constexpr + dtype specialization → same
-  6. bmm: BLOCK_SIZE = tl.constexpr → same
-  7. (additional override for elementwise ops)
+9+ aten overrides with tl.constexpr BLOCK_SIZE (updated with #24459):
+  1. rms_norm: BLOCK_SIZE = tl.constexpr → aten override registered → #24459 MERGED May 6
+  2. mm: BLOCK_SIZE = tl.constexpr + dtype specialization → #24459 added mm.dtype
+  3. addmm: BLOCK_SIZE = tl.constexpr → matmul+bias fused override
+  4. matmul: BLOCK_SIZE = tl.constexpr → general matrix multiply override
+  5. linear: BLOCK_SIZE = tl.constexpr → nn.functional.linear override
+  6. _log_softmax: BLOCK_SIZE = tl.constexpr → softmax with log
+  7. mean.dim: BLOCK_SIZE = tl.constexpr → reduction operation override
+  8. bmm: BLOCK_SIZE = tl.constexpr → batched matmul override
+  9. silu: BLOCK_SIZE = tl.constexpr → activation override
+  10. sigmoid: BLOCK_SIZE = tl.constexpr → activation override
+  11. mul: BLOCK_SIZE = tl.constexpr → elementwise override
 
-★★★★★★★★★ 3 NEW overrides added beyond original 4:
-  → rms_norm (was relying on torch.compile → now explicit Triton override)
-  → mm with dtype specialization (float16/bfloat16 separate constexpr paths)
-  → bmm (batched matmul → constexpr block sizes)
+★★★★★★★★★ #24459 (MERGED May 6) strengthened KERNEL-level:
+  → Added aten::rms_norm override → was relying on torch.compile → now explicit Triton
+  → Added aten::mm.dtype specialization → separate bf16/fp16 constexpr paths
+  → NOW 9+ overrides → MORE than originally counted (7)
+  → ★★★★★★★★ This PROVES aten overrides work → P9 guard makes them MORE effective
 
 ★★★★★★★★★ murmur_hash32 Gumbel-max float64 sampling:
   → Position + seed + vocab hash → murmur_hash32 Triton kernel → Gumbel-max categorical
@@ -70,31 +76,44 @@ Triton CachingAutotuner selects different XBLOCK sizes for different input shape
   → Can be combined with CUDA graph → constexpr = static → graph-friendly
 ```
 
-### vLLM — COMPILE-Level (★★★★★★★★★ AFFECTED BY ROOT CAUSE)
+### vLLM — COMPILE-Level (★★★★★★★★★ SM89 GAPS CONFIRMED)
 
 ```
-★★★★★★★★★ vLLM relies on torch.compile → Inductor → subject to batch invariance bug:
+★★★★★★★★★ vLLM batch_invariant.py (984 lines) — SM89 has CRITICAL GAPS:
 
-Current status on SM89:
-  → torch.compile(vllm_model) → Inductor fuses RMSNorm → batch-dependent
-  → vLLM's torch.mean override → WORKS when reduction stays as separate kernel
-  → But Inductor FUSES reduction+pointwise → override bypassed → fails!
+SM89 overrides (source-verified, lines 897-951):
+  → _log_softmax: Triton override → ALL CUDA platforms ✅
+  → softmax/_softmax: Triton override → ALL CUDA platforms ✅
+  → mean.dim: Triton override → ALL CUDA platforms ✅
+  → bmm: Triton override → ALL CUDA platforms ✅
+  → mm/addmm/matmul/linear: CUBLASLt workspace config ONLY → SM89 ❌
+    → SM80 gets 4 Triton matmul overrides with constexpr BLOCK_SIZE
+    → SM89/else gets ONLY CUBLASLt workspace config → NO Triton override
+  → RMSNorm: _rms_norm_kernel defined (lines 775-881) with tl.constexpr BUT NOT registered as aten override ❌
+
+★★★★★★★★★ SM89 gap analysis:
+  → RMSNorm: kernel EXISTS but NOT aten override → Inductor can STILL fuse RMSNorm reduction+pointwise
+  → matmul: CUBLASLt workspace config doesn't prevent batch-dependent results (workspace size varies)
+  → silu/sigmoid/mul: NOT overridden on ANY platform → can be fused by Inductor
+  → ★★★★★★★★ On SM89, vLLM batch_invariant leaves THE SAME gaps that P9 fills!
 
 ★★★★★★★★★ vLLM's attempts to fix:
   → enforce_eager=True → disables torch.compile → slow but correct
   → MRv2 (Model Runner v2) → preserves determinism → safe for verl
   → vLLM #39096 → open bug → community tracking
-  → vLLM #44879 → Inductor fix attempt → Tier 1 comment ready
+  → VLLM_BATCH_INVARIANT=1 → env var → enables existing overrides → production validated by verl #6572
+  → ★★★★★★★★ BUT: VLLM_BATCH_INVARIANT=1 on SM89 STILL has RMSNorm gap → P9 REQUIRED
 
-★★★★★★★★★ Our proposed solution for vLLM:
-  → Inductor Fusion Guard P9 → blocks bad fusions on SM<90 → separate kernels → correct
-  → Triton dequant_swiglu_quant P6 → provides GOOD fused path → faster than unfused
-  → Together: Fusion Guard blocks bad + Triton provides good = complete SM89 solution
+★★★★★★★★★ Our proposed solution for vLLM SM89:
+  → P9 Inductor Fusion Guard → blocks ALL reduction fusions on SM<90 → fills RMSNorm gap
+  → P6 Triton dequant_swiglu_quant → provides GOOD fused path → faster than unfused
+  → verl #6572 → 5-layer deployment → VLLM_BATCH_INVARIANT=1 production
+  → Together: P9 + VLLM_BATCH_INVARIANT + #6572 = complete SM89 deterministic stack
 
 ★★★★★★★★★ Why COMPILE-level is weaker than KERNEL-level:
   → Depends on Inductor scheduler decisions → may change across versions
   → torch.compile may fuse differently for different model sizes → model-dependent
-  → Cannot guarantee batch invariance across all compilation configurations
+  → vLLM SM89: CUBLASLt workspace ≠ Triton constexpr → gaps remain
   → BUT: our Fusion Guard makes COMPILE-level deterministic → same outcome as KERNEL-level
 ```
 
@@ -138,11 +157,25 @@ RouterReplay (#4168):
   → But: QB routing still computes routing dynamically → needs RouterReplay for CUDA graph
 ```
 
-### verl — COMPILE-Level (★★★★★★★★★ SAME AS vLLM + HYBRID mitigates)
+### verl — COMPILE-Level + 5-Layer Deployment (★★★★★★★★★ #6572 VALIDATES VLLM_BATCH_INVARIANT)
 
 ```
-★★★★★★★★★ verl inference = vLLM backend → inherits vLLM's determinism issues:
+★★★★★★★★★ verl #6572 (OPEN, June 2026): 5-layer full determinism for vLLM rollout
 
+5-layer architecture:
+  Layer 1: PyTorch enable_full_determinism → torch.use_deterministic_algorithms(True)
+  Layer 2: Environment propagation → PYTHONHASHSEED, VERL_FULL_DETERMINISM, VLLM_BATCH_INVARIANT
+  Layer 3: VLLM_BATCH_INVARIANT=1 + SamplingParams.seed → production mechanism
+  Layer 4: Priority scheduling + deterministic routing → consistent request ordering
+  Layer 5: RM max_num_seqs=1 serialization → reward model deterministic inference
+
+★★★★★★★★★ #6572 PRODUCTION VALIDATES VLLM_BATCH_INVARIANT=1:
+  → verl uses VLLM_BATCH_INVARIANT=1 as the production mechanism for deterministic inference
+  → This validates our analysis: vLLM batch_invariant.py IS the right mechanism
+  → BUT: on SM89, VLLM_BATCH_INVARIANT still has RMSNorm gap → needs P9 for full determinism
+  → ★★★★★★★★ #6572 + P9 = complete SM89 deterministic GRPO stack!
+
+★★★★★★★★★ verl inference = vLLM backend → inherits vLLM's determinism issues:
   → verl HYBRID mode → vLLM rollout in same process → same torch.compile issues
   → verl rollout engine → vLLM ServerAdapter → enforce_eager or torch.compile
 
@@ -208,14 +241,19 @@ RouterReplay (#4168):
 
 | Layer | Mechanism | Frameworks | Guarantee | SM89 Viable? |
 |-------|-----------|------------|-----------|---------------|
-| KERNEL-level | Triton aten overrides + tl.constexpr | SGLang | ★★★★★★★★ STRONGEST — bypasses Inductor entirely | Yes! — constexpr = deterministic by design |
-| COMPILE-level | Inductor Fusion Guard (our P9) | vLLM + PyTorch | ★★★★★★★★ STRONG — blocks bad fusions on SM<90 | Yes! — separate kernels = deterministic |
+| KERNEL-level | Triton aten overrides + tl.constexpr | SGLang (9+ overrides) | ★★★★★★★★ STRONGEST — bypasses Inductor entirely | Yes! — constexpr = deterministic by design |
+| KERNEL-level | AscendC/Triton dual-tier overrides | vLLM-Ascend (batch_invariant_ops) | ★★★★★★★★ STRONGEST — same pattern | Yes! — Ascend hardware deterministic |
+| COMPILE-level | Inductor Fusion Guard (P9) + vLLM batch_invariant.py | vLLM + PyTorch + verl #6572 | ★★★★★★★★ STRONG — blocks bad fusions on SM<90 | Yes! — with P9 fills SM89 gaps |
+| COMPILE-level | VLLM_BATCH_INVARIANT=1 (existing overrides) | vLLM + verl | ★★★★★★★ PARTIAL — SM89 gaps remain | Partial — RMSNorm gap unfilled on SM89 |
 | NONE | No mechanism → raw torch.compile | DeepSpeed, Megatron, rLLM | ★★★ WEAK — subject to batch invariance bug | Only with enforce_eager=True |
 
-★★★★★★★★★ Our contribution strategy covers ALL 3 layers:
-  → P9 Fusion Guard → strengthens COMPILE-level → vLLM + PyTorch
-  → P6 Triton swiglu kernel → provides GOOD fused KERNEL-level path → vLLM + SGLang
-  → Together: block bad COMPILE-level fusions + provide good KERNEL-level alternatives
+★★★★★★★★★ P9 + #187435 + #6572 integration path (3 complementary mechanisms):
+  → P9 (5 LOC): GLOBAL SM<90 policy → blocks ALL reduction fusions → simplest, fastest
+  → #187435 (804 LOC): PER-OP no_fuse_region → fine-grained control → useful on SM90+
+  → #6572 (deployment): VLLM_BATCH_INVARIANT=1 production → validates the mechanism
+  → Phase 1: P9 first → simplest → immediate SM89 fix → works with existing vLLM/verl
+  → Phase 2: #187435 → per-op refinement → useful for SM90+ edge cases
+  → Phase 3: #6572 deployment → production stack → GRPO determinism complete
 
 ★★★★★★★★★ Triton tl.constexpr = the KEY insight:
   → SGLang discovered: constexpr BLOCK_SIZE → batch-invariant → no autotuning
@@ -231,37 +269,47 @@ RouterReplay (#4168):
 ```
 ★★★★★★★★★ GRPO determinism requirements per framework:
 
-| Framework | Rollout Backend | Determinism Level | GRPO Viable on SM89? |
-|-----------|----------------|-------------------|---------------------|
-| SGLang | SGLang Triton | ★★★★★★★★ KERNEL | ★★★★★★★★ YES — gold standard |
-| verl HYBRID | vLLM (same process) | ★★★★★★★★ COMPILE (with guard) | ★★★★★★★★ YES — with Fusion Guard or enforce_eager |
-| rLLM Tinker | vLLM/SGLang | ★★★★★★★★ KERNEL or COMPILE | ★★★★★★★★ YES — inherits backend determinism |
-| DeepSpeed ZeRO-2 | torch (eager mode) | ★★★ NONE (eager=correct) | ★★★★★ YES — enforce_eager → slow but correct |
-| Megatron | TE + torch.compile | ★★★ COMPILE (affected) | ★★★★ YES — with Fusion Guard |
+| Framework | Rollout Backend | Determinism Level | SM89 Gap? | GRPO Viable on SM89? |
+|-----------|----------------|-------------------|-----------|---------------------|
+| SGLang | SGLang Triton | ★★★★★★★★ KERNEL (9+ overrides) | No gap | ★★★★★★★★ YES — gold standard |
+| verl HYBRID + #6572 | vLLM (same process) | ★★★★★★★★ COMPILE+DEPLOY (5-layer) | RMSNorm gap | ★★★★★★★★ YES — with P9 fills gap |
+| vLLM + VLLM_BATCH_INVARIANT | vLLM Triton overrides | ★★★★★★★ PARTIAL | RMSNorm + matmul | ★★★★★★★★ YES — with P9 fills gaps |
+| rLLM Tinker | vLLM/SGLang | ★★★★★★★★ KERNEL or COMPILE | Depends on backend | ★★★★★★★★ YES — inherits backend |
+| DeepSpeed ZeRO-2 | torch (eager mode) | ★★★ NONE (eager=correct) | No override needed | ★★★★★ YES — enforce_eager → slow |
+| Megatron | TE + torch.compile | ★★★ COMPILE (affected) | Same as vLLM | ★★★★ YES — with Fusion Guard |
+| PyTorch (raw) | torch.compile | ★★★ NONE | RMSNorm fusion | ★★★ Only with enforce_eager or P9 |
 
-★★★★★★★★★ Key insight: enforce_eager = ALWAYS correct but ALWAYS slow
-  → Fusion Guard + Triton swiglu = CORRECT and FAST → both needed!
+★★★★★★★★★ Complete SM89 deterministic GRPO stack (5 components):
+  1. P9 Inductor Fusion Guard (5 LOC) → prevents reduction fusions
+  2. VLLM_BATCH_INVARIANT=1 (env var) → enables vLLM aten overrides
+  3. verl #6572 5-layer determinism → production deployment
+  4. SGLang KERNEL-level overrides → gold standard baseline
+  5. Triton constexpr BLOCK_SIZE → deterministic accumulation order
 ```
 
 ---
 
 ## Key Findings Summary
 
-★★★★★★★★★ 3 architectural layers: KERNEL > COMPILE > NONE for SM89 determinism
-★★★★★★★★★ SGLang KERNEL-level = gold standard → tl.constexpr → bypasses Inductor entirely
-★★★★★★★★★ Our P9 Fusion Guard strengthens COMPILE-level → blocks bad fusions → separate kernels → deterministic
-★★★★★★★★★ Our P6 Triton swiglu provides GOOD KERNEL-level fused path → tl.constexpr → deterministic + fast
+★★★★★★★★★ 5 implementations now: SGLang (9+ KERNEL overrides) + vLLM (984-line PARTIAL SM89) + vLLM-Ascend (AscendC/Triton dual-tier) + MindIE Turbo (compose-level) + verl #6572 (5-layer deployment)
+★★★★★★★★★ vLLM SM89 GAPS CONFIRMED: RMSNorm NOT aten override, matmul only CUBLASLt workspace, silu/sigmoid/mul NOT overridden
+★★★★★★★★★ SGLang #24459 STRENGTHENED: rms_norm + mm.dtype overrides → 9+ overrides → MORE than originally counted
+★★★★★★★★★ verl #6572 VALIDATES VLLM_BATCH_INVARIANT=1 production use → BUT SM89 requires P9 for full determinism
+★★★★★★★★★ P9 + #187435 + #6572 = 3 complementary mechanisms → P9 first (5 LOC), #187435 second (804 LOC per-op), #6572 deployment
 ★★★★★★★★★ Triton tl.constexpr = AscendC deterministic tiling → hardware-agnostic determinism principle
 ★★★★★★★★★ GRPO n=8 in same batch → HYBRID on-policy → simplest determinism story for RTX 4090
-★★★★★★★★★ Together: Fusion Guard + Triton swiglu = complete SM89 deterministic inference solution
 
 ---
 
 ## References
 
 - SGLang deterministic: notebook/projects/sglang-deterministic-inference-source-reading.md
+- SGLang #24459: notebook/projects/sglang-latest-developments-2026-06-agent-research.md
+- vLLM batch_invariant SM89 gap: notebook/projects/vllm-batch-invariant-source-reading.md
+- verl #6572 full determinism: notebook/projects/verl-6572-full-determinism-source-reading.md
+- P9 integration path: notebook/projects/p9-fusion-guard-integration-path-synthesis.md
+- P9 issue draft: notebook/projects/pytorch-inductor-sm89-fusion-guard-issue-draft.md
 - Inductor root cause: notebook/fundamentals/pytorch-inductor-sm89-fusion-reading.md
-- Fusion Guard PR: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-draft.md
 - Triton swiglu design: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
 - verl GRPO flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md
 - MindIE ATB compose: notebook/projects/mindie-atb-compose-fusion-deep-reading.md

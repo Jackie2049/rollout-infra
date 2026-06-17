@@ -56,6 +56,8 @@
 ★★★★★★★★★ Framework-specific blockers preventing GRPO on RTX 4090:
 
 rLLM Tinker:
+  → ★★★★★★★★ #605 CRITICAL: GRPO grouping bug → trajectory.uid vs task_ids → group size 1 → GRPO BROKEN!
+  → Fix: 1 line for enable=False → few lines for per_step → MUST fix before training
   → Checkpoint NOT standard PEFT → need export bridge → Tinker→HF format
   → PR #576 MergedSegment OPEN → track for merge → enable backend swap
 
