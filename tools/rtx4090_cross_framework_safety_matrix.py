@@ -52,6 +52,20 @@ MATRIX = {
                 "tool": "deepspeed_zero_safety_checker.py --mode check",
             },
             {
+                "id": "#8072/#8073",
+                "title": "ZeRO-3+PEFT LoRA regression in v0.19.2",
+                "fix": "Use ZeRO-2 (unaffected) or autocast_adapter_dtype=False workaround",
+                "source": "#8066 dtype cast → mixed bf16+fp32 → TypeError in _allgather_params_coalesced",
+                "tool": "deepspeed_zero_safety_checker.py --mode explain --check zero3_peft_regression",
+            },
+            {
+                "id": "#7776",
+                "title": "Muon gradient clipping orthogonalization bug",
+                "fix": "gradient_clipping=0 for Muon groups, or clip AFTER Muon step",
+                "source": "Clip BEFORE Newton-Schulz → near-zero vectors → degenerate",
+                "tool": "deepspeed_zero_safety_checker.py --mode explain --check muon_plus_zero2_blocked",
+            },
+            {
                 "id": "ZeRO-3",
                 "title": "ZeRO-3 meaningless overhead on single GPU",
                 "fix": "Use ZeRO-2 + CPU_Adam + offload_optimizer",
@@ -92,6 +106,16 @@ MATRIX = {
                 "id": "#8064",
                 "title": "AutoEP+AutoTP folding — TP+EP共存",
                 "fix": "Track for future multi-GPU use",
+            },
+            {
+                "id": "#8058",
+                "title": "ZenFlow native CPU optimizer — GPU spike 2944→256 MiB",
+                "fix": "Track for CPU_Adam efficiency improvement on RTX 4090",
+            },
+            {
+                "id": "#7992",
+                "title": "coalesce_grad_reduction — N reduce-scatters → 1 for GRPO",
+                "fix": "Use engine.coalesce_grad_reduction() for multi-loss backward",
             },
         ],
         "experimental": [
@@ -154,6 +178,13 @@ MATRIX = {
                 "fix": "bypass_mode=True in all RTX 4090 configs",
                 "tool": "grpo_troubleshooter_4090.py --mode check",
             },
+            {
+                "id": "#6699",
+                "title": "model_output detach fix — 4x memory reduction (64→16.2 GiB)",
+                "fix": "Use verl >= commit with #6699 (MERGED June 12) — detach tensors before building output dict",
+                "source": "log_probs/entropy STILL ATTACHED to autograd graph → pinned checkpoint frames → OOM at micro-batch #400",
+                "tool": "rtx4090_grpo_config_reference.py --mode validate",
+            },
         ],
         "stability": [
             {
@@ -170,8 +201,13 @@ MATRIX = {
         "config": [
             {
                 "id": "CPPO+bypass",
-                "title": "CPPO (#6731) + bypass_mode = RTX 4090 optimal trust region",
+                "title": "CPPO (#6731) + bypass_mode = RTX 4090 #1 BEST trust region",
                 "fix": "CPPO MUST use bypass_mode (divergence vs rollout mu, not pi_old)",
+            },
+            {
+                "id": "#6717",
+                "title": "TinkerTrainingWorker — split training primitives IN verl",
+                "fix": "optimizer_zero_grad/forward_backward/optimizer_step → no framework switch needed",
             },
             {
                 "id": "#6736",
@@ -187,8 +223,23 @@ MATRIX = {
         "monitor": [
             {
                 "id": "#6738",
-                "title": "SGLang weight sync OOM fix",
-                "fix": "Track for SGLang rollout path",
+                "title": "SGLang weight sync OOM fix — skip redundant clone",
+                "fix": "Track for SGLang rollout path → MoE weight sync on RTX 4090",
+            },
+            {
+                "id": "#6688",
+                "title": "LoRA IPC buffer crash fix — cudaErrorIllegalAddress",
+                "fix": "MERGED June 12 → unmerged LoRA + vLLM + free_cache_engine=True",
+            },
+            {
+                "id": "#6572",
+                "title": "Full determinism vLLM rollout — bitwise-aligned reward curves",
+                "fix": "OPEN → SM89 requires P9 Fusion Guard → track for deployment",
+            },
+            {
+                "id": "#6790",
+                "title": "Separate async trainer — colocated group never switches",
+                "fix": "MERGED June 17 → enables separate rollout+training memory optimization",
             },
         ],
     },
@@ -198,6 +249,12 @@ MATRIX = {
                 "id": "#5203",
                 "title": "Singleton PG crash — dp_cp_params_list=None on single GPU",
                 "fix": "Avoid LayerWise optimizer on single GPU",
+            },
+            {
+                "id": "#5394",
+                "title": "ChainedOptimizer Muon clipping stalls — same pattern as #8068/#7776",
+                "fix": "Skip global norm-clipping for Muon groups → gradient_clipping=0 per-group",
+                "source": "Global grad_norm across all sub-optimizers → Newton-Schulz degenerates on near-zero vectors",
             },
         ],
         "stability": [
@@ -230,16 +287,38 @@ MATRIX = {
                 "title": "SSM dtype configurable (APPROVED) — bf16/fp32 choice",
                 "fix": "Track for hybrid model memory optimization",
             },
+            {
+                "id": "#5391",
+                "title": "Compact LayerWise DDP — removes dp padding → RTX 4090 memory efficiency",
+                "fix": "Track for Muon+ZeRO-2 memory optimization",
+            },
+            {
+                "id": "#5386/#5384",
+                "title": "DSA Indexer Replay for RL — extends RouterReplay to sparse attention",
+                "fix": "3404 LOC → DeepSeek V4 stability → same singleton-registry pattern",
+            },
+            {
+                "id": "#5219",
+                "title": "Single-GPU Muon crash fix — close to merge",
+                "fix": "None guard for dp_cp_params_list → essential for single GPU",
+            },
         ],
     },
     "sglang": {
         "critical": [],
-        "stability": [],
+        "stability": [
+            {
+                "id": "#27097",
+                "title": "Concurrent multi-LoRA diverge under deterministic inference",
+                "fix": "Sequential is stable → concurrency problem → needs watching for GRPO LoRA",
+            },
+        ],
         "config": [
             {
                 "id": "deterministic",
-                "title": "Deterministic inference → batch-invariant by design",
+                "title": "Deterministic inference → batch-invariant by design (9+ aten overrides KERNEL-level)",
                 "fix": "--enable-deterministic-inference, Triton backend recommended SM89",
+                "source": "#24459 MERGED → rms_norm + mm.dtype overrides → 9+ overrides total",
             },
             {
                 "id": "RadixAttention",
@@ -261,7 +340,14 @@ MATRIX = {
         ],
     },
     "rllm": {
-        "critical": [],
+        "critical": [
+            {
+                "id": "#605",
+                "title": "GRPO grouping bug — trajectory.uid vs task_ids → group size 1 → BROKEN",
+                "fix": "1 line fix for enable=False → few lines for per_step → ranking downgraded #1→#3",
+                "source": "batch.non_tensor_batch['uid'] = batch.non_tensor_batch['step_ids'] → wrong grouping",
+            },
+        ],
         "stability": [],
         "config": [
             {
@@ -325,9 +411,19 @@ MATRIX = {
                 "fix": "Strengthens our Inductor Fusion Guard case",
             },
             {
+                "id": "#187435",
+                "title": "no_fuse_region per-op fusion barrier — complementary to P9",
+                "fix": "804 LOC per-op barrier + 5 LOC P9 global = complete solution",
+            },
+            {
                 "id": "Non-TMA",
                 "title": "Non-TMA Triton templates for SM89 — Phase 1 of 2-phase fix",
                 "fix": "Does NOT fix batch invariance root cause directly",
+            },
+            {
+                "id": "v2.12",
+                "title": "max_autotune layout deferral now opt-in — reduces SM89 risk by default",
+                "fix": "P9 still needed for opt-in users → issue draft ready to file",
             },
         ],
     },
