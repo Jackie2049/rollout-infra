@@ -100,6 +100,21 @@ CRITICAL: Run `python3 tools/deepspeed_zero_safety_checker.py --mode check --con
 
 Generated safe configs: configs/lora-grpo_rtx4090.json, configs/moe-autoep_rtx4090.json, configs/opd-distill_rtx4090.json, configs/muon_lora_zero2_rtx4090.json
 
+Config generator tool:
+```
+python3 tools/deepspeed_config_generator.py --scenario lora-grpo --model qwen3-1.7b --dry-run
+python3 tools/deepspeed_config_generator.py --scenario moe-autoep --model qwen3-moe
+python3 tools/deepspeed_config_generator.py --scenario opd-distill --model qwen2.5-0.5b
+python3 tools/deepspeed_config_generator.py --scenario lora-grpo-muon --model qwen3-1.7b
+```
+
+Cross-framework safety matrix:
+```
+python3 tools/rtx4090_cross_framework_safety_matrix.py --mode matrix
+python3 tools/rtx4090_cross_framework_safety_matrix.py --mode framework deepspeed
+python3 tools/rtx4090_cross_framework_safety_matrix.py --mode category critical
+```
+
 ## Files Reference
 
 Key benchmark result files in `results/`:
