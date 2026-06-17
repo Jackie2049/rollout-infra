@@ -560,18 +560,33 @@ def check_config(config: dict) -> list:
         muon_params = config.get("optimizer", {}).get("params", {})
         ns_method = muon_params.get("ns_method", "gram")
         aux_lr = muon_params.get("aux_adam_lr", None)
-        issues.append({
-            "check": "muon_optimizer",
-            "severity": "EXPERIMENTAL",
-            "status": "WARNING",
-            "message": (
-                f"Muon optimizer is EXPERIMENTAL!\n"
-                f"  ns_method={ns_method} {'(recommended)' if ns_method == 'gram' else '(rectangular — 5x more expensive)'}\n"
-                f"  aux_adam_lr={aux_lr} " + ("(set for 1D params)" if aux_lr else "(NOT SET — 1D params unoptimized!)") + "\n"
-                f"  ALWAYS compare convergence with AdamW baseline.\n"
-                f"  Muon+LoRA = natural combo (2D matrices), but results not proven on consumer GPUs."
-            ),
-        })
+        # CRITICAL: Muon CPU offload BLOCKED on single GPU
+        if stage == 2 and offload_device == "cpu":
+            issues.append({
+                "check": "muon_optimizer",
+                "severity": "CRITICAL",
+                "status": "BLOCKED",
+                "message": (
+                    "!!! Muon+ZeRO-2+CPU_offload BLOCKED (#7939 closed without merge)!\n"
+                    "!!! CPU offload NOT available for Muon → NO memory advantage on single GPU\n"
+                    "!!! MUST use cpu_adam (non-Muon) for ZeRO-2 optimizer offload\n"
+                    "!!! Muon optimizer states on GPU → 18Ψ → DOES NOT FIT 24GB!\n"
+                    "!!! cpu_adam optimizer on CPU → 3.8Ψ → FITS 24GB with 7GB margin"
+                ),
+            })
+        else:
+            issues.append({
+                "check": "muon_optimizer",
+                "severity": "EXPERIMENTAL",
+                "status": "WARNING",
+                "message": (
+                    f"Muon optimizer is EXPERIMENTAL!\n"
+                    f"  ns_method={ns_method} {'(recommended)' if ns_method == 'gram' else '(rectangular — 5x more expensive)'}\n"
+                    f"  aux_adam_lr={aux_lr} " + ("(set for 1D params)" if aux_lr else "(NOT SET — 1D params unoptimized!)") + "\n"
+                    f"  ALWAYS compare convergence with AdamW baseline.\n"
+                    f"  Muon+LoRA = natural combo (2D matrices), but results not proven on consumer GPUs."
+                ),
+            })
     else:
         issues.append({
             "check": "muon_optimizer",
