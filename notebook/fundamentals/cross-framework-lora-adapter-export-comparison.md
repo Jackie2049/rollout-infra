@@ -42,14 +42,16 @@ Stage 6: Continuous → re-train LoRA on new data → re-deploy or hot-swap
 ### Megatron-LM
 
 ```
-★★★★★★★★★ Megatron LoRA Export = CRITICAL COVERAGE GAP (#6713):
+★★★★★★★★★ Megatron LoRA Export = CRITICAL COVERAGE GAP (verl #6713):
 
-PR #6713 (DRAFT, 2026-06-12): "Megatron LoRA Adapter Export for Rollout"
-  → Purpose: Export LoRA adapter-only tensors for vLLM rollout engines
+verl PR #6713 (DRAFT, 2026-06-12): "Megatron LoRA Adapter Export for Rollout"
+  → ★★★★★★★★ CRITICAL CORRECTION: This is a **verl** PR, NOT a Megatron-LM PR!
+  → Purpose: Export LoRA adapter-only tensors from verl Megatron backend → vLLM format
   → ★★★★★★★★ Handles MoE LoRA: gather EP-local LoRA → rewrite local→global expert IDs
   → Pack Qwen3-Omni 3D MoE LoRA into vLLM-compatible layout
-  → ★★★★★ Bridges Megatron training → vLLM inference serving!
-  → ★★★★★★★★ But: still DRAFT → not merged → not production-ready!
+  → ★★★★★★★★ 3-repo coordinated: verl #6713 + verl-omni #169 + vllm-omni #4388
+  → ★★★★★★★★ But: still DRAFT → critical review issue (requires_grad non-leaf) → not production-ready!
+  → Detailed reading: notebook/projects/verl-pr6713-megatron-lora-export-reading.md
 
 Megatron-Bridge (NeMo2):
   → LoRA in NeMo2/Megatron-Bridge → separate path from core Megatron
@@ -95,11 +97,19 @@ vLLM LoRA + quantization:
 ### verl
 
 ```
-★★★★ verl LoRA Export:
+★★★★ verl LoRA Export (FSDP backend):
   → verl trains LoRA via GRPO/PPO/CPPO → worker-actor architecture
   → Export: standard PEFT save_pretrained → HF safetensors → portable
   → ★★★★★★★★ verl + rLLM Tinker: LoRA trained in-process → no IPC → simplest path
   → → ★★★★★★★★ Export via PEFT → vLLM serve → end-to-end pipeline = simplest!
+
+★★★★★★★★★ verl LoRA Export (Megatron backend + PR #6713):
+  → ★★★★★★★★ NEW: adapter-only export → EP gather + 3D MoE pack → vLLM format
+  → ★★★★★★★★ CRITICAL: PR #6713 is in verl repo, NOT Megatron-LM repo!
+  → EP=1 (RTX 4090): passthrough → zero overhead → but can't train on Megatron backend (single GPU crash)
+  → Multi-GPU training → export adapter → deploy on RTX 4090 vLLM → serving bridge viable
+  → ★★★★★★★★ But: DRAFT + critical review issue → not production-ready
+  → Detailed reading: notebook/projects/verl-pr6713-megatron-lora-export-reading.md
 
 ★★★★ verl ContinuousToken (#6720/#6721 OPEN):
   → Multi-turn agent RL → LoRA mask=[1,0,1,0,...] → action tokens only
@@ -156,13 +166,13 @@ TinkerBackend:
 
 ## 3. Format Compatibility Matrix
 
-| Train → Serve | DeepSpeed | Megatron Lite | verl/rLLM | Megatron #6713 |
-|---------------|-----------|---------------|-----------|-----------------|
+| Train → Serve | DeepSpeed | Megatron Lite | verl/rLLM | verl #6713 (Megatron backend) |
+|---------------|-----------|---------------|-----------|-------------------------------|
 | **vLLM** | ★★★★★ PEFT→HF→vLLM | ★★★★★ PEFT→HF→vLLM | ★★★★★ PEFT→HF→vLLM | ★★★★★★★★ Direct vLLM format! |
 | **SGLang** | ★★★★★ PEFT→HF→SGLang | ★★★★★ PEFT→HF→SGLang | ★★★★★ PEFT→HF→SGLang | ★★ Unknown |
 | **MindIE** | ★★★★ PEFT→Ascend | ★★ Megatron→Ascend | ★★★★ PEFT→Ascend | ★★ Direct vLLM-Ascend |
 
-★★★★★★★★★ **Key**: All frameworks except Megatron core use standard PEFT/HF safetensors → format portable → vLLM/SGLang directly compatible. Megatron #6713 explicitly targets vLLM format → most ambitious bridge but still DRAFT.
+★★★★★★★★★ **Key**: All frameworks except Megatron core use standard PEFT/HF safetensors → format portable → vLLM/SGLang directly compatible. verl #6713 explicitly targets vLLM format (EP gather + 3D MoE pack) → most ambitious bridge but still DRAFT with critical review issue.
 
 ---
 
@@ -202,7 +212,7 @@ Scenario C: OPD distillation (Qwen2.5-0.5B student)
 ★★★★★★★★★ ALL frameworks (except Megatron core) use standard PEFT/HF safetensors → format portable → vLLM/SGLang directly compatible
 ★★★★★★★★★ rLLM Tinker = SIMPLEST training→serving path → auto-init LoRA → PEFT save → vLLM serve → 3 commands!
 ★★★★★★★★★ vLLM multi-LoRA serving (--enable-lora) = MOST MATURE serving endpoint → hot-swap per request
-★★★★★★★★★ Megatron #6713 (DRAFT) = most ambitious bridge → MoE LoRA → vLLM format → but not yet merged
+★★★★★★★★★ verl #6713 (DRAFT) = most ambitious bridge → verl Megatron backend LoRA → vLLM format → MoE EP gather + 3D pack → but critical review issue + not merged
 ★★★★★★★★★ Megatron crashes on single GPU (#5203) → can't use core Megatron → need DeepSpeed/rLLM instead
 ★★★★★★★★★ DeepSpeed AutoEP LoRA export: standard PEFT but no RouterReplay → MoE deployment gap
 ★★★★★★★★★ merge_and_unload() = zero inference overhead (5.62ms vs 5.71ms → <2% → effectively free)
@@ -218,7 +228,7 @@ Scenario C: OPD distillation (Qwen2.5-0.5B student)
 - Inference serving: notebook/fundamentals/rtx4090-inference-serving-checklist.md
 - rLLM GRPO guide: notebook/projects/rllm-grpo-practical-training-guide.md
 - DeepSpeed config generator: tools/deepspeed_config_generator.py
-- Megatron #6713 tracker: notebook/projects/7-framework-developments-tracker-2026-06-16.md
+- Megatron LoRA export: notebook/projects/verl-pr6713-megatron-lora-export-reading.md
 - Megatron Lite: notebook/projects/megatron-lite-reading.md
 - RouterReplay: notebook/projects/megatron-router-replay-source-reading.md
 - BudgetRefiner synthesis: notebook/projects/watermark-budgetrefiner-complementary-synthesis.md
