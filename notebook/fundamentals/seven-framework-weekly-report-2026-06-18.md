@@ -55,7 +55,7 @@ Key RTX 4090 relevant:
     → Root cause: #8066's dtype cast stopped blanket bf16 → mixed dtypes (bf16 base + fp32 LoRA)
     → ★★★★★★★★ ZeRO-2 UNAFFECTED → RTX 4090 ZeRO-2+LoRA SAFE!
     → Fix: per-param dtype in allgather (2 lines) → workaround: autocast_adapter_dtype=False
-  → #8058 OPEN: ZenFlow native CPU optimizer → reduces GPU memory spike from 2944→256 MiB
+  → #8058 OPEN: ZenFlow native CPU optimizer process (954 additions) → reduces GPU spike 2944→256 MiB → chunked copyback → replaces pickling subprocess
     → ★★★★★★★★ CPU_Adam efficiency improvement → RTX 4090 benefit!
   → AutoEP #7938 MERGED June 11 → config-only MoE → RTX 4090 viable!
 
@@ -113,10 +113,13 @@ Key RTX 4090 relevant:
   → Colocated group never switches to rollouter → pure async pattern
 
 ★★★★★★★★★ verl #6699 MERGED June 12 — Detach model_output/loss metrics (★★★★★★★★★ CRITICAL RTX 4090!):
-  → model_output (log_probs/entropy) was STILL ATTACHED to autograd graph
-  → Pinned activation checkpoint frames per micro-batch → memory leak → 64 GiB OOM at micro-batch #400
-  → Fix: detach tensors before building output dict → STABLE 16.2 GiB throughout
+  → FSDPEngineWithLMHead.forward_step returns model_output (log_probs/entropy) STILL ATTACHED to autograd graph
+  → forward_backward_batch holds per-micro-batch outputs in output_lst → graph pinned per micro-batch
+  → Pinned: activation-checkpoint frame's saved embedding output (requires grad under PEFT enable_input_require_grads)
+  → Verified memory timeline (Qwen3-8B LoRA rank 32): mb#250=24.8→#300=37.9→#350=~50→#400=64 GiB→OOM
+  → After fix: STABLE 16.2 GiB throughout all micro-batches
   → ★★★★★★★★ 4x memory reduction → CRITICAL for RTX 4090 LoRA GRPO!
+  → Regression test: test_engine_forward_step_detach_on_cpu.py → verified red/green
 
 ★★★★★★★★★ verl #6688 MERGED June 12 — Clone LoRA weights out of IPC buffer:
   → Fixed cudaErrorIllegalAddress crash with unmerged LoRA + vLLM + free_cache_engine=True
@@ -293,7 +296,7 @@ Key RTX 4090 relevant:
 ★★★★★★★★★ Megatron #5394: ChainedOptimizer Muon clipping stalls → same pattern as DeepSpeed #8068/#7776
 ★★★★★★★★★ Megatron #5386/#5384: DSA Indexer Replay → extends RouterReplay to sparse attention (3404 LOC!)
 ★★★★★★★★★ DeepSpeed #8072/#8073: ZeRO-3+LoRA regression in v0.19.2 → ZeRO-2 unaffected → 2-line fix pending
-★★★★★★★★★ DeepSpeed #8058: ZenFlow native CPU optimizer → GPU spike 2944→256 MiB → CPU_Adam improvement
+★★★★★★★★★ DeepSpeed #8058: ZenFlow native CPU optimizer (954 additions) → GPU spike 2944→256 MiB → chunked copyback → fused multi-tensor → POSIX semaphore → NUMA-local
 ★★★★★★★★★ PyTorch v2.12: max_autotune layout deferral NOW OPT-IN → reduces SM89 fusion risk by default
 ★★★★★★★★★ PyTorch #181248: B200 Triton async fence → NOT SM89 (Blackwell only) → Triton cherry-pick needed
 
