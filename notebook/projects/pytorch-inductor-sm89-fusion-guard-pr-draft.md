@@ -188,6 +188,38 @@ Before submitting, we need to validate on an actual RTX 4090 (SM89) that:
 - [ ] Draft PyTorch issue to accompany PR → reference vLLM #39096
 - [ ] Get community feedback on approach → PyTorch dev forum
 
+### ★★★★★★★★ v2.12 Status (2026-06-18 Verification)
+
+★★★★★★★★★ v2.12 DOES NOT change our insertion point:
+  → choices.py can_fuse_vertical still returns True unconditionally (line 640-647)
+  → DeviceProperties.create() still in choices.py (line 19)
+  → reduction_split_factor still uses props.major >= 10 precedent (line 482-506)
+  → Our 5-line guard INSERTS at the exact same location → no adaptation needed!
+
+★★★★★★★★★ v2.12 max_autotune EXACERBATES SM89 behavior:
+  → Combo kernels (#177715/#178936/#179317) → more kernels autotuned → more variability
+  → On SM89: more autotuned configs = more XBLOCK variation = MORE batch-dependent!
+  → Our guard protects regardless: ALL reduction fusions blocked on SM<90 → no autotuned reductions
+
+★★★★★★★★★ #187275 confirms same root cause class:
+  → "Fix Combo Kernel Crash with Dynamic Persistent Reduction Dimensions" (opened 2026-06-14)
+  → Same architectural weakness: persistent reduction block sizes not properly handled
+  → Our issue = numerical correctness (different results per batch)
+  → Their issue = crash correctness (hardcoded RBLOCK invalid when rnumel changes)
+  → Both from persistent reduction dimension handling → CONFIRMS diagnosis
+
+★★★★★★★★★ v2.13 RISK (tracked in vLLM #45731):
+  → PyTorch 2.13.0 → Triton 3.7.1 → may change SM89 autotuning behavior
+  → IF Triton 3.7.1 fixes XBLOCK variability → our guard becomes unnecessary
+  → IF Triton 3.7.1 DOES NOT fix → our guard STILL needed
+  → Recommendation: file PyTorch issue NOW regardless → track v2.13 outcome
+
+★★★★★★★★★ Submission readiness update:
+  → Technical readiness: 95% (unchanged)
+  → Submission readiness: 60% → primary blocker = GPU validation (RTX 4090 offline)
+  → Test plan uses MockNode (incorrect) → should use unittest.mock.patch approach
+  → PyTorch issue NOT yet filed (pre-step per approach strategy)
+
 ## 参考
 - Source analysis: notebook/projects/pytorch-inductor-sm89-fusion-guard-pr-approach.md
 - Root cause: notebook/fundamentals/pytorch-inductor-sm89-fusion-reading.md
