@@ -1,9 +1,11 @@
 # Deterministic Inference Cross-Framework Comparison — SM89 Batch Invariance
 
 > 2026-06-18 | Cross-framework analysis | How each framework achieves batch-invariant inference on SM<90 GPUs
-> ★★★★★★★★ 3 architectural layers: KERNEL-level (SGLang) > COMPILE-level (vLLM) > NONE (DeepSpeed/Megatron/verl)
+> ★★★★★★★★ 4 implementations now: SGLang (7 overrides tl.constexpr) + vLLM (5+ overrides tl.constexpr) + vLLM-Ascend (AscendC/Triton dual-tier) + MindIE Turbo (compose-level)
 > ★★★★★★★★ ROOT CAUSE: Triton CachingAutotuner XBLOCK varies per batch size → non-associative FP addition
 > ★★★★★★★★ Triton tl.constexpr BLOCK_SIZE = gold standard → our Fusion Guard + Triton swiglu kernel both use this
+> ★★★★★★★★ vLLM MAIN already has batch_invariant.py (984 lines)! — Triton overrides for matmul/bmm/softmax/mean/rms_norm
+> ★★★★★★★★ vLLM-Ascend #10034: batch_invariant_ops for RL — SAME torch.library.Library pattern as SGLang
 
 ---
 
