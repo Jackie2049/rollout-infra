@@ -228,6 +228,23 @@ CONTRIBUTIONS = [
         gpu_needed=False,
         unique_contribution=True,
     ),
+    Contribution(
+        id="C10",
+        title="Comment on vLLM #45683 — Deterministic MoE combine for GRPO stability",
+        target="vllm-project/vllm",
+        tier=Tier.TIER1_COMMENT,
+        priority=7,
+        status=Status.DRAFT_READY,
+        issue_ref="vllm-project/vllm #45683",
+        description="CRITICAL for GRPO MoE: cross-rank summation order in MoE combine "
+                    "was NOT deterministic → breaks reward stability. This PR fixes "
+                    "reduce_scatterv → fixed-root reduce + scatter. Alignment with SGLang "
+                    "#27869 MoE top-k combine. Complementary with VLLM_BATCH_INVARIANT.",
+        draft_ref="notebook/tier1-comments/vllm-45683-moe-deterministic-combine-comment-draft.md",
+        next_steps=["Post comment on #45683 with GRPO MoE stability analysis"],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
     # ===== TIER 2 PRs (future) =====
     Contribution(
         id="AE1",
