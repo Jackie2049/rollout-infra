@@ -176,6 +176,58 @@ CONTRIBUTIONS = [
         gpu_needed=False,
         unique_contribution=False,
     ),
+    Contribution(
+        id="C7",
+        title="Comment on rLLM #605 — GRPO grouping bug fix proposal",
+        target="rllm-org/rllm",
+        tier=Tier.TIER1_COMMENT,
+        priority=9,
+        status=Status.DRAFT_READY,
+        issue_ref="rllm-org/rllm #605",
+        description="Source-level analysis of GRPO grouping bug: trajectory.uid vs task_ids → "
+                    "group size 1 → advantage = raw reward → GRPO BROKEN. 1-line fix for enable=False "
+                    "(task_ids), few lines for per_step ({task_id}_step{k}). "
+                    "CRITICAL RTX 4090 blocker — rLLM GRPO unusable until fixed.",
+        draft_ref="notebook/tier1-comments/rllm-605-grpo-grouping-bug-comment-draft.md",
+        next_steps=["Post comment on #605 with verified fix proposal"],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
+    Contribution(
+        id="C8",
+        title="Comment on Megatron #5394 — Cross-framework Muon clipping pattern",
+        target="NVIDIA/Megatron-LM",
+        tier=Tier.TIER1_COMMENT,
+        priority=8,
+        status=Status.DRAFT_READY,
+        issue_ref="NVIDIA/Megatron-LM #5394",
+        description="Cross-framework analysis: same bug found in DeepSpeed #8068/#7776 + "
+                    "Megatron #5394. Universal insight: scale-invariant optimizers MUST NOT be "
+                    "globally clipped. PR #5395 skip_grad_norm_clip attribute aligned with "
+                    "DeepSpeed pattern. Complementary: Emerging-Optimizers #230 NS eps robustness.",
+        draft_ref="notebook/tier1-comments/megatron-5394-muon-clipping-comment-draft.md",
+        next_steps=["Post comment on #5394 with cross-framework evidence"],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
+    Contribution(
+        id="C9",
+        title="verl #6699 unfixed backend detach fix — Automodel/Megatron/TorchTitan",
+        target="verl-project/verl",
+        tier=Tier.TIER2_PR,
+        priority=7,
+        status=Status.DRAFT_READY,
+        issue_ref="verl-project/verl #6699",
+        description="Apply same detach() fix from #6699 to 3 unfixed engine backends: "
+                    "AutomodelEngine (lines 708-712), MegatronEngine (lines 1013-1017), "
+                    "TorchTitanEngine (lines 730-734). Same 11-line pattern: "
+                    "model_output = {key: value.detach() if torch.is_tensor(value) and "
+                    "value.grad_fn is not None else value for key, value in model_output.items()}. "
+                    "CRITICAL: these backends will OOM with LoRA + long sequences on RTX 4090.",
+        next_steps=["Submit PR to verl-project/verl applying detach fix to 3 backends"],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
     # ===== TIER 2 PRs (future) =====
     Contribution(
         id="AE1",
