@@ -992,6 +992,91 @@ Key components:
 ★★★★★★★★★ RadixAttention C++ JIT → 7 eviction strategies → token-level prefix sharing → GRPO prefix reuse
 ★★★★★★★★★ rl_on_policy_target auto-enables deterministic → verl/rLLM RL frameworks can use it
 ★★★★★★★★★ 6 spec decode algorithms → NGRAM + murmur_hash32 = deterministic spec decode → UNIQUE advantage
+
+---
+
+## 9. ★★★★★★★★ 7 aten Overrides — Source Verified (June 18, 2026)
+
+```
+★★★★★★★★★ 7 aten overrides verified in current checkout (batch_invariant_ops.py):
+
+  Registered via torch.library.Library("aten", "IMPL") in enable_batch_invariant_mode():
+  → dispatch_key = get_dispatch_device_backend() → device-specific
+
+  1. aten::mm → mm_batch_invariant → matmul_persistent
+    → Triton persistent kernel: BLOCK_SIZE_M/N/K: tl.constexpr → FIXED for all batch sizes
+    → bf16 config: BLOCK_M=128, BLOCK_N=128, BLOCK_K=64 → deterministic
+    → DeepGEMM fallback when dimensions large enough (≥16) → SM90 TMA path
+    → BUT: DeepGEMM disabled on SM89 → Triton constexpr path for ALL matmuls
+
+  2. aten::addmm → addmm_batch_invariant → matmul_persistent(bias=bias)
+    → Same constexpr kernel as mm → plus bias accumulation → deterministic
+
+  3. aten::_log_softmax → _log_softmax_batch_invariant → log_softmax
+    → Triton kernel: n_cols: tl.constexpr → BLOCK_SIZE: tl.constexpr → 1024
+    → Each row computed independently → no cross-row interaction → deterministic
+
+  4. aten::mean.dim → mean_batch_invariant → mean_dim
+    → Triton kernel: BLOCK_SIZE: tl.constexpr → 1024 → fixed accumulation order
+    → ★★★★★★★★ This is the op that Inductor fuses incorrectly on SM<90!
+    → SGLang replaces mean with Triton constexpr → bypasses Inductor entirely
+
+  5. aten::rms_norm → _rms_norm_aten_compat → rms_norm_batch_invariant → rms_norm
+    → Triton kernel: n_cols: tl.constexpr → BLOCK_SIZE: tl.constexpr → 1024
+    → ★★★★★★★★ This is the core op for Llama/Mistral/Qwen3 normalization
+    → SGLang replaces rms_norm with Triton constexpr → KERNEL-level guarantee
+
+  6. aten::mm.dtype → _mm_dtype_compat → matmul_persistent then dtype cast
+    → Handles dtype mismatch → same constexpr kernel → deterministic
+
+  7. aten::bmm → bmm_batch_invariant → bmm_kernel_persistent
+    → Triton batched matmul: BLOCK_SIZE_M/N/K: tl.constexpr → SAME config as mm
+    → Batch-major tile ordering → deterministic across batches
+    → torch.bmm monkeypatched as fallback (enable_bmm=True)
+
+★★★★★★★★★ KEY PRINCIPLE: ALL 7 overrides use tl.constexpr → FIXED accumulation → batch-invariant
+
+  Why tl.constexpr works:
+    → constexpr = compile-time constant → kernel compiled ONCE for each config
+    → Same BLOCK_SIZE for ALL inputs → same accumulation order → same results
+    → No autotuning → no shape-dependent config → no batch-dependent results
+    → This is the OPPOSITE of Inductor's CachingAutotuner → which varies XBLOCK per shape
+
+★★★★★★★★★ Comparison with vLLM + Inductor:
+    → Inductor: CachingAutotuner → XBLOCK varies per input shape → batch-dependent
+    → SGLang: tl.constexpr → BLOCK_SIZE fixed for all shapes → batch-invariant
+    → Inductor: COMPILE-level fix (Fusion Guard blocks bad fusions)
+    → SGLang: KERNEL-level fix (replace ops entirely → bypasses Inductor)
+    → KERNEL > COMPILE > NONE → SGLang gold standard → vLLM enforce_eager fallback
+```
+
+---
+
+## 10. ★★★★★★★★ murmur_hash32 — Source Verified (June 18, 2026)
+
+```
+★★★★★★★★★ murmur_hash32 Triton kernel (hash.py, 122 lines):
+
+  @triton.jit murmur_hash32_kernel:
+    → seed_ptr, positions_ptr, col_indices_ptr, output_ptr → hash inputs
+    → BLOCK_SIZE: tl.constexpr → 1024 → FIXED → deterministic
+    → MurmurHash3 32-bit: rotl32, fmix32, murmur3_mix → all constexpr operations
+    → Output: uint32 hash per (row, col) pair → deterministic across all batch sizes
+
+  murmur_hash32(seed, positions, col_indices):
+    → Wrapper: n × m → grid=(n, triton.cdiv(m, BLOCK_SIZE=1024))
+    → BLOCK_SIZE=1024 constexpr → no autotuning → deterministic hash
+
+★★★★★★★★★ Usage in sampler.py:
+    → Murmur hash → deterministic random seed per position → Gumbel-max sampling
+    → hash → float64 → Gumbel noise → deterministic top-k sampling → GRPO compatible
+    → No RNG state sync needed → GPU-side entirely → simpler GRPO coordination
+
+★★★★★★★★★ NPU variant:
+    → Ascend NPU has separate batch_invariant_ops implementation
+    → npu_mm, npu_matmul, npu_mean, npu_log_softmax → AscendC constexpr equivalents
+    → SAME principle: constexpr/fixed tiling → batch-invariant → hardware-agnostic!
+```
 ★★★★★★★★★ LoRA Triton SGMV + extra_key namespace → LoRA serving WITH deterministic inference → gold standard GRPO
 ★★★★★★★★★ MoE LoRA + deterministic = unique SGLang capability → no other framework has this
 ★★★★★★★★★ RTX 4090 choice: SGLang deterministic for quality (GRPO rollout) vs vLLM throughput for production
