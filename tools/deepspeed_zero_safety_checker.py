@@ -235,10 +235,10 @@ CHECKS = {
     },
     "muon_optimizer": {
         "severity": "EXPERIMENTAL",
-        "issue": "DeepSpeed #7953 (merged)",
-        "title": "Muon optimizer experimental — monitor convergence closely",
+        "issue": "DeepSpeed #7953/#7919/#7953/#8047 (merged), #7748/#7878/#7776 (open)",
+        "title": "Muon optimizer experimental — 3 open blockers for RTX 4090",
         "description": (
-            "Muon (Momentum Orthogonalized by Newton-Schulz) is merged but EXPERIMENTAL.\n\n"
+            "Muon (Momentum Orthogonalized by Newton-Schulz) is merged but has 3 open blockers.\n\n"
             "Key properties:\n"
             "  - Operates on 2D matrices (perfect for LoRA!)\n"
             "  - Gram NS iteration: n×n → 5x cheaper than rectangular\n"
@@ -248,14 +248,26 @@ CHECKS = {
             "  - LoRA rank=64: Muon fits 19.2GB, AdamW OOM at 24.4GB\n"
             "  - SingleDeviceMuonWithAuxAdam+gram recommended\n"
             "  - aux_adam_lr for 1D params (bias, norm)\n\n"
+            "!!! 3 OPEN BLOCKERS for RTX 4090:\n"
+            "  1. #7939 CLOSED WITHOUT MERGE: CPU offload NOT available for Muon in ZeRO-2!\n"
+            "     → Muon+CPU_Adam NOT viable → must use GPU Adam for optimizer states\n"
+            "     → This means Muon has NO memory advantage on single GPU without CPU offload!\n"
+            "  2. #7776 OPEN: Muon orthogonalization BEFORE gradient clipping → WRONG order!\n"
+            "     → Orthogonalization changes gradient magnitude → clipping incorrectly suppresses\n"
+            "     → Must manually apply clipping AFTER orthogonalization (or skip clipping)\n"
+            "  3. #7878 OPEN: Muon+reduce_scatter incorrect gradient reduction\n"
+            "     → Must NOT use reduce_scatter=True with Muon until fixed\n\n"
             "Risks:\n"
-            "  - lr=0.02, muon_lr_scale=0.1 may need tuning\n"
+            "  - CPU offload not available → Muon memory advantage disappears on single GPU\n"
+            "  - Gradient clipping order wrong → manual workaround needed\n"
             "  - No long-term convergence data on consumer GPUs\n"
             "  - Compare with Adam baseline before committing"
         ),
         "affected_configs": ["Muon optimizer configs"],
         "workaround": (
-            "Start with conservative Muon config:\n"
+            "!!! Muon+CPU_offload BLOCKED on RTX 4090 (#7939 closed without merge)\n"
+            "!!! Use CPU_Adam (non-Muon) for single GPU ZeRO-2 offload\n\n"
+            "IF you must use Muon (experimental, no CPU offload):\n"
             "  \"optimizer\": {\n"
             "    \"type\": \"Muon\",\n"
             "    \"params\": {\n"
@@ -269,14 +281,16 @@ CHECKS = {
             "      \"aux_adam_lr\": 1e-5\n"
             "    }\n"
             "  }\n\n"
-            "ALWAYS compare with AdamW baseline. Muon is NOT guaranteed better.\n"
-            "gradient_clipping=1.0 still recommended (same as AdamW)."
+            "MANDATORY: gradient_clipping AFTER orthogonalization (not before → #7776)\n"
+            "MANDATORY: reduce_scatter=False with Muon until #7878 merges\n"
+            "ALWAYS compare with CPU_Adam baseline. Muon+LoRA without offload = no memory win."
         ),
         "rtx4090_impact": (
-            "Muon+LoRA fits 19.2GB → viable on RTX 4090.\n"
-            "AdamW+LoRA rank=64 → 24.4GB → OOM.\n"
-            "Muon is the ONLY path for LoRA rank≥64 on RTX 4090.\n"
-            "But: EXPERIMENTAL — convergence not proven on consumer GPUs."
+            "!!! Muon+CPU_offload NOT available → NO memory advantage on single GPU!\n"
+            "!!! CPU_Adam (non-Muon) remains ONLY viable optimizer-offload for ZeRO-2\n"
+            "Muon+LoRA fits 19.2GB but WITHOUT CPU offload → same memory as AdamW\n"
+            "AdamW+CPU_offload+LoRA rank=16 → ~3.8GB → BEST RTX 4090 config\n"
+            "Muon only viable IF CPU offload PR #7939 is resurrected and merged."
         ),
     },
 }
