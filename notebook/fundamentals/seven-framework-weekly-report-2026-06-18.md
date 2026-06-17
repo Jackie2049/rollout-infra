@@ -43,20 +43,21 @@ Key RTX 4090 relevant:
 ## 2. DeepSpeed — v0.19.2 Released June 16
 
 ```
-★★★★★★★★★ v0.19.2 — 27 merged PRs in 3 weeks (May 27 → June 16):
+★★★★★★★★★ DeepSpeed v0.19.2 — 27 merged PRs in 3 weeks:
 
 Key RTX 4090 relevant:
   → #7992 MERGED May 28: engine.coalesce_grad_reduction() → ZeRO 1/2/3 multi-backward
     → Collapses N reduce-scatters into 1 → removes communication bottleneck
-    → Verified bit-exact across 4 (contiguous_gradients, overlap_comm) combos
-    → ★★★★★★★★ GRPO multi-loss backward patterns benefit! → single reduce-scatter → faster
-  → #8056 MERGED June 10: Consistent fp32 grads flow → avoids bf16 buffers in fp32 reduction
-  → #8066 MERGED June 16: Mixed-precision per-policy param/buffer dtype cast
-    → Preserves fp32 buffers (rotary inv_freq) instead of blanket bf16 cast
-    → BUT: introduced ZeRO-3+PEFT regression → needs watching
-  → #8026 MERGED May 28: torch.func transforms on engine → ZeRO 0/1/2
-    → Enables torch.func.grad, grad_and_value, jacrev, vmap directly
-  → AutoEP #7938: MERGED June 11 → ZeRO-0/1/2 → config-only MoE → RTX 4090 viable!
+    → ★★★★★★★★ GRPO multi-loss backward patterns benefit!
+  → #8066 MERGED June 16: Mixed-precision per-policy dtype cast → preserves fp32 buffers
+    → BUT: introduced ZeRO-3+PEFT regression → ★★★★★★★★ #8072/#8073 2-line fix!
+  → #8072/#8073 NEW June 17: ZeRO-3+LoRA regression → TypeError in _allgather_params_coalesced
+    → Root cause: #8066's dtype cast stopped blanket bf16 → mixed dtypes (bf16 base + fp32 LoRA)
+    → ★★★★★★★★ ZeRO-2 UNAFFECTED → RTX 4090 ZeRO-2+LoRA SAFE!
+    → Fix: per-param dtype in allgather (2 lines) → workaround: autocast_adapter_dtype=False
+  → #8058 OPEN: ZenFlow native CPU optimizer → reduces GPU memory spike from 2944→256 MiB
+    → ★★★★★★★★ CPU_Adam efficiency improvement → RTX 4090 benefit!
+  → AutoEP #7938 MERGED June 11 → config-only MoE → RTX 4090 viable!
 
 ★★★★★★★★★ #8064 AutoEP+AutoTP folding — OPEN (2690 additions):
   → TP for dense + EP for MoE on same GPU set → preparation for future multi-GPU
@@ -76,17 +77,23 @@ Key RTX 4090 relevant:
 ## 3. Megatron-LM — #5391 Compact LayerWise DDP
 
 ```
-★★★★★★★★★ #5391 (OPEN, June 17) — Compact LayerWise DDP for Muon:
-  → +218/-58, 6 files, author: Wohox (Pingtian Li)
-  → Removes dp_size * max(shard_load) padding from param/grad buffers
-  → use_distributed_optimizer becomes per-buffer property:
-    → LayerWise buffers: compact no-padding + all-reduce (NOT reduce-scatter)
-    → Non-LayerWise buffers: standard byte-level DistOpt layout + reduce-scatter
-  → ★★★★★★★★ On RTX 4090 (dp=1): padding = max(shard_load) → still wasteful → compact removes it entirely
-  → num_distributed_optimizer_instances == 1 → naturally satisfied on single GPU
+★★★★★★★★★ #5391 OPEN (+218/-58) — Compact LayerWise DDP:
+  → Removes dp_size * max(shard_load) padding → per-buffer use_distributed_optimizer
+  → RTX 4090: dp=1 → padding = max(shard_load) → wasteful → compact removes entirely
+  → ★★★★★★★★ Makes Muon+ZeRO-2 more memory-efficient on RTX 4090
 
-★★★★★★★★★ #5219 (Final Review, updated June 17) — single-GPU LayerWise Muon crash fix:
-  → Progressing → Final Review status → close to merge
+★★★★★★★★★ #5394 NEW (June 17) — ChainedOptimizer Muon clipping stalls:
+  → Global grad_norm across all sub-optimizers → Muon orthogonalization degenerates
+  → ★★★★★★★★ SAME pattern as DeepSpeed #8068/#7776 → MUST skip global clipping for Muon groups!
+  → Positive-feedback stall: layers stop updating → grad_norm grows → clip coefficient shrinks → collapse
+
+★★★★★★★★★ #5386/#5384 NEW (June 17) — DSA/DSv4 Indexer Replay for RL (3404 LOC):
+  → Extends RouterReplay concept to sparse attention indexer top-k decisions
+  → ★★★★★★★★ For DeepSeek V4 hybrid attention → same train/rollout consistency as MoE RouterReplay!
+  → Same singleton-registry architecture as RouterReplay → established pattern
+
+★★★★★★★★★ #5219 Final Review — single-GPU Muon crash fix (+14/-7):
+  → None guard for dp_cp_params_list → simple but essential for single GPU
 
 ★★★★★★★★★ #4885 Lite — MERGED → 29K additions → Qwen3 MoE + HF safetensors
 ★★★★★★★★★ core_v0.17.1 (May 28) — latest release
@@ -102,9 +109,26 @@ Key RTX 4090 relevant:
 ## 4. verl — #6790 Separate Async Trainer + #6572 Reviews
 
 ```
-★★★★★★★★★ #6790 MERGED June 17 — Separate async trainer (17 additions):
+★★★★★★★★★ verl #6790 MERGED June 17 — Separate async trainer (17 additions):
   → Colocated group never switches to rollouter → pure async pattern
-  → Minimal initial PR → establishes architecture for decoupled async training
+
+★★★★★★★★★ verl #6699 MERGED June 12 — Detach model_output/loss metrics (★★★★★★★★★ CRITICAL RTX 4090!):
+  → model_output (log_probs/entropy) was STILL ATTACHED to autograd graph
+  → Pinned activation checkpoint frames per micro-batch → memory leak → 64 GiB OOM at micro-batch #400
+  → Fix: detach tensors before building output dict → STABLE 16.2 GiB throughout
+  → ★★★★★★★★ 4x memory reduction → CRITICAL for RTX 4090 LoRA GRPO!
+
+★★★★★★★★★ verl #6688 MERGED June 12 — Clone LoRA weights out of IPC buffer:
+  → Fixed cudaErrorIllegalAddress crash with unmerged LoRA + vLLM + free_cache_engine=True
+  → add_lora retained views into reused IPC bucket buffer → crash
+
+★★★★★★★★★ verl #6717 MERGED June 15 — Tinker training worker primitives (334 additions):
+  → TinkerTrainingWorker: optimizer_zero_grad(), forward_backward(), optimizer_step() split primitives
+  → Enables rLLM Tinker-style split training IN verl → no need to switch frameworks!
+  → Accumulated gradients across multiple forward_backward calls
+
+★★★★★★★★★ verl #6689 MERGED June 17 — Offload process_vision_info to thread:
+  → process_vision_info was CPU-bound (PNG decode + smart_resize) but declared async → blocked event loop
 
 ★★★★★★★★★ #6738 MERGED June 16 — Skip redundant clone SGLang weight sync (63 additions):
   → Critical OOM fix → clones only when necessary (contiguous check)
@@ -141,14 +165,25 @@ Key RTX 4090 relevant:
   → ★★★★★★★★ Relevant to SM89: combo kernel affects persistent reduction codegen → RMSNorm-like fused reductions
 
 ★★★★★★★★★ #187435 OPEN — no_fuse_region per-op fusion barrier:
-  → 804 additions, 7 files, 98 deletions
-  → control_deps carries compiler-only no_fuse_region flag
-  → Scheduler requires exact region-set equality for fusion → fine-grained control
-  → ★★★★★★★★ Complementary to P9 → P9 global (5 LOC) + #187435 per-op (804 LOC) = both needed eventually
+  → 804 additions, 7 files → CI currently failing (18 test failures)
+  → ★★★★★★★★ Complementary to P9 → P9 global (5 LOC) + #187435 per-op (804 LOC)
 
-★★★★★★★★★ P9 Fusion Guard issue draft — READY to file on GitHub:
-  → Updated with #187435 + #6572 + vLLM SM89 gap + SGLang #24459 evidence
-  → Integration path: P9 first → #187435 second → #6572 deployment
+★★★★★★★★★ CRITICAL NEW: PyTorch v2.12 max_autotune layout deferral NOW OPT-IN:
+  → In v2.11: deferred layout freezing was default → caused SM89 batch-dependent results
+  → In v2.12: REVERTED to immediate freezing → ★★★★★★★★ REDUCES SM89 risk by default!
+  → Users who opt into deferred mode still need Fusion Guard
+  → ★★★★★★★★ Makes P9 less urgent for v2.12+ but still needed for opt-in users
+
+★★★★★★★★★ #181248 NEW: B200 batch invariance nondeterminism (NOT SM89):
+  → Triton missing async fence between cp.async and tcgen05.mma on Blackwell
+  → Triton commit #9610 fixes it → BUT MISSING from Triton 3.7.x release → cherry-pick needed
+  → ★★★★★★★★ Blackwell-only issue → H100 passes → NOT RTX 4090
+
+★★★★★★★★★ Triton 3.7 SM89 ptxas workaround reverted:
+  → Older workaround for SM89 ptxas bug removed → now unnecessary with CUDA 13.0+
+  → Non-TMA persistent templates for mm/addmm → enables persistent kernels on SM89!
+
+★★★★★★★★★ P9 Fusion Guard issue draft — READY to file on GitHub
 
 ★★★★★★★★★ RTX 4090 impact:
   → #187275 progressing → combo kernel fix → affects RMSNorm persistent reduction paths
@@ -252,7 +287,15 @@ Key RTX 4090 relevant:
 ★★★★★★★★★ SGLang v0.5.13: #27097 multi-LoRA determinism bug → needs watching
 ★★★★★★★★★ vLLM-Ascend #10034: batch_invariant_ops MERGED → npu_add_rms_norm SPLIT → same reasoning as Inductor
 ★★★★★★★★★ rLLM #605: CRITICAL GRPO grouping bug → ranking downgraded from #1 to #3 until fixed
-★★★★★★★★★ verl #6572: reviewer concerns raised → progressing but needs addressing → SM89 gap = P9 needed
+★★★★★★★★★ verl #6699: detach model_output → 4x memory reduction → CRITICAL RTX 4090 LoRA GRPO!
+★★★★★★★★★ verl #6717: Tinker training worker primitives → split training IN verl → no framework switch needed
+★★★★★★★★★ verl #6688: LoRA IPC buffer crash fix → cudaErrorIllegalAddress resolved
+★★★★★★★★★ Megatron #5394: ChainedOptimizer Muon clipping stalls → same pattern as DeepSpeed #8068/#7776
+★★★★★★★★★ Megatron #5386/#5384: DSA Indexer Replay → extends RouterReplay to sparse attention (3404 LOC!)
+★★★★★★★★★ DeepSpeed #8072/#8073: ZeRO-3+LoRA regression in v0.19.2 → ZeRO-2 unaffected → 2-line fix pending
+★★★★★★★★★ DeepSpeed #8058: ZenFlow native CPU optimizer → GPU spike 2944→256 MiB → CPU_Adam improvement
+★★★★★★★★★ PyTorch v2.12: max_autotune layout deferral NOW OPT-IN → reduces SM89 fusion risk by default
+★★★★★★★★★ PyTorch #181248: B200 Triton async fence → NOT SM89 (Blackwell only) → Triton cherry-pick needed
 
 ---
 
