@@ -130,6 +130,38 @@ With #6699 fix:
 
 ---
 
+## 5. UNFIXED Leak in Other Engine Backends (★★★★★★★★★ CRITICAL GAP!)
+
+```
+★★★★★★★★★ Same leak pattern in 3 OTHER engine backends NOT fixed by #6699:
+
+1. AutomodelEngine (automodel/transformer_impl.py lines 708-712):
+  → output = {"model_output": model_output, ...} → NO DETACH!
+  → Same output_lst.append(meta_info) pattern in forward_backward_batch (line 260)
+  → ★★★★★★★★ SAME leak → SAME accumulation → SAME OOM risk
+
+2. MegatronEngine (megatron/transformer_impl.py lines 1013-1017):
+  → output = {"model_output": model_output, ...} → NO DETACH!
+  → In postprocess_micro_batch_func → pipeline PP may reduce per-micro-batch accumulation
+  → ★★★★★★★★ SAME leak risk → but pipeline PP may mask it
+
+3. TorchTitanEngine (torchtitan/transformer_impl.py lines 730-734):
+  → output = {"model_output": model_output, ...} → NO DETACH!
+  → Also has output_lst.append(output) in forward_backward_batch (line 340)
+  → ★★★★★★★★ SAME leak → SAME accumulation → SAME OOM risk
+
+★★★★★★★★★ VeOmniEngine is SAFE:
+  → VeOmniEngineWithLMHead inherits from FSDPEngineWithLMHead (line 848)
+  → Uses the fixed forward_step → detach applies automatically
+
+★★★★★★★★★ RTX 4090 impact:
+  → FSDP path (most common for RTX 4090) → FIXED → safe
+  → Automodel/Megatron/TorchTitan paths → NOT fixed → same leak risk
+  → ★★★★★★★★ For RTX 4090 GRPO: ALWAYS use FSDP path → other paths will OOM with LoRA
+```
+
+---
+
 ## Key Findings Summary
 
 ★★★★★★★★★ #6699: detach model_output → 4x memory reduction (64→16.2 GiB) → CRITICAL RTX 4090 LoRA GRPO
@@ -138,6 +170,8 @@ With #6699 fix:
 ★★★★★★★★★ RTX 4090: LoRA GRPO was BROKEN before fix → NOW VIABLE with #6699 + bypass_mode
 ★★★★★★★★★ Cluster of 6 verl fixes June 12-17 → each critical for RTX 4090 GRPO pipeline
 ★★★★★★★★★ MUST use verl >= #6699 commit → MUST bypass_mode=True → MUST detach_metrics=True
+★★★★★★★★★ UNFIXED LEAK: AutomodelEngine, MegatronEngine, TorchTitanEngine have same bug! → FSDP path only fixed
+★★★★★★★★★ Fix code: 11 lines → detach dict comprehension with torch.is_tensor + grad_fn is not None guard
 
 ---
 

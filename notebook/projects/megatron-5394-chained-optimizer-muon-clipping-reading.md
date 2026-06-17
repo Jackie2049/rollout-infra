@@ -171,6 +171,9 @@ If using Megatron with Muon+Adam:
 ★★★★★★★★★ Scale-invariant optimizers MUST NOT be globally clipped → fundamental insight
 ★★★★★★★★★ Cross-framework: 3 independent discoveries → same root cause → per-group clipping solves all
 ★★★★★★★★★ RTX 4090: CPU_Adam safe (no Muon) → Megatron+Muon MUST disable clipping per-group
+★★★★★★★★★ Fix PR #5395: skip_grad_norm_clip attribute (+15/-1) → bypasses config constraint
+★★★★★★★★★ ChainedOptimizer forces all sub-optimizers to share same OptimizerConfig → config-level per-group fix IMPOSSIBLE
+★★★★★★★★★ Bug is optimizer-agnostic: AdamW also stalls under same clip (eps floor) → fix targets orthogonalizing case as semantically meaningless
 
 ---
 
