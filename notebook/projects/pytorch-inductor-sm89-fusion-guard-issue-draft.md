@@ -66,6 +66,10 @@ The unconditional `True` at Layer 2 means ANY vertical reduction fusion passes, 
 
 ### Additional Evidence (June 2026 Update)
 
+9. **PyTorch #187347** (MERGED June 15, release/2.13): Revert "Skip cudagraphs for kernel-free inductor graphs" (#185760) — the reverted commit allowed Inductor to skip CUDA graph capture for graphs with no kernel launches. The revert restores CUDA graph capture for ALL Inductor graphs, meaning batch-dependent Inductor behavior now ALWAYS goes through CUDA graph capture → more consistent, but doesn't fix root cause (autotuned XBLOCK still produces batch-dependent results). This shows PyTorch is actively addressing Inductor consistency issues → P9's guard is timely.
+
+10. **SGLang #28499** (MERGED June 17): Fix chunked SGMV (csgmv) CUDA graph segment replay — baked grid size into captured graph, but real batch segment count differs → LoRA delta dropped for some segments. Same problem class as P9 (batch-dependent kernel behavior), different manifestation. Both root causes: parameters computed at capture/compile time that vary with batch size.
+
 5. **PyTorch #187435**: `no_fuse_region` per-op fusion barrier — `mark_no_fuse_region(graph, [ops])` → `annotations["no_fuse_region"]` → scheduler requires exact region-set equality for fusion. Complementary fine-grained mechanism to P9's global approach. P9 covers ALL ops universally; #187435 gives per-op control. Both needed eventually, but P9 first = simplest, fastest path.
 
 6. **verl #6572** (OPEN, June 2026): 5-layer full determinism for vLLM rollout — PRODUCTION VALIDATES VLLM_BATCH_INVARIANT=1 as the mechanism for batch-invariant inference. Key finding: on SM89, vLLM's batch_invariant.py does NOT override RMSNorm at aten level (only SM80 matmul Triton overrides). verl's determinism layer REQUIRES a working batch-invariant backend → P9 fills the SM89 gap that vLLM leaves.
@@ -136,6 +140,8 @@ def can_fuse_vertical(scheduler, node1, node2, shared_data_score) -> bool:
 - PyTorch #185814 — XBLOCK derivation for RMSNorm backward (complementary)
 - PyTorch #187275 — Combo kernel crash (same root cause class)
 - PyTorch #187435 — `no_fuse_region` per-op fusion barrier (complementary mechanism)
+- PyTorch #187347 — Revert cudagraph skip (Inductor consistency activity)
+- SGLang #28499 — csgmv CUDA graph segment replay (same problem class)
 - verl #6572 — 5-layer full determinism validates VLLM_BATCH_INVARIANT=1 production use
 - SGLang #24459 — aten::rms_norm + mm.dtype override strengthens KERNEL-level
 - vLLM batch_invariant.py — SM89 RMSNorm gap (not registered as aten override)
