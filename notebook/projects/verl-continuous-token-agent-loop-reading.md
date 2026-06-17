@@ -47,8 +47,23 @@
 ```
 
 ## 参考
-- verl PR #6720: Continuous Token Builder Core (open)
-- verl PR #6721: Agent Loop Integration (open)
+- verl PR #6720: Continuous Token Builder Core (OPEN, +737 lines)
+- verl PR #6721: Agent Loop Integration (OPEN, +1270/-39 lines)
 - verl AgentLoop: multi-turn execution paths
 - verl multi_turn.continuous_token.enable: config flag
 - Related notes: verl-v080-latest-developments-2026-06-reading.md, verl-magi-prefix-tree-reading.md
+
+### ★★★★★★★★ response_mask alignment with GRPO/PPO/CPPO (source-level):
+
+ContinuousToken's alignment mechanism preserves `response_mask` correctly after token merges:
+  → Inserted boundary tokens (e.g., `<|im_end|>` newlines) → mask=0 → NOT trainable
+  → Assistant tokens → mask=1 → trainable → action tokens
+  → Removed prefix tokens → reflected in mask → correct loss computation
+
+  → ★★★★★★★★ This means ZERO changes needed to GRPO/PPO/CPPO training algorithms!
+  → → GRPO: compute_grpo_outcome_advantage uses response_mask → mask=0 tokens get zero advantage → no loss contribution
+  → → PPO/GAE: compute_gae_advantage_return uses response_mask → observation tokens (mask=0) transparent to advantage computation
+  → → Policy loss: response_mask → bool → loss_mask → only action tokens participate
+  → → KL penalty: kld * response_mask → KL only on action tokens
+
+★★★★★ Key insight: mask=[1,0,1,0,...] = standard multi-step RL design. Policy learns "what to do" (action tokens, mask=1), NOT "what to see" (observation tokens, mask=0). ContinuousToken preserves this design while fixing token inconsistency.
