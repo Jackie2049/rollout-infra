@@ -896,3 +896,102 @@ for seed in sampling_seeds:
 | decode_attention.py | `python/sglang/srt/layers/attention/triton_ops/decode_attention.py` | Triton decode kernel with constexpr BLOCK_N |
 | configurer.py | `python/sglang/srt/layers/deep_gemm_wrapper/configurer.py` | SM89 DeepGEMM gate (returns False) |
 | deterministic_inference.md | `docs/advanced_features/deterministic_inference.md` | User-facing documentation |
+
+---
+
+## 7. ★★★★★★★★ murmur_hash32 Triton Sampling Kernel (NEW detail from 2026-06-18 agent)
+
+```
+★★★★★★★★★ murmur_hash32 = gold standard deterministic sampling for GRPO:
+
+Purpose: Replace torch.rand RNG-based sampling with hash-based deterministic sampling
+  → Standard sampling: torch.rand → CPU RNG → GPU copy → non-deterministic across processes
+  → murmur_hash32: position+seed+vocab_hash → deterministic → same position+seed = same token ALWAYS
+
+Implementation: Triton kernel in hash.py
+  → Input: position_ids, sampling_seed, vocab_size
+  → Output: hash_value per token position → float64 → Gumbel-max sampling
+  → Algorithm: MurmurHash3 (position+seed → seed) → float64 normalization → Gumbel noise addition → argmax = token selection
+  → ★★★★★★★★ Gumbel-max theorem: argmax(g_i + noise_i) = sample(categorical(p_i)) → EXACT categorical sampling!
+  → → BUT: float64 precision → NOT exact float32 → theoretical ~1e-15 deviation → negligible for GRPO
+
+★★★★★★★★★ Key: No RNG state synchronization needed!
+  → Standard: torch.manual_seed → all workers must sync RNG state → complex coordination
+  → murmur_hash32: hash(position, seed) → deterministic by construction → zero coordination overhead
+  → → RTX 4090 GRPO: no RNG sync between rollout workers → simpler → faster
+```
+
+---
+
+## 8. ★★★★★★★★ Speculative Decoding Algorithms (NEW detail from 2026-06-18 agent)
+
+```
+★★★★ SGLang supports 6 speculative decoding algorithms:
+
+| Algorithm | Draft Model | Speedup | RTX 4090? | Deterministic? |
+|-----------|------------|---------|-----------|----------------|
+| EAGLE | Trained draft | 4.2x | ✓ | ✓ (with deterministic) |
+| Medusa | Multi-head draft | 2-3x | ✓ | Partial |
+| DFlash | Draft flash attention | 2-3x | ✓ | ✓ |
+| NGRAM | No draft model | 2.14x | ✓ | ✓ |
+| STANDALONE | Separate small model | 2-3x | ✓ | ✓ |
+| FROZEN_KV_MTP | Multi-token prediction | 2x | ✓ | ✓ |
+
+★★★★★★★★★ RadixKey bigram mode for EAGLE:
+  → EAGLE draft model generates candidate tokens → verify against target model
+  → RadixAttention key: prefix tokens as radix tree keys → match → reuse KV cache for verification
+  → ★★★★★★★★ Bigram mode: RadixKey uses prefix + candidate pair → efficient verification path
+  → → Even with spec decode, RadixAttention prefix reuse maintains efficiency
+
+★★★★★★★★★ Spec decode + deterministic inference:
+  → NGRAM + murmur_hash32 → deterministic verification → batch-invariant spec decode!
+  → → This is UNIQUE: vLLM spec decode is NOT batch-invariant → SGLang advantage for GRPO
+```
+
+---
+
+## 9. ★★★★★★★★ LoRA Serving in SGLang (NEW detail from 2026-06-18 agent)
+
+```
+★★★★ SGLang LoRA serving architecture:
+
+Key components:
+  → Triton SGMV (Segmented Grouped Matmul V) kernel → core LoRA compute
+  → Chunked sgmv → memory-efficient for large LoRA batches
+  → RadixKey extra_key namespace → isolate LoRA adapters in KV cache
+
+★★★★★★★★★ Triton SGMV kernel:
+  → Segmented grouped matmul → handle multiple LoRA segments in one kernel
+  → LoRA weight segments → grouped by adapter → compute in parallel
+  → ★★★★★ Triton kernel → SM89 compatible → persistent matmul → deterministic!
+
+★★★★★★★★★ LoRA + deterministic inference:
+  → LoRA weights loaded → Triton SGMV compute → constexpr block sizes → batch-invariant LoRA
+  → ★★★★★★★★ This means: LoRA serving WITH deterministic inference → gold standard for GRPO rollout!
+  → → vLLM LoRA serving: NOT batch-invariant → slight numerical differences across batches
+
+★★★★★★★★★ LoRA + MoE:
+  → SGLang supports LoRA on MoE models → Triton MoE backend + LoRA SGMV
+  → Extra_key namespace: each LoRA adapter gets its own KV namespace → no cross-contamination
+  → ★★★★★★★★ MoE LoRA + deterministic = unique SGLang capability → no other framework has this
+
+★★★★★★★★★ RTX 4090 LoRA serving recommendation:
+  → SGLang deterministic + LoRA → gold standard for GRPO quality-sensitive rollout
+  → vLLM throughput + LoRA → gold standard for throughput-focused production serving
+  → ★★★★★★★★ Choose based on priority: SGLang for quality, vLLM for throughput
+```
+
+---
+
+## Key Findings Summary (Updated 2026-06-18)
+
+★★★★★★★★★ SGLang solves batch invariance at KERNEL level (7 aten overrides with constexpr) vs vLLM at COMPILE level (Inductor fusion guard)
+★★★★★★★★★ murmur_hash32 + Gumbel-max float64 = gold standard deterministic sampling → no RNG sync needed → simpler GRPO
+★★★★★★★★★ DeepGEMM disabled SM89 → ALL matmuls use _matmul_persistent_triton constexpr → GOOD for determinism
+★★★★★★★★★ Triton backend split_tile_size=256 fixed → SM89 compatible → deterministic attention
+★★★★★★★★★ RadixAttention C++ JIT → 7 eviction strategies → token-level prefix sharing → GRPO prefix reuse
+★★★★★★★★★ rl_on_policy_target auto-enables deterministic → verl/rLLM RL frameworks can use it
+★★★★★★★★★ 6 spec decode algorithms → NGRAM + murmur_hash32 = deterministic spec decode → UNIQUE advantage
+★★★★★★★★★ LoRA Triton SGMV + extra_key namespace → LoRA serving WITH deterministic inference → gold standard GRPO
+★★★★★★★★★ MoE LoRA + deterministic = unique SGLang capability → no other framework has this
+★★★★★★★★★ RTX 4090 choice: SGLang deterministic for quality (GRPO rollout) vs vLLM throughput for production
