@@ -247,7 +247,7 @@ def generate_config(scenario_name, model_name):
     return config, scenario, model
 
 
-def print_config_info(config, scenario, model):
+def print_config_info(config, scenario, model, scenario_name):
     """Print config info and safety notes."""
     print("=" * 70)
     print(f"RTX 4090 DeepSpeed Config: {scenario['name']}")
@@ -337,7 +337,7 @@ def main():
     if args.dry_run:
         print(json.dumps(clean_config, indent=2))
         print()
-        print_config_info(config, scenario, model)
+        print_config_info(config, scenario, model, scenario_name)
         return
 
     # Save to file
@@ -348,7 +348,7 @@ def main():
 
     print(f"Config saved: {output_path}")
     print()
-    print_config_info(config, scenario, model)
+    print_config_info(config, scenario, model, scenario_name)
 
 
 if __name__ == "__main__":
