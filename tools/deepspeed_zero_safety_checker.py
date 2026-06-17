@@ -13,6 +13,7 @@ Checks:
   6. contiguous_gradients + overlap_comm interaction (CONFIG)
   7. bf16/fp16 selection (SM89)
   8. Muon optimizer compatibility (EXPERIMENTAL)
+  9. #8072: ZeRO-3+PEFT LoRA regression in v0.19.2 (CRITICAL)
 
 Modes:
   - check: Validate a DeepSpeed config JSON file
@@ -235,8 +236,8 @@ CHECKS = {
     },
     "muon_optimizer": {
         "severity": "EXPERIMENTAL",
-        "issue": "DeepSpeed #7953/#7919/#7953/#8047 (merged), #7748/#7878/#7776 (open)",
-        "title": "Muon optimizer experimental — 3 open blockers for RTX 4090",
+        "issue": "DeepSpeed #7953/#7919/#7953/#8047 (merged), #7748/#7878/#7776/#5394 (open)",
+        "title": "Muon optimizer experimental — 3 open blockers for RTX 4090 + cross-framework clipping bug",
         "description": (
             "Muon (Momentum Orthogonalized by Newton-Schulz) is merged but has 3 open blockers.\n\n"
             "Key properties:\n"
@@ -255,6 +256,8 @@ CHECKS = {
             "  2. #7776 OPEN: Muon orthogonalization BEFORE gradient clipping → WRONG order!\n"
             "     → Orthogonalization changes gradient magnitude → clipping incorrectly suppresses\n"
             "     → Must manually apply clipping AFTER orthogonalization (or skip clipping)\n"
+            "     → ★★★★★★★★ Same bug pattern as Megatron #5394 (ChainedOptimizer stalls Muon)\n"
+            "     → See: notebook/fundamentals/cross-framework-muon-gradient-clipping-bug.md\n"
             "  3. #7878 OPEN: Muon+reduce_scatter incorrect gradient reduction\n"
             "     → Must NOT use reduce_scatter=True with Muon until fixed\n\n"
             "Risks:\n"
@@ -291,6 +294,38 @@ CHECKS = {
             "Muon+LoRA fits 19.2GB but WITHOUT CPU offload → same memory as AdamW\n"
             "AdamW+CPU_offload+LoRA rank=16 → ~3.8GB → BEST RTX 4090 config\n"
             "Muon only viable IF CPU offload PR #7939 is resurrected and merged."
+        ),
+    },
+    "zero3_peft_regression": {
+        "severity": "CRITICAL",
+        "issue": "DeepSpeed #8072/#8073 (v0.19.2 regression)",
+        "title": "ZeRO-3 + PEFT LoRA regression in v0.19.2 — TypeError in _allgather_params_coalesced",
+        "description": (
+            "v0.19.2 PR #8066 introduced mixed-precision per-policy dtype cast.\n"
+            "This stopped the blanket bf16 cast that was accidentally normalizing PEFT LoRA adapter dtypes.\n"
+            "Now persistent_parameters has mixed dtypes (bf16 base + fp32 LoRA from autocast_adapter_dtype=True).\n"
+            "The allgather allocates output buffers using param_list[0].ds_tensor.dtype for ALL buffers.\n\n"
+            "★★★★★★★★★ ZeRO-2 is UNAFFECTED — this is a ZeRO-3-specific regression.\n"
+            "★★★★★★★★★ RTX 4090 recommended config (ZeRO-2 + CPU_Adam) is SAFE.\n\n"
+            "PR #8073 (OPEN): 2-line fix — use per-param dtype (param_list[i].ds_tensor.dtype)\n"
+            "Workaround: set autocast_adapter_dtype=False in get_peft_model()"
+        ),
+        "affected_configs": ["ZeRO-3 + PEFT LoRA", "v0.19.2 with ZeRO-3 + LoRA"],
+        "workaround": (
+            "ZeRO-3 + LoRA users on v0.19.2:\n\n"
+            "Option 1 (RECOMMENDED for RTX 4090): Use ZeRO-2 instead → UNAFFECTED\n"
+            "  \"zero_optimization\": {\n"
+            "    \"stage\": 2,\n"
+            "    \"offload_optimizer\": {\"device\": \"cpu\"}\n"
+            "  }\n\n"
+            "Option 2 (if you must use ZeRO-3): Pin to v0.19.1 or apply #8073 patch\n\n"
+            "Option 3 (ZeRO-3 workaround): Set autocast_adapter_dtype=False\n"
+            "  peft_model = get_peft_model(model, peft_config, autocast_adapter_dtype=False)"
+        ),
+        "rtx4090_impact": (
+            "★★★★★★★★★ RTX 4090 ZeRO-2 + CPU_Adam is UNAFFECTED by this regression.\n"
+            "ZeRO-3 on single GPU is already not recommended (pure overhead).\n"
+            "This regression only affects ZeRO-3 + LoRA configs → not the RTX 4090 optimal path."
         ),
     },
 }
