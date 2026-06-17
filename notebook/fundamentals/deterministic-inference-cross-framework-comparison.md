@@ -104,6 +104,17 @@ SM89 overrides (source-verified, lines 897-951):
   → VLLM_BATCH_INVARIANT=1 → env var → enables existing overrides → production validated by verl #6572
   → ★★★★★★★★ BUT: VLLM_BATCH_INVARIANT=1 on SM89 STILL has RMSNorm gap → P9 REQUIRED
 
+★★★★★★★★★ NEW v0.23.0+ batch invariance PRs (June 15-16):
+  → #45683 OPEN (June 15, 89 additions): Deterministic MoE combine under VLLM_BATCH_INVARIANT
+    → Cross-rank summation order in MoE combine step was NOT stable → breaks bit-for-bit reproducibility
+    → Fix: route MoE combine through deterministic reduce_scatterv → fixed-root reduce + scatter
+    → ★★★★★★★★ CRITICAL for GRPO MoE → DP+EP MoE needs deterministic combine for stable rewards!
+    → Only changes behavior when VLLM_BATCH_INVARIANT=1 and DP world_size > 2
+  → #45819 OPEN (June 16, 13 additions): GDN attention batch invariance support
+    → GDNAttentionBackend now supports_batch_invariance() → returns True
+    → GDN uses stable sorting (torch.argsort with stable=True) → deterministic by design
+    → ★★★★★★★★ Enables Qwen3.6 hybrid Mamba+GDN deterministic inference → RTX 4090 GRPO viable
+
 ★★★★★★★★★ Our proposed solution for vLLM SM89:
   → P9 Inductor Fusion Guard → blocks ALL reduction fusions on SM<90 → fills RMSNorm gap
   → P6 Triton dequant_swiglu_quant → provides GOOD fused path → faster than unfused

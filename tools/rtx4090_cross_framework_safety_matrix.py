@@ -164,6 +164,16 @@ MATRIX = {
                 "fix": "Monitor for SM89 batch invariance root cause shift",
             },
             {
+                "id": "#45683",
+                "title": "Deterministic MoE combine under VLLM_BATCH_INVARIANT (89 additions)",
+                "fix": "Track for GRPO MoE → DP+EP needs deterministic combine for stable rewards",
+            },
+            {
+                "id": "#45819",
+                "title": "GDN attention batch invariance support (13 additions)",
+                "fix": "Track for Qwen3.6 hybrid Mamba+GDN deterministic inference",
+            },
+            {
                 "id": "MRv2",
                 "title": "MRv2 default expanding — verl may be safe",
                 "fix": "VLLM_USE_V2_MODEL_RUNNER=0 as conservative fallback",
