@@ -27,6 +27,8 @@ START: Want to train LLM with GRPO on RTX 4090?
 │   │   → tools/train_tinker_rtx4090.sh --model Qwen3-1.7B --task math
 │   │   → LoRA rank=32, group_size=4, batch_size=8, bypass=true
 │   │   → LossFnType choices: ppo (default), IS, cispo, dro
+│   │   → ★★★★★★★★ WARNING: rLLM #605 GRPO grouping bug → MUST fix before training!
+│   │   → ★★★★★★★★ WARNING: use post-#663 version → rewards were ALL 0.0 before fix!
 │   │
 │   ├── Want maximum flexibility → verl (Ray-based, many algorithms)
 │   │   → Algorithm choice (Q3):
@@ -50,6 +52,8 @@ START: Want to train LLM with GRPO on RTX 4090?
 │   │   → ★★★★★★★★ RTX 4090 optimal trust region
 │   │   → Position-weighted cumulative prefix divergence
 │   │   → MUST use bypass_mode (divergence measured against rollout μ)
+│   │   → ★★★★★★★★ MUST use sync TransferQueue trainer (async overrides loss_mode!)
+│   │   → ★★★★★★★★ MUST use FSDP2 backend (NOT Automodel/Megatron — detach leak!)
 │   │
 │   ├── GRPO (default) + bypass
 │   │   → ★★★★★ Simplest, widely validated
@@ -104,6 +108,7 @@ START: Want to train LLM with GRPO on RTX 4090?
 │   ├── bypass_mode=True → save ~model_size GB (no ref model)
 │   │   → MUST for all RTX 4090 RL training
 │   ├── LoRA rank=32 → ~0.6GB trainable params
+│   │   → ★★★★★★★★ MUST use rank=32/alpha=64 → rank=64 breaks EOS (#6782!)
 │   │   → train_mlp+attn+unembed (Tinker default)
 │   ├── INT8 KV cache → ~50% KV memory savings
 │   │   → FlashInfer backend required
@@ -145,6 +150,19 @@ START: Want to train LLM with GRPO on RTX 4090?
     └── vLLM + SGLang hybrid
         → SGLang for inference (deterministic) + vLLM for training
         → Not yet common, but possible via verl
+
+├── Q9: Sleep/Wake buffer safety (verl HYBRID)?
+│   ├── DSA Hadamard matrix preservation → UNKNOWN on CUDA → needs GPU verification!
+│   │   → If corrupted → P9-tier contribution opportunity (same pattern as vLLM-Ascend #10684)
+│   │   → Fix: regenerate on wake (deterministic, seed-based) + copy before in-place mutation
+│   │
+│   ├── MoE router bias staleness → RouterReplay pattern (#4168)
+│   │   → Replay router after weight update → prevent stale routing
+│   │
+│   └── DSV4 models → enforce_eager=True MANDATORY
+│       → 6 failures in 4 days → 3 CUDA graph reverts + 1 sparse cache + 1 swa_loc + 1 chat template
+│       → Per-step dynamic data MUST NOT be cached across steps
+│       → ★★★★★★★★ enforce_eager=True is REQUIRED for DSV4 on any GPU!
 ```
 
 ---
