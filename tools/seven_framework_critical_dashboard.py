@@ -76,6 +76,20 @@ CRITICAL_ISSUES = [
         "fix_pr": "delock reviewing",
         "url": "https://github.com/microsoft/DeepSpeed/pull/8058",
     },
+    {
+        "id": "DS-5",
+        "framework": "DeepSpeed",
+        "issue": "#8075",
+        "title": "fd leak in deepspeed_io_handle_t::wait()",
+        "severity": "MEDIUM",
+        "status": "OPEN",
+        "rtx4090": "File descriptor leak → long training runs → eventual failure",
+        "must": "Monitor for merge",
+        "days_open": 0,
+        "comments": 0,
+        "fix_pr": "#8075 (close fd in wait())",
+        "url": "https://github.com/microsoft/DeepSpeed/pull/8075",
+    },
     # ── Megatron-LM ──
     {
         "id": "MG-1",
