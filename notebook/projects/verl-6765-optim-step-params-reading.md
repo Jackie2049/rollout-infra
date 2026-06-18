@@ -1,6 +1,6 @@
 # verl #6765 — Per-Step Optimizer Overrides (OptimStepParams) Reading
 
-> 2026-06-18 | PR #6765 OPEN | ~110 additions | TinkerTrainingWorker extension
+> 2026-06-18 | PR #6765 MERGED June 18 | ~110 additions | TinkerTrainingWorker extension
 > ★★★★★★★★ Enables Muon-style LR scheduling + per-group optimizer param control
 > ★★★★★★★★ Extends #6717 Tinker primitives → fine-grained optimizer stepping
 > ★★★★★★★★ Scoped to Tinker worker → regular TrainingWorker API unchanged
