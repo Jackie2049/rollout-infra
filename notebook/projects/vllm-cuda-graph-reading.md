@@ -353,6 +353,19 @@ Memory estimation (7B INT4 on RTX 4090 24GB):
   → Under graph replay → PRE-CAPTURED path replayed → NOT current dynamic decision
   → → WRONG expert/adapter/draft → incorrect results, memory corruption, NaN
 
+★★★★★★★★★ vLLM #45972 DSV4 REVERT — source-level mechanism:
+  → #45309 removed @eager_break_during_capture from attention_impl
+  → Used runtime BreakableCUDAGraphCapture.is_active() check instead
+  → During CAPTURE: ran wq_b_kv_insert + compressor in 2-way parallel, indexer sequentially
+  → BUT all inside stream capture context → BECOMES PART OF recorded CUDA graph!
+  → During REPLAY: entire captured graph replayed with STATIC data from capture-time buffers
+  → → NOT with live per-request metadata → garbage output like "the the the the..."
+  → ★★★★★★★★ @eager_break_during_capture is the CORRECT separation boundary:
+    → Static GEMMs (weight matmuls, norms) → CAN be captured → speed benefit
+    → Dynamic routing (attention metadata, MoE expert selection, indexer) → MUST run eagerly
+  → ★★★★★★★★ Universal rule: ANY operation whose behavior depends on per-request metadata
+    → MUST run eagerly, NEVER inside captured CUDA graph
+
 ★★★★★★★★★ RTX 4090 recommendation: enforce_eager=True for training + inference
   → 10-15% throughput sacrifice → but CORRECTNESS guaranteed
   → BudgetRefiner SLO compensates throughput loss with better scheduling
