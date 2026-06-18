@@ -35,6 +35,8 @@ sglang/
 _temp_deepspeed/
 _temp_megatron/
 _temp_rllm/
+rllm/
+vllm-ascend/
 cutlass/
 deepep-src/
 flashinfer/
