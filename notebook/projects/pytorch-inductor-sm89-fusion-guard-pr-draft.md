@@ -188,13 +188,36 @@ Before submitting, we need to validate on an actual RTX 4090 (SM89) that:
 - [ ] Draft PyTorch issue to accompany PR → reference vLLM #39096
 - [ ] Get community feedback on approach → PyTorch dev forum
 
-### ★★★★★★★★ v2.12 Status (2026-06-18 Verification)
+### ★★★★★★★★ Source-Verified on PyTorch main (2026-06-18)
 
-★★★★★★★★★ v2.12 DOES NOT change our insertion point:
-  → choices.py can_fuse_vertical still returns True unconditionally (line 640-647)
-  → DeviceProperties.create() still in choices.py (line 19)
-  → reduction_split_factor still uses props.major >= 10 precedent (line 482-506)
-  → Our 5-line guard INSERTS at the exact same location → no adaptation needed!
+★★★★★★★★★ Verified on current PyTorch main branch (choices.py = 729 lines):
+  → can_fuse_vertical at lines 640-647: still returns True unconditionally → our insertion point CONFIRMED
+  → DeviceProperties at line 19 import: `from .runtime.hints import DeviceProperties, ReductionHint` → already imported
+  → WhyNoFuse at line 20 import: `from .scheduler import BaseSchedulerNode, Scheduler, WhyNoFuse` → already imported
+  → reduction_split_factor at lines 473-506: uses `DeviceProperties.create(device)` + `props.major >= 10` → our PRIMARY precedent
+  → is_reduction() and get_device() on BaseSchedulerNode: CONFIRMED in scheduler.py (lines 1462, 1449)
+  → ★★★★★★★★ No additional imports needed → minimal change → easy review!
+
+★★★★★★★★★ Three-layer fusion call architecture (scheduler.py lines 7886-7926):
+  Layer 1: V.choices.can_fuse() → general heuristic (shared_data_score) → line 7886
+  Layer 2: self.can_fuse_vertical() → structural legality (dependency matching) → lines 7892/7911
+  Layer 3: V.choices.can_fuse_vertical() → profitability hook → lines 7897/7916 ← OUR INSERTION POINT!
+  Layer 4: self.get_backend(device).can_fuse_vertical() → tiling legality → lines 7898/7919
+
+★★★★★★★★★ Call flow (both direct and reindex paths):
+  Direct: node→producer→L1→L2→L3(OUR GUARD)→L4→fuse
+  Reindex: node→reindex→producer→L1→L2→L3(OUR GUARD)→L4→fuse
+  → If our guard returns False → fusion stops → WhyNoFuse logged → separate kernel dispatched!
+
+★★★★★★★★★ #184119 (SM89 fp8 prologue guard) uses get_cuda_arch() — reviewer suggested it:
+  → get_cuda_arch() in cuda_env.py: cached, returns string "89"/"90"/"100" etc.
+  → #184119 adopted get_cuda_arch() per reviewer preference → simpler global check
+  → Our guard uses DeviceProperties.create(device) → per-device → SAME as reduction_split_factor precedent
+  → Why DeviceProperties over get_cuda_arch:
+    1. Already imported in choices.py (no new import needed)
+    2. Same pattern as reduction_split_factor precedent (same file)
+    3. Per-device → more correct in principle (multi-GPU with different SM versions)
+    4. If reviewer prefers get_cuda_arch → we can adapt → but DeviceProperties aligns with existing code
 
 ★★★★★★★★★ v2.12 max_autotune EXACERBATES SM89 behavior:
   → Combo kernels (#177715/#178936/#179317) → more kernels autotuned → more variability
@@ -202,7 +225,7 @@ Before submitting, we need to validate on an actual RTX 4090 (SM89) that:
   → Our guard protects regardless: ALL reduction fusions blocked on SM<90 → no autotuned reductions
 
 ★★★★★★★★★ #187275 confirms same root cause class:
-  → "Fix Combo Kernel Crash with Dynamic Persistent Reduction Dimensions" (opened 2026-06-14)
+  → "Fix Combo Kernel Crash with Dynamic Persistent Reduction Dimensions" (OPEN, updated June 18)
   → Same architectural weakness: persistent reduction block sizes not properly handled
   → Our issue = numerical correctness (different results per batch)
   → Their issue = crash correctness (hardcoded RBLOCK invalid when rnumel changes)
