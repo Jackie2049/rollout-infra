@@ -161,6 +161,20 @@ CRITICAL_ISSUES = [
         "fix_pr": "#5197 (MoE activation free in recompute)",
         "url": "https://github.com/NVIDIA/Megatron-LM/issues/5227",
     },
+    {
+        "id": "MG-6",
+        "framework": "Megatron-LM",
+        "issue": "#5401",
+        "title": "MoE z-loss + CUDA graph capture failure",
+        "severity": "MEDIUM",
+        "status": "OPEN",
+        "rtx4090": "z-loss + CUDA graph → padding_mask=None → CPU-to-CUDA during capture",
+        "must": "Monitor for merge → affects MoE+z-loss+CUDA graph combo",
+        "days_open": 0,
+        "comments": 0,
+        "fix_pr": "#5401 (keep no-padding token count as Python int)",
+        "url": "https://github.com/NVIDIA/Megatron-LM/pull/5401",
+    },
     # ── vLLM ──
     {
         "id": "VL-1",
@@ -346,6 +360,20 @@ CRITICAL_ISSUES = [
         "comments": 0,
         "fix_pr": "Fix for #28591 (DSV4 MTP revert)",
         "url": "https://github.com/sgl-project/sglang/pull/28612",
+    },
+    {
+        "id": "SG-5",
+        "framework": "SGLang",
+        "issue": "#28618",
+        "title": "RFC: SM89/L20 support for DSV4-Flash-FP8",
+        "severity": "HIGH",
+        "status": "OPEN",
+        "rtx4090": "★★★★★★★★ DIRECTLY RELEVANT! SM89 DSV4 path validated on L20 (8xL20 TP=8)",
+        "must": "Monitor for merge → opens DSV4-Flash-FP8 on RTX 4090!",
+        "days_open": 0,
+        "comments": 0,
+        "fix_pr": "RFC stage — upstream SM89-compatible DSV4 path",
+        "url": "https://github.com/sgl-project/sglang/issues/28618",
     },
     # ── PyTorch ──
     {
