@@ -17,8 +17,10 @@
 | 2 | SGLang | #26471→#28591 | DSV4 Online Compress MTP | Testing revert (OPEN) | OPEN revert |
 | 3 | SGLang | #27749→#28575 | MTP weight update distributed | Refactor needed | OPEN reimpl |
 | 4 | SGLang | #28569 | EAGLE3 CUDA graph replay | ILLEGAL MEMORY ACCESS crash | OPEN bug |
+| 5 | vLLM | #45979 | DSV4 flashinfer sparse index cache revert | GSM8K 6.75% vs 87% threshold | OPEN revert June 18 |
 
-★★★★★★★★★ 4 DSV4 issues in 4 days → 2 frameworks → SYSTEMATIC pattern!
+★★★★★★★★★ 5 DSV4 issues in 4 days → 2 frameworks → SYSTEMATIC pattern!
+★★★★★★★★★ 3rd vLLM DSV4 revert (#45979) in same day as #45972 → DSV4 flashinfer sparse cache also broken!
 ```
 
 ---
@@ -92,7 +94,84 @@ During REPLAY:
 
 ---
 
-## 4. SGLang #28591 — MTP Online Compress Revert
+## 4. SGLang #28520 — MTP Accept-Length Bug (EAGER mode, NOT CUDA graph!)
+
+```
+★★★★★★★★★ SGLang #28520 (MERGED June 17, +20/-7 lines) — AMD-specific MTP bug:
+
+Root cause: swa_loc caching bug in get_unified_swa_loc():
+  → Ring buffer formula: swa_loc = req_slot * ring_size + positions % ring_size
+  → Bug: cached swa_loc computed once from initial positions
+  → During multi-step draft decode (speculative_num_steps > 1):
+    → Step 0: writes KV to ring slot for position P → correct
+    → Step 1: position P+1 → BUT cached swa_loc still maps to slot(P) → OVERWRITES Step 0's KV!
+    → Step 2: same overwriting pattern → ALL draft tokens' KV destroyed after Step 0!
+
+★★★★★★★★★ Accept-length collapse:
+  → unified_kv_triton (buggy): 2.17 avg accept length
+  → triton (correct): 3.04 avg accept length
+  → After fix: 2.17 → 3.08 (near-parity with triton)
+  → Throughput: 6355 → 7324 tok/s (+15.3%)
+
+★★★★★★★★★ KEY FINDING: DSV4 MTP is fragile even WITHOUT CUDA graphs!
+  → This bug happened in EAGER mode (unified_kv_triton backend running eagerly)
+  → NOT a CUDA graph replay problem → a Python-level state management bug
+  → The SWA ring buffer assumes positions are fixed for one forward pass
+  → MTP draft decode runs multiple forward passes with advancing positions
+  → → cached state = stale state → KV corruption → accept chain collapse!
+  → ★★★★★★★★ This proves: DSV4 MTP fragility is NOT just CUDA graph → it's architectural!
+
+★★★★★★★★★ Fix: bypass swa_loc cache during multi-step draft decode:
+  → is_multistep_draft_decode = forward_mode.is_decode() and speculative_num_steps > 1
+  → When True: recompute swa_loc from LIVE per-step positions (not cached)
+  → When False: use cached swa_loc (normal decode → positions don't change across steps)
+  → Overhead: negligible → recompute only triggers on draft layers
+
+★★★★★★★★★ AMD-specific: unified_kv_triton backend is ROCm-only path
+  → NVIDIA triton backend has different cache logic → was unaffected
+  → Bug only manifested on AMD MI35x hardware
+```
+
+---
+
+## 5. vLLM #45979 — DSV4 Flashinfer Sparse Cache Revert (3rd DSV4 revert!)
+
+```
+★★★★★★★★★ vLLM #45979 (OPEN June 18) — 3rd DSV4 revert in 24 hours:
+
+What #45863 added (MERGED earlier):
+  → DSV4 flashinfer sparse index cache optimization
+  → Cached sparse attention indices for reuse across decode steps
+  → Performance improvement: reduced index recomputation overhead
+
+What went wrong:
+  → GSM8K accuracy dropped to 6.75% vs 87% threshold in CI nightly!
+  → Almost as bad as #45309's garbage output ("the the the the...")
+  → → Cached indices become stale across decode steps → wrong attention → catastrophic accuracy loss
+
+★★★★★★★★★ Same root cause class as #45309 and #26471:
+  → ALL three DSV4 optimizations cache dynamic data that changes across steps
+  → #45309: cached dynamic routing in CUDA graph → stale expert selection
+  → #26471: cached dynamic compress state for MTP → stale slot assignments
+  → #45863: cached sparse attention indices → stale index data
+  → ★★★★★★★★ UNIVERSAL pattern: DSV4's dynamic layers produce STEP-DEPENDENT data
+  → Caching this data across steps = stale state = correctness regression!
+
+★★★★★★★★★ Timeline of 3 DSV4 reverts in 24 hours:
+  → #45972 MERGED June 18: revert #45309 (cudagraph) → garbage output
+  → #45979 OPEN June 18: revert #45863 (sparse cache) → GSM8K 6.75%
+  → #28591 OPEN June 18: revert #26471 (online compress MTP) → accuracy degradation
+  → ★★★★★★★★ THREE DSV4 correctness regressions in ONE DAY → systematic instability confirmed!
+
+★★★★★★★★★ Updated pattern: ALL 5 DSV4 failures share same root cause class:
+  → DSV4 has MORE dynamic routing layers than any previous model
+  → Each dynamic layer produces step-dependent data → caching = stale = incorrect
+  → Whether cached in CUDA graph, in Python variable, or in C++ kernel → SAME problem!
+```
+
+---
+
+## 6. SGLang #28591 — MTP Online Compress Revert
 
 ```
 ★★★★★★★★★ SGLang #26471 (MERGED June 16, +1276/-49 lines):
@@ -280,12 +359,17 @@ if BreakableCUDAGraphCapture.is_active():
 
 ## Key Findings Summary
 
-★★★★★★★★★ DSV4 has 4 correctness failures in 4 days across 2 frameworks → SYSTEMATIC pattern!
-★★★★★★★★★ DSV4 fragility is CROSS-ARCHITECTURE — broken on NVIDIA (#45972, #28591) AND Ascend (#10628, #10640)!
+★★★★★★★★★ DSV4 has 5 correctness failures in 4 days across 2 frameworks → SYSTEMATIC pattern!
+★★★★★★★★★ DSV4 fragility is CROSS-ARCHITECTURE — broken on NVIDIA (#45972, #45979, #28591) AND Ascend (#10628, #10640)!
+★★★★★★★★★ 3 DSV4 reverts in 24 hours: #45972 (cudagraph), #45979 (sparse cache), #28591 (MTP compress) — same root cause class!
+★★★★★★★★★ SGLang #28520: DSV4 MTP fragile even WITHOUT CUDA graphs — swa_loc caching bug → accept-length 2.17!
+★★★★★★★★★ vLLM #45979: 3rd DSV4 revert — flashinfer sparse cache → GSM8K 6.75% vs 87% threshold!
 ★★★★★★★★★ DSV4 has MORE dynamic routing layers than any previous model → compounding fragility
 ★★★★★★★★★ vLLM #45972 REVERT confirms: @eager_break_during_capture is the CORRECT boundary
-★★★★★★★★★ SGLang #28591 MTP revert + #28569 EAGLE3 crash = same root cause (stale metadata under graph)
+★★★★★★★★★ SGLang #28591 MTP revert + #28569 EAGLE3 crash + #28520 AMD MTP = same root cause (stale metadata)
+★★★★★★★★★ vLLM #45979 3rd revert: flashinfer sparse cache → GSM8K 6.75% → same caching pattern!
 ★★★★★★★★★ Universal rule: ANY per-request dynamic routing MUST run eagerly → NEVER in captured graph
+★★★★★★★★★ Extended rule: ANY per-step dynamic data MUST NOT be cached across steps → DSV4 architectural fragility
 ★★★★★★★★★ RTX 4090: enforce_eager=True MANDATORY for DSV4 → 10-15% throughput sacrifice for correctness
 ★★★★★★★★★ verl GRPO+DSV4 needs BOTH MoE router replay + DSA indexer replay → 2x recording
 ★★★★★★★★★ NO framework has fully safe DSV4 CUDA graph support → all in "safe but slow" mode

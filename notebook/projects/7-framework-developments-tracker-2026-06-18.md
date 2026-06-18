@@ -18,7 +18,9 @@
 | 6 | Megatron | #5394 Muon clipping stalls | Cross-framework pattern w/ DeepSpeed | OPEN 0 reviews |
 | 7 | vLLM | #45972 REVERT DSV4 cudagraph | Garbage output from cudagraph+DSV4 | MERGED June 18 |
 | 8 | SGLang | #28582 RCE CVSS 9.8 | Unauthenticated LoRA endpoint | OPEN 0 maintainer response |
-| 9 | Cross-framework | DSV4 systematic instability | 4 failures in 4 days → enforce_eager=True MANDATORY | vLLM #45972 + SGLang #28591/#28575/#28569 |
+| 9 | Cross-framework | DSV4 systematic instability | 5 failures in 4 days → enforce_eager=True MANDATORY | vLLM #45972/#45979 + SGLang #28591/#28520/#28569 |
+| 10 | vLLM | #45979 DSV4 sparse cache revert | GSM8K 6.75% vs 87% threshold → 3rd DSV4 revert in 24h! | OPEN June 18 |
+| 11 | PyTorch | #187636 autotune_at_compile_time=False | Reduces SM89 batch-dependent fusion risk → complements P9! | OPEN June 18 |
 
 ---
 

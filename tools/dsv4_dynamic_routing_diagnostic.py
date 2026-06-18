@@ -7,10 +7,13 @@ if ANY dynamic routing is detected.
 
 Based on cross-framework DSV4 systematic instability analysis:
   - vLLM #45972: DSV4 cudagraph → garbage output → MERGED revert
+  - vLLM #45979: DSV4 flashinfer sparse cache → GSM8K 6.75% → OPEN revert
   - SGLang #28591: DSV4 MTP → testing revert
+  - SGLang #28520: AMD MTP accept-length bug → 2.17 (NOT CUDA graph, EAGER mode!)
   - SGLang #28569: EAGLE3 CUDA graph → illegal memory access crash
   - vLLM-Ascend #10628/#10640: DSV4 failure + MTP crash on Ascend
   - Universal rule: ANY per-request dynamic routing MUST run eagerly
+  - Extended rule: ANY per-step dynamic data MUST NOT be cached across steps
 
 Usage:
   python dsv4_dynamic_routing_diagnostic.py check <model_name>
