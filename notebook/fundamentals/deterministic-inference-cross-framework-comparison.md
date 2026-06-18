@@ -309,6 +309,10 @@ RouterReplay (#4168):
 ★★★★★★★★★ P9 + #187435 + #6572 = 3 complementary mechanisms → P9 first (5 LOC), #187435 second (804 LOC per-op), #6572 deployment
 ★★★★★★★★★ Triton tl.constexpr = AscendC deterministic tiling → hardware-agnostic determinism principle
 ★★★★★★★★★ GRPO n=8 in same batch → HYBRID on-policy → simplest determinism story for RTX 4090
+★★★★★★★★★ NEW: DSV4 CUDA graph replay = 6th form of non-determinism → batch-dependent graph replay with stale metadata!
+  → 4 failures in 4 days across 2 frameworks + Ascend → enforce_eager=True = simplest fix
+  → @eager_break_during_capture = correct separation boundary (validated by vLLM #45972 REVERT)
+  → Dynamic routing (MoE, DSA, MTP) under graph replay → PRE-CAPTURED path → NOT current decisions
 
 ---
 
@@ -322,5 +326,8 @@ RouterReplay (#4168):
 - P9 issue draft: notebook/projects/pytorch-inductor-sm89-fusion-guard-issue-draft.md
 - Inductor root cause: notebook/fundamentals/pytorch-inductor-sm89-fusion-reading.md
 - Triton swiglu design: notebook/projects/triton-dequant-swiglu-quant-sm89-design.md
+- DSV4 systematic instability: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
+- CUDA graph fragility: notebook/projects/vllm-cuda-graph-reading.md (Section 13)
+- vLLM-Ascend batch_invariant for RL: #10034
 - verl GRPO flow: notebook/fundamentals/verl-rtx4090-grpo-training-flow.md
 - MindIE ATB compose: notebook/projects/mindie-atb-compose-fusion-deep-reading.md
