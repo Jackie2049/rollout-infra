@@ -73,6 +73,21 @@ During REPLAY:
     → MUST run eagerly, NEVER inside captured CUDA graph
 
 ★★★★★★★★★ vLLM #45972 REVERT was MERGED June 18 → confirms: DSV4 cudagraph optimization NOT safe!
+
+★★★★★★★★★ ★★★★★★★★ Both DSV4 reverts removed EXPLICIT correctness guards — this is the pattern:
+
+| Guard | vLLM #45309→#45972 | SGLang #26471→#28591 |
+|-------|---------------------|----------------------|
+| Guard removed | @eager_break_during_capture | assert not use_prefill_cuda_graph |
+| Guard purpose | Static GEMMs OK, dynamic routing must run eagerly | Online C128 without MTP OK, MTP path is dynamic |
+| Symptom | Garbage output "the the the the..." | Accuracy degradation + under investigation |
+| Root cause | Dynamic routing captured in graph → stale expert weights | Dynamic MTP state captured in graph → corrupt KV state |
+| Revert author | WoosukKwon (vLLM lead) | yhyang201 (SGLang maintainer) |
+| Time from merge to revert | Same day | 2 days |
+
+★★★★★★★★★ UNIVERSAL RULE: ANY guard that blocks CUDA graph for dynamic paths is a CORRECTNESS boundary!
+  → Removing these guards → correctness regression → NOT a performance optimization!
+  → ★★★★★★★★ These guards exist for a REASON — they're not "limitations" to be removed!
 ```
 
 ---
@@ -83,12 +98,20 @@ During REPLAY:
 ★★★★★★★★★ SGLang #26471 (MERGED June 16, +1276/-49 lines):
 
 What it added:
-  → JIT kernel: online_c128_mtp.cuh (CUDA C++ kernel for MTP + online compress)
+  → JIT kernel: online_c128_mtp.cuh (537 lines — CUDA C++ kernels!)
   → compress.py: SGLANG_OPT_USE_ONLINE_COMPRESS=1 integration
   → compressor_v2.py: new compressor for DSV4 MTP path
   → deepseek_v4_compress_state.py: state management for compressed KV
   → deepseek_v4_memory_pool.py: memory pool for compress state
   → deepseek_v4_backend.py: attention backend integration
+
+★★★★★★★★★ ★★★★★★★★ CRITICAL: #26471 REMOVED the CUDA graph guard!
+  → BEFORE: assert not use_prefill_cuda_graph, "online c128 doesn't support cuda graph"
+  → AFTER: this assertion was REMOVED entirely!
+  → ★★★★★★★★ EXACTLY the same pattern as vLLM #45309/45972:
+    → vLLM: removed @eager_break_during_capture → dynamic routing captured in graph → garbage output
+    → SGLang: removed assert not use_prefill_cuda_graph → dynamic MTP state captured in graph → accuracy degradation
+    → ★★★★★★★★ Both guards served the SAME purpose: correctness boundary separating static vs dynamic!
 
 Performance claim:
   → "280% improvement in max tokens (2M→5.7M)"
@@ -97,8 +120,12 @@ Performance claim:
 ★★★★★★★★★ #28591 reverts this entire +1276/-49 PR — for "testing":
   → Labeled "deepseek" + "jit-kernel"
   → The JIT kernel (C++ CUDA) compilation may have correctness issues
-  → Online Compress + MTP interaction may have stale state under graph replay
+  → Online Compress + MTP interaction has stale state under graph replay
   → ★★★★★★★★ Similar pattern to vLLM: combining dynamic operations (compress + MTP) → state consistency issues!
+
+★★★★★★★★★ SGLang #28520 (MERGED June 17): AMD MTP accept-length bug!
+  → Draft steps overwrite earlier draft tokens' KV in same ring slot
+  → Accept length collapsed from 3.04→2.17 → DSV4 MTP state management IS fragile even without CUDA graphs!
 
 ★★★★★★★★★ SGLang #28575 (OPEN) — reimpl MTP weight update from distributed:
   → #27749 was the "first cut" of distributed weight-update for speculative draft worker(s)
@@ -271,6 +298,7 @@ if BreakableCUDAGraphCapture.is_active():
 - SGLang #26471→#28591: DSV4 MTP Online Compress revert (OPEN)
 - SGLang #27749→#28575: MTP weight update reimpl (OPEN)
 - SGLang #28569: EAGLE3 CUDA graph replay crash (OPEN)
+- SGLang #28520: AMD MTP accept-length bug (MERGED June 17 — DSV4 MTP state IS fragile even without CUDA graphs!)
 - SGLang #27097: multi-LoRA determinism (4 factors)
 - vLLM #39096: SM89 batch invariance
 - vLLM-Ascend #10628: DSV4 chat failure on Ascend (OPEN)
