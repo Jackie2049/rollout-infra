@@ -183,6 +183,16 @@ Fix for #5394 ChainedOptimizer clipping stalls
 
 ### OPEN: #181248 — B200 Triton async fence nondeterminism (NOT SM89)
 
+### NEW: #187620 — FSDP2 PartialOffloadPolicy (DRAFT, +153/-7)
+```
+★★★★★★★★★ RTX 4090 GAME-CHANGER! Fractional CPU parameter offload:
+  → offload_ratio in [0.0, 1.0] → offload just enough to fit in 24 GiB budget
+  → Greedy largest-first selector → deterministic → no cross-rank communication
+  → MoE expert params = largest → offloaded first → ideal for greedy algorithm
+  → ★★★★★★★★ DRAFT → API direction review → no human comments yet → watch for maintainer feedback
+  → Integration path: verl FSDP2 + PartialOffloadPolicy → future config option
+```
+
 ### MERGED June 16: #187347 — Revert cudagraph skip for kernel-free inductor graphs (release/2.13 cherry-pick)
 ```
 ★★★★★★★★★ Important revert in PyTorch 2.13!
@@ -238,7 +248,13 @@ Fix for #5394 ChainedOptimizer clipping stalls
 ★★★★★★★★★ SGLang #28499 MERGED June 17: csgmv CUDA graph segment replay → partially fixes #27097 Factor 2
 ★★★★★★★★★ SGLang #28566 OPEN: LoRA sentinel-pad for DP-attention → another source of multi-LoRA divergence
 ★★★★★★★★★ vLLM #45964 OPEN: MLA decode query replication → DCP optimization for DeepSeek
-★★★★★★★★★ DeepSpeed #8072/#8073: Still OPEN, updated June 17 → ZeRO-3+PEFT regression NOT fixed yet
+★★★★★★★★★ PyTorch #187620 NEW: FSDP2 PartialOffloadPolicy → fractional CPU offload → RTX 4090 game-changer!
+★★★★★★★★★ Megatron #5387 NEW: MFSDPv2 fully_shard → NVIDIA's own FSDP → 993 additions → Final Review
+★★★★★★★★★ vLLM #45849 MERGED: NaN fix for hybrid attention (Qwen3.5 linear+full attention)
+★★★★★★★★★ vLLM #45972 OPEN: Revert DSV4 cudagraph optimization → correctness regression from perf optimization
+★★★★★★★★★ vLLM #45863 MERGED: DSv4 sparse index cache → 2-4% TTFT improvement
+★★★★★★★★★ DeepSpeed #8072/#8073: Still OPEN, 0 comments on fix PR → stalled → needs community attention
+★★★★★★★★★ DeepSpeed #8058: ZenFlow still OPEN → 2 comments only
 ★★★★★★★★★ PyTorch #187347: cudagraph skip reverted in 2.13 → batch invariance relevant
 ★★★★★★★★★ rLLM #605: STILL OPEN, 16 days without update → needs community engagement
 ★★★★★★★★★ rLLM #650: Terminal-RL major merge (3673 additions)
