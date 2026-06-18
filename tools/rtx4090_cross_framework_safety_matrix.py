@@ -174,6 +174,21 @@ MATRIX = {
                 "fix": "Track for Qwen3.6 hybrid Mamba+GDN deterministic inference",
             },
             {
+                "id": "#45964",
+                "title": "MLA DCP query replication — replicate small/shard large (299 additions)",
+                "fix": "RTX 4090 NOT affected (DCP=1 pure no-op) but architectural lesson: 'replicate small, shard large'",
+            },
+            {
+                "id": "#45972",
+                "title": "Revert DSV4 cudagraph optimization — CORRECTNESS regression from perf optimization",
+                "fix": "Lesson: CUDA graph optimization can break MoE correctness → WATCH for similar issues",
+            },
+            {
+                "id": "#45917",
+                "title": "FlashInfer all-reduce fusion TP group fix — TP>1+DP>1 hang (MERGED)",
+                "fix": "2-line fix → TP>1+DP>1 was broken → RTX 4090 TP=1+DP=1 not affected",
+            },
+            {
                 "id": "MRv2",
                 "title": "MRv2 default expanding — verl may be safe",
                 "fix": "VLLM_USE_V2_MODEL_RUNNER=0 as conservative fallback",
@@ -320,8 +335,23 @@ MATRIX = {
             },
             {
                 "id": "#5219",
-                "title": "Single-GPU Muon crash fix — close to merge",
+                "title": "Single-GPU Muon crash fix — Final Review, close to merge",
                 "fix": "None guard for dp_cp_params_list → essential for single GPU",
+            },
+            {
+                "id": "#5387",
+                "title": "MFSDPv2 fully_shard — Megatron's own FSDP using DBuffer primitives (993 additions)",
+                "fix": "Experimental → Final Review → same summon/release lifecycle as FSDP2 + #6512",
+            },
+            {
+                "id": "#5389",
+                "title": "GDN THD all-to-all MERGED June 17 — fused GDN THD restore on dev",
+                "fix": "353 additions → MoE/MLA attention optimization → multi-GPU path",
+            },
+            {
+                "id": "#5369",
+                "title": "MFSDPv2 meta-parameter support — to_empty + reset_parameters (2398 additions)",
+                "fix": "Follow-up to #5387 → modular → can be kept/dropped independently",
             },
         ],
     },
@@ -440,6 +470,16 @@ MATRIX = {
                 "id": "#184119",
                 "title": "SM89 fp8→bf16 prologue fusion guard → VALIDATES P9 thesis!",
                 "fix": "Blocks fp8-to-bf16 fusion into mm template on pre-sm90 → same Inductor SM89 class",
+            },
+            {
+                "id": "#187620",
+                "title": "FSDP2 PartialOffloadPolicy → fractional CPU offload → RTX 4090 game-changer!",
+                "fix": "offload_ratio in [0.0,1.0] → offload only enough to fit → fraction of copy cost → MoE experts offloaded first",
+            },
+            {
+                "id": "#187347",
+                "title": "cudagraph skip for kernel-free Inductor graphs reverted → batch invariance relevance",
+                "fix": "Shows PyTorch actively addressing Inductor consistency → strengthens P9 case",
             },
             {
                 "id": "Non-TMA",
