@@ -18,9 +18,13 @@
 | 3 | SGLang | #27749→#28575 | MTP weight update distributed | Refactor needed | OPEN reimpl |
 | 4 | SGLang | #28569 | EAGLE3 CUDA graph replay | ILLEGAL MEMORY ACCESS crash | OPEN bug |
 | 5 | vLLM | #45979 | DSV4 flashinfer sparse index cache revert | GSM8K 6.75% vs 87% threshold | OPEN revert June 18 |
+| 6 | SGLang | #28520 | MTP swa_loc cache (EAGER mode!) | accept-length 3.04→2.17 collapse | NOT CUDA graph → EAGER bug! |
+| 7 | vLLM-Ascend | #10645 | DSV4 chat template | Wrong template formatting | FIXED |
 
-★★★★★★★★★ 5 DSV4 issues in 4 days → 2 frameworks → SYSTEMATIC pattern!
-★★★★★★★★★ 3rd vLLM DSV4 revert (#45979) in same day as #45972 → DSV4 flashinfer sparse cache also broken!
+★★★★★★★★★ 7 DSV4 issues in 4 days → 3 frameworks → SYSTEMATIC pattern!
+★★★★★★★★★ Key: #28520 proves DSV4 fragile even WITHOUT CUDA graphs (EAGER mode bug!)
+★★★★★★★★★ #10645 extends DSV4 instability to Ascend NPU → now 3 platforms affected!
+★★★★★★★★★ Extended universal rule: per-step dynamic data MUST NOT be cached → not just CUDA graph!
 ```
 
 ---
