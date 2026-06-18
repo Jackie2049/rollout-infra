@@ -21,7 +21,15 @@ All three share the same root cause: **magnitude-based global gradient clipping 
 
 ### Why the bug is optimizer-agnostic
 
-The author's clarification is important: AdamW also stalls under the same clip when its `eps` floor is hit. The fix targets orthogonalizing optimizers because magnitude clipping is *semantically meaningless* for scale-invariant updates — a clean, side-effect-free skip.
+The author's clarification and experimental confirmation are critical: **yuchenwang3 tested both Adam and Muon with clip_grad=1.0 on Qwen3.5-35B-A3B**:
+
+| optimizer | clip_grad | result |
+|-----------|-----------|--------|
+| adam | 1.0 | stalls ~0.5 |
+| **adam** | **0** | **overfits → 0.029** |
+| dist_muon | 0 | overfits → 0 |
+
+AdamW also stalls under the same clip when the global `grad_norm` is large enough to make `c = clip_grad/grad_norm` tiny, pushing per-parameter updates below `eps` significance. The fix targets orthogonalizing optimizers as the cleanest approach, but the underlying issue — **global clipping scaling down ALL parameter groups uniformly regardless of their individual scale requirements** — is optimizer-agnostic.
 
 ### PR #5395 alignment
 
