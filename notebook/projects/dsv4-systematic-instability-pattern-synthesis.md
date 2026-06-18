@@ -20,10 +20,11 @@
 | 5 | vLLM | #45979 | DSV4 flashinfer sparse index cache revert | GSM8K 6.75% vs 87% threshold | OPEN revert June 18 |
 | 6 | SGLang | #28520 | MTP swa_loc cache (EAGER mode!) | accept-length 3.04→2.17 collapse | NOT CUDA graph → EAGER bug! |
 | 7 | vLLM-Ascend | #10645 | DSV4 chat template | Wrong template formatting | FIXED |
+| 8 | vLLM-Ascend | #10724 | DSV4 crash on 2*A2 PD-Mix multi-node | Deployment crash (Ascend) | OPEN bug June 18 |
 
-★★★★★★★★★ 7 DSV4 issues in 4 days → 3 frameworks → SYSTEMATIC pattern!
+★★★★★★★★★ 8 DSV4 issues in 4 days → 3 frameworks → 2 platforms → SYSTEMATIC pattern!
 ★★★★★★★★★ Key: #28520 proves DSV4 fragile even WITHOUT CUDA graphs (EAGER mode bug!)
-★★★★★★★★★ #10645 extends DSV4 instability to Ascend NPU → now 3 platforms affected!
+★★★★★★★★★ #10645 + #10724 extends DSV4 instability to Ascend NPU → now 2 platforms affected!
 ★★★★★★★★★ Extended universal rule: per-step dynamic data MUST NOT be cached → not just CUDA graph!
 ```
 
@@ -363,11 +364,12 @@ if BreakableCUDAGraphCapture.is_active():
 
 ## Key Findings Summary
 
-★★★★★★★★★ DSV4 has 5 correctness failures in 4 days across 2 frameworks → SYSTEMATIC pattern!
-★★★★★★★★★ DSV4 fragility is CROSS-ARCHITECTURE — broken on NVIDIA (#45972, #45979, #28591) AND Ascend (#10628, #10640)!
+★★★★★★★★★ DSV4 has 8 correctness failures across 3 frameworks + 2 platforms → SYSTEMATIC pattern!
+★★★★★★★★★ DSV4 fragility is CROSS-ARCHITECTURE — broken on NVIDIA (#45972, #45979, #28591) AND Ascend (#10645, #10724)
 ★★★★★★★★★ 3 DSV4 reverts in 24 hours: #45972 (cudagraph), #45979 (sparse cache), #28591 (MTP compress) — same root cause class!
 ★★★★★★★★★ SGLang #28520: DSV4 MTP fragile even WITHOUT CUDA graphs — swa_loc caching bug → accept-length 2.17!
 ★★★★★★★★★ vLLM #45979: 3rd DSV4 revert — flashinfer sparse cache → GSM8K 6.75% vs 87% threshold!
+★★★★★★★★★ vLLM-Ascend #10724 NEW: DSV4 crash on 2*A2 PD-Mix multi-node → 8th DSV4 failure! Ascend deployment instability
 ★★★★★★★★★ DSV4 has MORE dynamic routing layers than any previous model → compounding fragility
 ★★★★★★★★★ vLLM #45972 REVERT confirms: @eager_break_during_capture is the CORRECT boundary
 ★★★★★★★★★ SGLang #28591 MTP revert + #28569 EAGLE3 crash + #28520 AMD MTP = same root cause (stale metadata)

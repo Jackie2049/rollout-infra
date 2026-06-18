@@ -1,7 +1,7 @@
 # Cross-Framework Muon Optimizer Status Synthesis — RTX 4090 Consultant Guide
 
 > 2026-06-18 | Comprehensive Muon optimizer status across DeepSpeed, Megatron, verl, rLLM
-> ★★★★★★★★ RTX 4090 Muon: CURRENTLY NOT VIABLE → 3 blockers remain
+> ★★★★★★★★ RTX 4090 Muon: CURRENTLY NOT VIABLE → 6 blockers remain
 > ★★★★★★★★ AdamW + CPU_Adam remains ONLY safe optimizer for RTX 4090 GRPO
 > ★★★★★★★★ Tracking 6 open issues/prs that must resolve for Muon to work on single GPU
 
@@ -12,11 +12,13 @@
 ```
 ★★★★★★★★★ Muon optimizer status on RTX 4090: NOT VIABLE
 
-4 BLOCKERS:
+6 BLOCKERS:
   1. Muon CPU offload BLOCKED (#7939 closed without merge) → can't fit 24GB
   2. Global gradient clipping DESTROYS Muon (#7776/#8068/#5394) → stalls Newton-Schulz
   3. Single-GPU Muon CRASHES (#5219 still OPEN) → dp_cp_params_list=None → TypeError
   4. Muon package NOT INSTALLABLE (#5179 OPEN) → PyPI stub v999.9.9 → placeholder → can't even import
+  5. GatedDeltaNet in_proj INCOMPATIBLE with Muon (#5400 NEW June 18) → must route to Adam
+  6. ChainedOptimizer applies global grad-norm to Muon (#5394 NEW June 17) → silently stalls training
 
 ★★★★★★★★★ Current RTX 4090 optimizer recommendation:
   → AdamW with CPU_Adam → ZeRO-2 + param_offload + optimizer_offload
@@ -66,7 +68,7 @@
 ## Megatron-LM Muon Blockers
 
 ```
-★★★★★★★★★ 3 Megatron Muon blockers (2 OPEN, 1 DRAFT):
+★★★★★★★★★ 4 Megatron Muon blockers (3 OPEN, 1 DRAFT):
 
 1. #5219 — Single-GPU Muon CRASH (Final Review, OPEN):
   → dp_cp_params_list = None on single GPU → zip(bucket_params_list, None) → TypeError
@@ -82,7 +84,14 @@
   → ★★★★★★★★ Fix PR #5395: skip_grad_norm_clip attribute (+15/-1)
   → Bypasses global clipping for specific sub-optimizers → Muon gets skip=True
 
-3. #5391 — Compact LayerWise DDP (DRAFT, OPEN):
+3. #5400 — GatedDeltaNet in_proj INCOMPATIBLE with Muon (NEW June 18):
+  → Routes GatedDeltaNet's in_proj to Adam instead of Muon's orthogonalizer
+  → Why: GatedDeltaNet uses recurrent gating → in_proj dimensions don't work with Newton-Schulz
+  → Muon's orthogonalizer assumes "orthogonal update" → but gated recurrence is NOT orthogonal
+  → ★★★★★★★★ 6th Muon blocker: even architecture-level incompatibility exists
+  → This confirms Muon is NOT universal → specific architectures need Adam fallback
+
+4. #5391 — Compact LayerWise DDP (DRAFT, OPEN):
   → Removes dp_size padding on dp=1 → per-buffer use_distributed_optimizer
   → ★★★★★★★★ NOT a blocker but HIGHLY beneficial → Muon buffers compact (all-reduce)
   → +218/-58 → significant change → DRAFT status → needs more review
@@ -90,8 +99,9 @@
 ★★★★★★★★★ Megatron Muon dependency chain:
   → #5219 (crash fix) MUST merge FIRST → enables initialization
   → #5395 (clipping skip) MUST merge SECOND → enables correct training
+  → #5400 (GatedDeltaNet routing) MUST merge → prevents architecture-level incompatibility
   → #5391 (compact DDP) SHOULD merge → memory efficiency
-  → ★★★★★★★★ All 3 needed for production RTX 4090 Muon on Megatron
+  → ★★★★★★★★ All 4 needed for production RTX 4090 Muon on Megatron
 ```
 
 ---
