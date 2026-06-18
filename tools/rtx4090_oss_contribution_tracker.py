@@ -300,6 +300,57 @@ CONTRIBUTIONS = [
         gpu_needed=True,
         unique_contribution=True,
     ),
+    # ===== TIER 1 Comments (new from June 18 session) =====
+    Contribution(
+        id="C11",
+        title="Comment on DeepSpeed #8073 — ZeRO-3+PEFT LoRA regression 1-line fix",
+        target="microsoft/DeepSpeed",
+        tier=Tier.TIER1_COMMENT,
+        priority=7,
+        status=Status.DRAFT_READY,
+        issue_ref="microsoft/DeepSpeed #8072/#8073",
+        description="Root cause analysis: #8066 per-policy dtype cast → mixed dtype in "
+                    "_allgather_params_coalesced → TypeError. ZeRO-2 UNAFFBECTED. "
+                    "#8073 provides correct 2-line fix. 0 reviews for 2+ days → STALLED.",
+        draft_ref="notebook/projects/deepspeed-8072-8073-zero3-peft-regression-comment-draft.md",
+        next_steps=["Post root cause on #8072", "Post verification on #8073"],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
+    Contribution(
+        id="C12",
+        title="vLLM DSA Hadamard sleep/wake preservation → CUDA verification + bug report",
+        target="vllm-project/vllm",
+        tier=Tier.TIER2_PR,
+        priority=8,
+        status=Status.GPU_VALIDATION_NEEDED,
+        issue_ref="vllm-project/vllm (new issue, if bug found)",
+        description="If vLLM DSA Hadamard matrix becomes corrupted during sleep/wake on CUDA "
+                    "(same pattern as vLLM-Ascend #10684), this would be a P9-tier contribution. "
+                    "Fix: regenerate Hadamard on wake (deterministic, seed-based) + copy before "
+                    "in-place mutation. NEEDS GPU verification first!",
+        draft_ref="tools/dsa_hadamard_sleep_wake_validator.py (rtx4090 mode)",
+        next_steps=["Verify Hadamard preservation on CUDA GPU",
+                    "If corrupted → create issue + PR with fix"],
+        gpu_needed=True,
+        unique_contribution=True,
+    ),
+    Contribution(
+        id="C13",
+        title="Comment on vLLM-Ascend #10579 — MoE NaN 1-line fix (0 reviews)",
+        target="vllm-project/vllm-ascend",
+        tier=Tier.TIER1_COMMENT,
+        priority=6,
+        status=Status.DRAFT_READY,
+        issue_ref="vllm-ascend #10579",
+        description="torch.abs() on expanded_row_idx before npu_moe_token_unpermute → "
+                    "duplicate indices → NaN. 1-line fix: remove torch.abs(). "
+                    "0 reviews → STALLED. Same pattern as DeepSpeed #8073.",
+        draft_ref="notebook/projects/vllm-ascend-critical-developments-2026-06-18-reading.md",
+        next_steps=["Post verification comment on #10579"],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
 ]
 
 
