@@ -322,3 +322,38 @@ Memory estimation (7B INT4 on RTX 4090 24GB):
 - Megatron: PR #5242 + PR #5280 (GRPO cudagraph regression)
 - 相关: [CUDA Graphs 基础](cuda-graphs.md), [V1 Executor](vllm-v1-executor-reading.md)
 - `tools/cuda_graph_demo.py` — CUDA Graph 实测数据
+
+---
+
+## 13. CUDA Graph Systematic Fragility Pattern (June 2026 Update)
+
+```
+★★★★★★★★★ CUDA graph replay bugs across ALL frameworks → SYSTEMATIC pattern:
+
+1. vLLM #45972 MERGED June 18: REVERT of DSV4 cudagraph optimization
+   → #45309 cudagraph + DeepSeek-V4 → GARBAGE OUTPUT → correctness regression!
+   → REVERTED within days → same pattern: graph replay + complex model = incorrect results
+
+2. SGLang #27097: multi-LoRA determinism bug → 4 factors
+   → SGMV dynamic routing + CUDA graph replay + KV stale state + flashinfer batch-dep
+   → #28499 csgmv MERGED June 17 → partial fix (Factor 2 only)
+
+3. SGLang #28569: EAGLE3 CUDA graph replay illegal memory access on gpt-oss-120b
+   → --disable-cuda-graph avoids crash → confirms systematic fragility
+
+4. SGLang #28582: LoRA endpoint RCE (CVSS 9.8) → not graph-related but security fragility
+
+5. SGLang #28588: image decompression bomb → 2nd security issue same week
+
+6. vLLM #39096: SM89 batch invariance → Inductor fuses under cudagraph → batch-dependent
+   → enforce_eager=True skips cudagraph → safe on RTX 4090
+
+★★★★★★★★★ Root cause: CUDA graph replay assumes STATIC execution path
+  → Any DYNAMIC routing (MoE expert selection, LoRA adapter selection, spec decode draft)
+  → Under graph replay → PRE-CAPTURED path replayed → NOT current dynamic decision
+  → → WRONG expert/adapter/draft → incorrect results, memory corruption, NaN
+
+★★★★★★★★★ RTX 4090 recommendation: enforce_eager=True for training + inference
+  → 10-15% throughput sacrifice → but CORRECTNESS guaranteed
+  → BudgetRefiner SLO compensates throughput loss with better scheduling
+```
