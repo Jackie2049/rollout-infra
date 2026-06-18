@@ -82,14 +82,30 @@ Algorithm:
   → Bounded: offloaded numel NEVER exceeds budget → safe
   → Largest-first: biggest params offloaded first → most memory freed per param
 
-★★★★★★★★★ RTX 4090 example (Qwen3.5-27B LoRA, dp=1):
-  → Total sharded param numel: ~5B (27B params / 1 rank = 27B)
-  → Wait — dp=1 → FSDP2 sharding is identity → each rank has full params
-  → Actually for dp=1: sharded numel = total numel / world_size = total / 1 = total
-  → Budget = floor(0.2 * total) → offload largest params first
-  → ★★★★★★★★ On single GPU: FSDP2 all-gather = identity → but offload still works!
-  → Offloaded params stored on CPU → materialized on GPU for forward → then freed
-  → Resident params always on GPU → no copy latency
+★★★★★★★★★ RTX 4090 example — CRITICAL dp=1 insight:
+
+  → On dp=1 (single GPU): FSDP2 shard = identity → shard_size = total_size / 1 = total!
+  → Resident params: sharded (full) storage ALWAYS on GPU → for 27B model = 37.8 GiB (ratio=0.3) → OOM!
+  → ★★★★★★★★ PartialOffloadPolicy DOES NOT help RTX 4090 dp=1 for large models!
+  → Resident shard = full param → can't fit 24 GiB → must offload ratio near 1.0 → ≈ full offload
+
+★★★★★★★★★ The dp=1 limitation explained:
+
+  → FSDP2 with dp=1: each rank has full params → sharding = identity → no memory savings from sharding
+  → CPUOffloadPolicy: ALL shards on CPU → peak = largest all-gathered unit + activations → FITS
+  → PartialOffloadPolicy: resident shards = full params on GPU → 70% of 27B = 37.8 GiB → OOM!
+  → ★★★★★★★★ On single GPU: resident storage = full model portion → exceeds 24 GiB for any large model!
+
+★★★★★★★★★ When PartialOffloadPolicy ACTUALLY helps:
+  → Multi-GPU (dp>=2): shard_size = total/dp → resident shard = fraction → can fit
+  → dp=2: 27B/2 = 13.5B → resident 70% = 9.45B → 18.9 GiB → FITS on each GPU!
+  → dp=4: 27B/4 = 6.75B → resident 70% = 4.725B → 9.45 GiB → comfortable
+  → ★★★★★★★★ PartialOffloadPolicy = multi-GPU optimization → NOT single GPU benefit
+
+★★★★★★★★★ RTX 4090 single GPU conclusion:
+  → CPUOffloadPolicy (full offload) → STILL the ONLY viable path on dp=1
+  → PartialOffloadPolicy → reduces copy bandwidth → but resident storage too large for dp=1
+  → ★★★★★★★★ The benefit is ONLY for multi-GPU scenarios → RTX 4090 stays with full offload
 ```
 
 ---
@@ -131,27 +147,39 @@ Algorithm:
 ## 5. RTX 4090 Impact Assessment
 
 ```
-★★★★★★★★★ RTX 4090 memory scenarios:
+★★★★★★★★★ RTX 4090 memory scenarios — CORRECTED with dp=1 insight:
 
-Scenario 1: Qwen3-8B LoRA (~16.2 GiB peak)
-  → Fits with 7.8 GiB margin → PartialOffloadPolicy(0.0) → same as OffloadPolicy
-  → No need for partial offload → but future larger models need it!
+★★★★★★★★★ CRITICAL: PartialOffloadPolicy DOES NOT help RTX 4090 dp=1!
+  → FSDP2 dp=1: shard = identity → resident shard = full param → too large for 24 GiB
+  → CPUOffloadPolicy (full offload) remains ONLY viable path for large models on single GPU
 
-Scenario 2: Qwen3.5-27B LoRA (~16.2 GiB peak with per-unit summon)
-  → Tight fit → 7.8 GiB margin → but what if optimizer states + activations overflow?
-  → PartialOffloadPolicy(0.15) → offload 15% → ~2.4 GiB freed → more margin
-  → ★★★★★★★★ "Slightly over budget" → partial offload → perfect fit
+Scenario 1: Qwen3-8B LoRA (~16.2 GiB peak, dp=1)
+  → Fits with full offload → 7.8 GiB margin → CPUOffloadPolicy works
+  → PartialOffloadPolicy → resident shard = 8B * 2 = 16 GiB → FITS for ratio=0.0 only
+  → ★★★★★★★★ No benefit from partial offload on dp=1 → full offload is sufficient
 
-Scenario 3: MoE models (Qwen3.5-35B-A3B, ~20 GiB)
-  → Very tight → 4 GiB margin → any overflow → OOM
-  → PartialOffloadPolicy(0.3) → offload 30% → ~6 GiB freed → comfortable margin
-  → ★★★★★★★★ MoE expert params = largest → offloaded first → ideal for greedy algo!
+Scenario 2: Qwen3.5-27B LoRA (~16.2 GiB peak, dp=1, per-unit summon)
+  → Full offload fits → CPUOffloadPolicy → 7.8 GiB margin
+  → PartialOffloadPolicy → resident shard = 27B * 0.7 * 2 = 37.8 GiB → OOM!
+  → ★★★★★★★★ MUST use full offload → can't have any resident params on dp=1
 
-★★★★★★★★★ Comparison with current strategies:
-  → Current: full CPU_Adam offload (ZeRO-2 style) → ALL params/grads/optimizer on CPU
-  → PartialOffloadPolicy: only offload fraction → resident params stay GPU → faster forward
-  → ★★★★★★★★ Potential benefit: 30-50% less host-device copy bandwidth per step
-  → But: needs FSDP2 (verl supports FSDP2) → verl CPPO+bypass + PartialOffloadPolicy?
+Scenario 3: MoE models (dp=1)
+  → Qwen3-MoE (~19.8 GiB peak) → fits with full offload → 4.2 GiB margin
+  → PartialOffloadPolicy → resident shard still too large → OOM!
+  → ★★★★★★★★ Full offload is the only safe option on dp=1
+
+★★★★★★★★★ PartialOffloadPolicy ACTUALLY helps (multi-GPU only):
+
+Multi-GPU dp=2 example (2× RTX 4090):
+  → Qwen3.5-27B with ratio=0.3: resident shard = 27B/2 * 0.7 * 2 = 18.9 GiB → FITS!
+  → 30% offloaded → 70% resident → faster forward → less host-device copy
+  → ★★★★★★★★ PartialOffloadPolicy = multi-GPU optimization → reduces copy bandwidth
+  → On dp=2: each GPU holds resident shard (18.9 GiB) → FITS with 5 GiB margin
+
+★★★★★★★★★ RTX 4090 single GPU conclusion:
+  → CPUOffloadPolicy (full offload) → ONLY viable path → proven → stable → works NOW
+  → PartialOffloadPolicy → multi-GPU only → NOT beneficial on dp=1
+  → ★★★★★★★★ This CORRECTS earlier "RTX 4090 game-changer" claim → it's multi-GPU game-changer!
 
 ★★★★★★★★★ Integration path for verl:
   → verl supports FSDP2 backend → fsdp_config can specify offload policy
@@ -196,15 +224,14 @@ DeepSpeed ZeRO-2 + CPU_Adam:
 
 ## Key Findings Summary
 
-★★★★★★★★★ #187620: PartialOffloadPolicy → fractional CPU offload → RTX 4090 GAME-CHANGER
-★★★★★★★★★ offload_ratio in [0.0, 1.0] → boundary equivalence with existing policies
+★★★★★★★★★ #187620: PartialOffloadPolicy → fractional CPU offload → multi-GPU benefit ONLY
+★★★★★★★★★ CORRECTED: NOT RTX 4090 dp=1 game-changer → FSDP2 dp=1 shard=identity → resident too large
+★★★★★★★★★ CPUOffloadPolicy (full offload) → STILL ONLY viable path for RTX 4090 single GPU
+★★★★★★★★★ PartialOffloadPolicy helps dp>=2 → resident shard smaller → can fit → less copy bandwidth
 ★★★★★★★★★ Deterministic greedy largest-first selector → no cross-rank communication needed
 ★★★★★★★★★ 3 files, +153/-7 → additive API → backward compatible
-★★★★★★★★★ RTX 4090: "slightly over budget" → offload just enough → fraction of copy cost
-★★★★★★★★★ MoE models benefit most → expert params = largest → offloaded first
-★★★★★★★★★ DRAFT → API direction review → not yet full CI → watch for progress
-★★★★★★★★★ Integration: verl FSDP2 + PartialOffloadPolicy → future RTX 4090 config option
-★★★★★★★★★ Complementary with #6512 per-unit summon → summon what you need + offload what you must
+★★★★★★★★★ RTX 4090 dp=1: MUST use full offload → partial offload resident storage exceeds 24 GiB
+★★★★★★★★★ Multi-GPU future: dp=2 → PartialOffloadPolicy(ratio=0.3) → faster forward + less copy
 
 ---
 

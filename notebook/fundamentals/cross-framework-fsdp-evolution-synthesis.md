@@ -57,12 +57,13 @@ Implementation 4: DeepSpeed ZeRO-2 + CPU_Adam
   → PyTorch FSDP2 standard behavior → all-gather per unit
   → ★★★★★★★★ WORKS on RTX 4090 → but ALL optimizer states still on CPU (full offload)
 
-★★★★★★★★★ Level 3: Fractional offload (FUTURE, BEST for RTX 4090)
+★★★★★★★★★ Level 3: Fractional offload (FUTURE, dp>=2 multi-GPU ONLY)
   → PartialOffloadPolicy → offload only fraction → resident params stay on GPU
-  → Peak = largest offloaded unit + resident params → balanced
+  → Peak = resident shard + largest offloaded unit + activations → balanced
   → ★★★★★★★★ Example: offload_ratio=0.3 → 30% params on CPU → 70% on GPU → faster forward
   → MoE expert params = largest → offloaded first → ideal for greedy selector
-  → ★★★★★★★★ BEST for RTX 4090 → minimize host-device copy → maximize GPU residency
+  → ★★★★★★★★ CRITICAL: NOT viable on dp=1 → FSDP2 shard=identity → resident shard = full param → exceeds 24 GiB!
+  → ★★★★★★★★ ONLY beneficial on dp>=2 → resident shard = total/dp * (1-ratio) → fits per GPU
 ```
 
 ---
@@ -169,7 +170,8 @@ actor_rollout_ref:
 ★★★★★★★★★ PyTorch #187620 PartialOffloadPolicy → RTX 4090 game-changer → fractional CPU offload
 ★★★★★★★★★ Megatron #5387 MFSDPv2 → DBuffer primitives → explicit storage lifecycle → same pattern
 ★★★★★★★★★ verl #6512 per-unit LoRA summon → same summon/release pattern → 10x peak reduction
-★★★★★★★★★ RTX 4090 path: FSDP2 + CPUOffloadPolicy (now) → FSDP2 + PartialOffloadPolicy (future)
+★★★★★★★★★ RTX 4090 path: FSDP2 + CPUOffloadPolicy (now, dp=1 MUST full offload) → FSDP2 + PartialOffloadPolicy (future, dp>=2 ONLY)
+★★★★★★★★★ CRITICAL CORRECTION: PartialOffloadPolicy NOT beneficial on dp=1 → FSDP2 shard=identity → resident storage too large → CPUOffloadPolicy remains ONLY option on single GPU
 ★★★★★★★★★ MoE models benefit most from partial offload → expert params = largest → offloaded first
 ★★★★★★★★★ Integration: verl config needs offload_ratio → simple addition → but #187620 must merge first
 
