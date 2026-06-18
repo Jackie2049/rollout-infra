@@ -3,6 +3,7 @@
 > 2026-06-18 | Cross-framework deep synthesis of DeepSeek-V4 correctness failures
 > ★★★★★★★★ DSV4 is the most fragile production model in 2026 — 4 reverts/crashes in 1 week across 2 frameworks!
 > ★★★★★★★★ Root cause: DSV4 has MORE dynamic routing than any previous model → breaks static execution assumptions
+> ★★★★★★★★ NEW June 18: SGLang #28612 DSV4 C128 state mapping fix — co-authored with shiyu7
 
 ---
 
@@ -21,8 +22,9 @@
 | 6 | SGLang | #28520 | MTP swa_loc cache (EAGER mode!) | accept-length 3.04→2.17 collapse | NOT CUDA graph → EAGER bug! |
 | 7 | vLLM-Ascend | #10645 | DSV4 chat template | Wrong template formatting | FIXED |
 | 8 | vLLM-Ascend | #10724 | DSV4 crash on 2*A2 PD-Mix multi-node | Deployment crash (Ascend) | OPEN bug June 18 |
+| 9 | SGLang | #28612 | DSV4 C128 state mapping lifecycle fix | Correctness fix for online compression | OPEN June 18 (fix PR for #28591!) |
 
-★★★★★★★★★ 8 DSV4 issues in 4 days → 3 frameworks → 2 platforms → SYSTEMATIC pattern!
+★★★★★★★★★ 9 DSV4 issues in 4 days → 3 frameworks → 2 platforms → SYSTEMATIC pattern!
 ★★★★★★★★★ Key: #28520 proves DSV4 fragile even WITHOUT CUDA graphs (EAGER mode bug!)
 ★★★★★★★★★ #10645 + #10724 extends DSV4 instability to Ascend NPU → now 2 platforms affected!
 ★★★★★★★★★ Extended universal rule: per-step dynamic data MUST NOT be cached → not just CUDA graph!
