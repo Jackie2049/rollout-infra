@@ -15,11 +15,14 @@
   → After sleep/wake_up cycle: Hadamard matrix becomes ALL-ZERO
   → → ALL projection outputs = 0 → model outputs garbage → NaN propagation!
 
-★★★★★★★★★ Root cause (inferred from description):
-  → sleep/wake_up cycle transfers weights between CPU/GPU or across NPU ranks
-  → Hadamard matrix is a CONSTANT (not a learnable parameter) → stored as buffer
-  → Buffers may NOT be included in weight transfer protocol → lost during sleep!
-  → wake_up restores learnable parameters but NOT buffers → Hadamard = zeros!
+★★★★★★★★★ Root cause (REFINED — in-place mutation!):
+  → PRIMARY: Hadamard rotation in-place mutates the DSA shared attention buffer
+  → → Before sleep: Hadamard transform applied IN-PLACE → original buffer destroyed
+  → → On wake: system re-reads from the corrupted (already-mutated) shared buffer → garbage!
+  → SECONDARY: sleep/wake_up cycle may also fail to transfer buffers (Hadamard not learnable)
+  → → Hadamard matrix is a CONSTANT (not a learnable parameter) → stored as buffer
+  → → Buffers NOT included in weight transfer protocol → also lost during sleep!
+  → → → Double failure: in-place mutation + transfer exclusion = complete corruption!
   → → Same pattern as MoE RouterReplay: constant routing data lost during state transfer!
 
 ★★★★★★★★★ Impact on verl RLHF:
@@ -35,11 +38,17 @@
   → Pattern: sleep/wake + constant buffer = corruption → universal across GPU/NPU architectures!
   → vLLM-Ascend #10193 DSV4 prefix cache → same sleep/wake boundary issue
 
-★★★★★★★★★ Fix direction:
-  → Option A: Include buffers in weight transfer protocol → ensure Hadamard restored on wake_up
-  → Option B: Regenerate Hadamard matrix on wake_up (it's deterministic, seed-based)
-  → Option B is MORE robust → no transfer bandwidth cost → same pattern as RouterReplay!
-  → For verl integration: MUST add buffer restoration to weight sync protocol
+★★★★★★★★★ Fix direction (REFINED — primary fix is copy, not transfer):
+  → Option A: Don't mutate in-place → COPY buffer before Hadamard rotation → preserve original
+  → → This is the PRIMARY fix → prevents corruption at source
+  → → Cost: 1 extra buffer copy → minimal bandwidth → but ensures original preserved
+  → Option B: Include buffers in weight transfer protocol → ensure Hadamard restored on wake_up
+  → → This addresses SECONDARY cause → but doesn't fix in-place mutation
+  → Option C: Regenerate Hadamard matrix on wake_up (it's deterministic, seed-based)
+  → → Option C is MORE robust → no transfer bandwidth cost → same pattern as RouterReplay!
+  → ★★★★★★★★ RECOMMENDED: Option A (copy before in-place mutation) + Option C (regenerate on wake)
+  → → Option A prevents corruption at source → Option C provides safety net on wake
+  → → Both together = COMPLETE protection against buffer corruption!
 ```
 
 ---
