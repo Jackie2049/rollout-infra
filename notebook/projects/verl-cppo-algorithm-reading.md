@@ -1,17 +1,20 @@
 # verl CPPO Algorithm (PR #6731) — 深度阅读
 
-> 2026-06-16 | PR #6731 (open) | Paper: arXiv:2606.10968 | Authors: Tencent Hunyuan
-> 核心: Position-weighted cumulative prefix divergence constraint → 比GRPO更principled trust region
+> 2026-06-16 | PR #6731 (OPEN, progressing) | Paper: arXiv:2606.10968 | Authors: Tencent Hunyuan
+> 核心: Position-weighted cumulative-prefix-divergence token mask → 比GRPO更principled trust region
+> ★★★★★★★★ CPPO = "Cumulative Prefix-divergence Policy Optimization" (official name from expanded title!)
 > ★★★★★ CPPO + bypass_mode + GRPO advantage = RTX 4090最优trust region组合!
 
 ## 1. PR概述
 
 ```
-★★★★ PR #6731 — feat: add CPPO (Clipped Position-weighted Policy Optimization):
+★★★★★★ PR #6731 — feat: add CPPO (position-weighted cumulative-prefix-divergence token mask):
   → Binary-TV variant of CPPO → @register_policy_loss("cppo")
+  → ★★★★★★★★ Official full name: "Cumulative Prefix-divergence Policy Optimization"!
+  → Title expansion clarifies: CPPO masks tokens based on CUMULATIVE prefix divergence + POSITION weight
   → 8 files changed, +544 lines
   → PR Author: chongqichuizi875
-  → Status: OPEN (not yet merged, submitted 2026-06-15)
+  → Status: OPEN (wuxibin89 reviewed → config restructuring → progressing!)
   → Paper: arXiv:2606.10968 "Beyond Uniform Token-Level Trust Region in LLM RL"
   → Project page: https://hunyuan-cppo.github.io
 
@@ -260,3 +263,7 @@ Examples:
 - verl/workers/config/actor.py (+12 lines)
 - examples/cppo_trainer/ (script + README)
 - 相关笔记: verl-grpo-core-algos-reading.md, verl-latest-developments-2026-06-reading.md
+- ★★★★★★★★ DSV4连接: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
+  → CPPO position-weighted trust region is ESPECIALLY important for DSV4
+  → DSV4 multi-layer dynamic routing → early token mismatch cascades MORE → CPPO catches cascading drift!
+  → verl #6791 (DSv4 Megatron Lite) + CPPO + bypass_mode = optimal DSV4 GRPO pathway

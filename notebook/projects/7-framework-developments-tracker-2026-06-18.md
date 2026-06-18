@@ -2,7 +2,7 @@
 
 > 2026-06-18 | Comprehensive status update across all 7 frameworks
 > ★★★★★★★★ Source: background research agent (88 tool calls, 9 min)
-> ★★★★★★★★ 8 cross-framework critical alerts for RTX 4090 GRPO
+> ★★★★★★★★ 9 cross-framework critical alerts for RTX 4090 GRPO
 
 ---
 
@@ -18,6 +18,7 @@
 | 6 | Megatron | #5394 Muon clipping stalls | Cross-framework pattern w/ DeepSpeed | OPEN 0 reviews |
 | 7 | vLLM | #45972 REVERT DSV4 cudagraph | Garbage output from cudagraph+DSV4 | MERGED June 18 |
 | 8 | SGLang | #28582 RCE CVSS 9.8 | Unauthenticated LoRA endpoint | OPEN 0 maintainer response |
+| 9 | Cross-framework | DSV4 systematic instability | 4 failures in 4 days → enforce_eager=True MANDATORY | vLLM #45972 + SGLang #28591/#28575/#28569 |
 
 ---
 
@@ -156,6 +157,8 @@
 |----------|--------|--------|----------------|
 | #28582 RCE security fix | OPEN, June 17 | CVSS 9.8, 0 maintainer response | ★★★★★★★★ CRITICAL for exposed servers |
 | #28588 image decompression bomb | NEW June 18 | Guard against oversized image decode | ★★★★★★★★ 2nd security issue this week! |
+| #28591 DSV4 MTP revert | NEW June 18 | Revert #26471 (DSV4 online compress MTP) for testing | ★★★★★★★★ 4th DSV4 failure this week! |
+| #28569 EAGLE3 CUDA graph crash | OPEN | Illegal memory access when batch shrinks | ★★★★★★★★ Another CUDA graph replay fragility! |
 | #27097 multi-LoRA determinism | OPEN | No activity since June 3 | 4-factor determinism bug |
 | #28566 sentinel-pad | OPEN June 17 | DP-attention foreign token mapping | Essential for DP LoRA |
 | #28564 MoE LoRA gate_up fusion | OPEN June 17 | Length-2 lora_b for gate_up case | MoE LoRA throughput |
@@ -169,6 +172,8 @@
 | #28579 hybrid linear attention overlap | OPEN June 17 | Spec decoding fully overlap | ✓ |
 
 ★★★★★★★★★ #28588 NEW: image decompression bomb guard → 2nd security issue same week as #28582 RCE!
+★★★★★★★★★ #28591 DSV4 MTP revert → 4th DSV4 failure this week (vLLM #45972, SGLang #28591, #28575, #28569)
+★★★★★★★★★ See: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
 
 ---
 
@@ -180,6 +185,8 @@
 | #184119 SM89 guard | OPEN, progressing | jansel pushing CI, latest June 15 | ★★★★★★★★ Validates P9 thesis |
 | #187484 vLLM Inductor breaks on 2.13 | OPEN | frgossen bisected root cause to #184193 | Blocks vLLM #45731 |
 | #187581 revert #184193 | CLOSED | NOT accepted → #187484 stays OPEN | |
+| #187634 torch.where casting | NEW June 18 | Out-of-range scalar → +/-Inf for fp16 | ★★★★★★★★ fp16 NaN propagation risk on SM89! |
+| #187631 dynamo segfault fix | NEW June 18 | List comprehension graph break | torch.compile stability |
 
 ---
 
@@ -192,3 +199,4 @@
 - SGLang #28582 RCE: notebook/projects/sglang-28582-rce-security-vulnerability-reading.md
 - rLLM #605 grouping bug: notebook/projects/rllm-605-grpo-grouping-bug-source-reading.md
 - MindIE deep reading: notebook/projects/mindie-vllm-ascend-source-deep-reading.md
+- DSV4 systematic instability: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
