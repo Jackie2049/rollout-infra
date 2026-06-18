@@ -80,6 +80,16 @@ SGLANG_ENDPOINTS = [
         downloads_remote=False, risk_level="LOW",
         notes="Health check. Always allowed per decide_request_auth()."
     ),
+    EndpointCheck(
+        framework="SGLang", endpoint="/v1/chat/completions (image input)", method="POST",
+        auth_mechanism="per-endpoint @auth_level decorator",
+        auth_configured="NORMAL (no decorator needed)",
+        has_auth_decorator=False, modifies_state=False, accesses_filesystem=False,
+        downloads_remote=True, risk_level="HIGH",
+        notes="#28588 Image decompression bomb! nano_nemotron_vl.py DISABLES PIL "
+              "guard (PIL.Image.MAX_IMAGE_PIXELS=None). Crafted images can exhaust "
+              "memory/CPU. vLLM has SAME pattern! RTX 4090 HYBRID: localhost attack."
+    ),
 ]
 
 # vLLM endpoint checks (source-level verified)
@@ -116,6 +126,15 @@ VLLM_ENDPOINTS = [
         has_auth_decorator=False, modifies_state=False, accesses_filesystem=False,
         downloads_remote=False, risk_level="LOW",
         notes="Health endpoint. Not under /v1 prefix. No auth needed."
+    ),
+    EndpointCheck(
+        framework="vLLM", endpoint="/v1/chat/completions (image input)", method="POST",
+        auth_mechanism="global prefix middleware",
+        auth_configured="Protected by /v1 prefix when --api-key set",
+        has_auth_decorator=True, modifies_state=False, accesses_filesystem=False,
+        downloads_remote=True, risk_level="MEDIUM",
+        notes="#28588-related: vLLM has SAME PIL guard disable pattern as SGLang! "
+              "Crafted images can exhaust memory/CPU. RTX 4090: OOM risk."
     ),
 ]
 
@@ -225,7 +244,10 @@ def rtx4090_check():
     print("    3. MUST: if SGLang/vLLM exposed to network → configure --api-key")
     print("    4. MUST: verify all LoRA endpoints have auth decorator (after #28582)")
     print("    5. MUST: for disaggregated deployment → firewall or auth_required")
-    print("    6. RECOMMENDED: add per-endpoint auth granularity (ADMIN vs NORMAL)")
+    print("    6. MUST: image decompression bomb guard → #28588 → set PIL.Image.MAX_IMAGE_PIXELS!")
+    print("       → SGLang nano_nemotron_vl.py DISABLES PIL guard → MUST re-enable!")
+    print("       → vLLM has SAME pattern → MUST check for PIL guard disable!")
+    print("    7. RECOMMENDED: add per-endpoint auth granularity (ADMIN vs NORMAL)")
     print()
 
     print("  If GPU server shared with other users:")
