@@ -140,9 +140,15 @@ How bypass_mode works:
   → KL penalty = 0 → no ref model = no KL loss → CPPO provides its own trust region!
   → ★★★★★ CPPO's divergence mask = better trust region → makes explicit KL penalty redundant!
 
-★★★★ Requirements:
+★★★★★★★★★ Requirements:
   → rollout.calculate_log_probs=True (default)
   → TransferQueue backend (pip install TransferQueue)
+  → ★★★★★★★★ MUST use SYNC trainer (main_ppo_sync) — async trainer overrides loss_mode="cppo" with "bypass_mode" → DESTROYS CPPO mask!
+
+★★★★★★★★★ Async trainer incompatibility (CRITICAL):
+  → Sync trainer (trainer_base.py): bypass_mode=True → swaps rollout_log_probs into old_log_probs → leaves loss_mode UNTOUCHED → CPPO runs correctly!
+  → Async trainer (rollout_corr_helper.py): bypass_mode=True → calls apply_bypass_mode() → overrides loss_mode="cppo" with "bypass_mode" → CPPO mask BYPASSED entirely!
+  → ★★★★★★★★ CPPO+bypass currently ONLY works with sync TransferQueue trainer, NOT async Ray trainer!
 ```
 
 ## 6. ★★★★★ RTX 4090 Training Implications
