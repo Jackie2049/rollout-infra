@@ -9,26 +9,38 @@
 
 Thanks for the thorough analysis — I've confirmed this bug at the source level and it's critical for GRPO correctness.
 
-### Root cause confirmed
+### Root cause confirmed (source-level)
 
-In `agent_workflow_trainer.py`, the line:
+The grouping bug exists in **two locations** depending on the training path:
+
+**Path 1 — Unified trainer (experimental)**: `transform.py:127`
 ```python
-batch.non_tensor_batch["uid"] = batch.non_tensor_batch["step_ids"]
+trajectories_by_name[f"{task_id}:{trajectory.name}"].append(trajectory)
 ```
+This groups by `task_id:trajectory.name` where `trajectory.name` comes from `agent.name` (types.py:552). Since each agent/flow has its own name, GRPO groups have size 1 — same prompt but different agent → separate group → no variance reduction.
 
-assigns `trajectory.uid` (a unique UUID per trajectory) as the GRPO grouping key. Since each rollout gets a distinct `trajectory.uid`, GRPO groups have size 1, making `advantage ≈ raw reward` — this completely negates GRPO's variance-reduction mechanism.
+**Path 2 — AgentWorkflowPPOTrainer (verl backend)**: `uid = step_ids`
+As the original issue notes, `batch.non_tensor_batch["uid"] = batch.non_tensor_batch["step_ids"]` assigns trajectory.uid (unique UUID) as the grouping key → group size 1.
+
+**Both paths**: GRPO groups by a key that's too granular (agent name or trajectory UID) instead of by task/prompt → group size = 1 → advantage ≈ raw reward → GRPO becomes REINFORCE.
 
 ### Verified impact
 
-With `enable=False` and 4 rollouts of the same prompt, rewards [1, 0, 1, 0]:
+With 4 rollouts of the same prompt, rewards [1, 0, 1, 0]:
 - **Current (bug)**: advantages ≈ [1, 0, 1, 0] (group size 1 → no normalization)
 - **Expected (fix)**: group mean = 0.5 → advantages ≈ [+0.87, -0.87, +0.87, -0.87]
 
-This affects ALL 3 `stepwise_advantage` configs because the grouping key assignment happens before the config-specific logic.
-
 ### Proposed fix
 
-**For `enable=False`** (1-line fix):
+**Path 1 — Unified trainer (1-line fix)**: `transform.py:127`
+```python
+# Replace:
+trajectories_by_name[f"{task_id}:{trajectory.name}"].append(trajectory)
+# With:
+trajectories_by_name[task_id].append(trajectory)
+```
+
+**Path 2 — AgentWorkflowPPOTrainer (1-line fix)**:
 ```python
 # Replace:
 batch.non_tensor_batch["uid"] = batch.non_tensor_batch["step_ids"]
@@ -36,27 +48,18 @@ batch.non_tensor_batch["uid"] = batch.non_tensor_batch["step_ids"]
 batch.non_tensor_batch["uid"] = batch.non_tensor_batch["task_ids"]
 ```
 
-**For `mode=per_step`** (few lines):
-```python
-step_indices = batch.non_tensor_batch.get("step_indices", None)
-if step_indices is not None:
-    batch.non_tensor_batch["uid"] = [
-        f"{task_id}_step{step_idx}"
-        for task_id, step_idx in zip(batch.non_tensor_batch["task_ids"], step_indices)
-    ]
-else:
-    batch.non_tensor_batch["uid"] = batch.non_tensor_batch["task_ids"]
-```
+### Additional critical bug: #663 (MERGED June 17)
 
-**For `mode=broadcast`**: Same as `enable=False` (`task_ids`), plus transform fix for `is_last_step` emission.
+Note that #663 just fixed another critical bug: `Step.output` was always `None`, causing **ALL rewards = 0.0** for any training run before June 17. This means any prior rLLM GRPO training was completely invalid — not just grouping wrong, but rewards were literally zero. Combined with #605, GRPO was doubly broken.
 
 ### RTX 4090 implications
 
-This bug makes rLLM Tinker GRPO completely unusable for training — any serious GRPO run will produce random advantages instead of normalized group comparisons. Until fixed, rLLM should not be used for GRPO training.
+This bug makes rLLM Tinker GRPO completely unusable — advantages are raw rewards (no variance reduction). Until fixed, rLLM should not be used for GRPO training. verl groups correctly by `task_ids` (prompt) → all responses in one group → proper GRPO.
 
 ---
 
 ## References
 
-- Source reading: rllm-605-grpo-grouping-bug-reading.md
+- Source reading: rllm-605-grpo-grouping-bug-source-reading.md (transform.py:127 verified!)
+- #663 fix: Step.output was None → ALL rewards = 0.0 → MERGED June 17
 - GRPO config reference: tools/rtx4090_grpo_config_reference.py (rLLM #3 BLOCKED by #605)
