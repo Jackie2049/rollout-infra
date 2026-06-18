@@ -212,12 +212,22 @@ Before submitting, we need to validate on an actual RTX 4090 (SM89) that:
 ★★★★★★★★★ #184119 (SM89 fp8 prologue guard) uses get_cuda_arch() — reviewer suggested it:
   → get_cuda_arch() in cuda_env.py: cached, returns string "89"/"90"/"100" etc.
   → #184119 adopted get_cuda_arch() per reviewer preference → simpler global check
+  → _is_pre_sm90_cuda_device helper function: checks device.type=="cuda" + cuda_arch < 90
+  → ★★★★★★★★ #184119 implementation pattern (scheduler.py, lines 3994-4044):
+    → _is_pre_sm90_cuda_device(device): uses get_cuda_arch() → returns bool
+    → _has_float8_read(node): checks if node reads float8 dtype
+    → Both guards are per-node checks → same conceptual level as our P9 guard
   → Our guard uses DeviceProperties.create(device) → per-device → SAME as reduction_split_factor precedent
   → Why DeviceProperties over get_cuda_arch:
-    1. Already imported in choices.py (no new import needed)
-    2. Same pattern as reduction_split_factor precedent (same file)
+    1. Already imported in choices.py (line 19) → no new import needed
+    2. Same pattern as reduction_split_factor precedent (same file, line 482-506)
     3. Per-device → more correct in principle (multi-GPU with different SM versions)
     4. If reviewer prefers get_cuda_arch → we can adapt → but DeviceProperties aligns with existing code
+  → ★★★★★★★★ Alternative approach (following #184119 pattern) — for reviewer discussion:
+    → Add import: from .codegen.cuda.cuda_env import get_cuda_arch (choices.py line ~25)
+    → Helper: def _is_pre_sm90_cuda(device): return device.type=="cuda" and int(get_cuda_arch()) < 90
+    → Guard: if (node1.is_reduction() or node2.is_reduction()) and _is_pre_sm90_cuda(device): return False
+    → This would be 3 lines (guard) + 3 lines (helper) + 1 line (import) = 7 LOC total
 
 ★★★★★★★★★ v2.12 max_autotune EXACERBATES SM89 behavior:
   → Combo kernels (#177715/#178936/#179317) → more kernels autotuned → more variability
