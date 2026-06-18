@@ -238,13 +238,15 @@ if BreakableCUDAGraphCapture.is_active():
 | Megatron | Partial (#5386 indexer replay needed) | N/A (training) | RouterReplay + IndexerReplay needed | ★★★★★★★★ feature request OPEN |
 | verl | Partial (rollout via SGLang/vLLM) | N/A (uses inference engine) | bypass_mode + record/replay | ★★★★★★★★ CPPO+bypass BEST |
 | DeepSpeed | Partial (AutoEP for MoE) | N/A (training) | RouterReplay needed | ★★★★★★★★ needs implementation |
-| MindIE | Yes (MXFP4 + CANN) | Separate path | AscendC kernels | ★★★★★★★★ different architecture |
+| MindIE/vLLM-Ascend | Yes (MXFP4 + CANN) | NO (#10628 DSV4 failure, #10640 MTP startup crash) | AscendC kernels | ★★★★★★★★ DSV4 ALSO broken on Ascend! |
 | PyTorch | Backend only | SM89 guard needed | Inductor choices.py | ★★★★★★★★ #184119 progressing |
 
-★★★★★★★★★ NO framework has fully safe DSV4 CUDA graph support yet!
+★★★★★★★★★ NO framework has fully safe DSV4 support yet — not even Ascend!
   → vLLM reverted their optimization → back to eager
   → SGLang reverting MTP → back to testing
-  → Both frameworks in "safe but slow" mode for DSV4
+  → vLLM-Ascend: DSV4 chat failure (#10628) + MTP startup crash (#10640) → SAME pattern on different architecture!
+  → ★★★★★★★★ DSV4 fragility is CROSS-ARCHITECTURE (NVIDIA + Ascend)!
+  → Both NVIDIA and Ascend frameworks in "safe but slow" mode for DSV4
 ```
 
 ---
@@ -252,6 +254,7 @@ if BreakableCUDAGraphCapture.is_active():
 ## Key Findings Summary
 
 ★★★★★★★★★ DSV4 has 4 correctness failures in 4 days across 2 frameworks → SYSTEMATIC pattern!
+★★★★★★★★★ DSV4 fragility is CROSS-ARCHITECTURE — broken on NVIDIA (#45972, #28591) AND Ascend (#10628, #10640)!
 ★★★★★★★★★ DSV4 has MORE dynamic routing layers than any previous model → compounding fragility
 ★★★★★★★★★ vLLM #45972 REVERT confirms: @eager_break_during_capture is the CORRECT boundary
 ★★★★★★★★★ SGLang #28591 MTP revert + #28569 EAGLE3 crash = same root cause (stale metadata under graph)
@@ -270,6 +273,9 @@ if BreakableCUDAGraphCapture.is_active():
 - SGLang #28569: EAGLE3 CUDA graph replay crash (OPEN)
 - SGLang #27097: multi-LoRA determinism (4 factors)
 - vLLM #39096: SM89 batch invariance
+- vLLM-Ascend #10628: DSV4 chat failure on Ascend (OPEN)
+- vLLM-Ascend #10640: MTP startup failure on 300i duo (OPEN)
+- vLLM-Ascend #10621: spec decoding non-determinism on Ascend (OPEN)
 - Megatron #5384: DSA indexer replay feature request
 - notebook/projects/vllm-cuda-graph-reading.md (Section 13)
 - notebook/projects/sglang-28588-image-decompression-bomb-reading.md
