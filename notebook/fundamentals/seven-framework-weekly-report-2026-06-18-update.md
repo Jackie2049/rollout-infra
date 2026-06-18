@@ -248,7 +248,8 @@ Fix for #5394 ChainedOptimizer clipping stalls
 ★★★★★★★★★ SGLang #28499 MERGED June 17: csgmv CUDA graph segment replay → partially fixes #27097 Factor 2
 ★★★★★★★★★ SGLang #28566 OPEN: LoRA sentinel-pad for DP-attention → another source of multi-LoRA divergence
 ★★★★★★★★★ vLLM #45964 OPEN: MLA decode query replication → DCP optimization for DeepSeek
-★★★★★★★★★ PyTorch #187620 NEW: FSDP2 PartialOffloadPolicy → fractional CPU offload → RTX 4090 game-changer!
+★★★★★★★★★ PyTorch #187620 NEW: FSDP2 PartialOffloadPolicy → fractional CPU offload → multi-GPU ONLY (NOT dp=1!)
+★★★★★★★★★ CORRECTED: NOT RTX 4090 single GPU game-changer → dp=1 FSDP2 shard=identity → resident shard exceeds 24 GiB → CPUOffloadPolicy remains ONLY option
 ★★★★★★★★★ Megatron #5387 NEW: MFSDPv2 fully_shard → NVIDIA's own FSDP → 993 additions → Final Review
 ★★★★★★★★★ vLLM #45849 MERGED: NaN fix for hybrid attention (Qwen3.5 linear+full attention)
 ★★★★★★★★★ vLLM #45972 OPEN: Revert DSV4 cudagraph optimization → correctness regression from perf optimization
