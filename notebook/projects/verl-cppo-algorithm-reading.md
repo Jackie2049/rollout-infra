@@ -90,12 +90,18 @@ Keep decision:
   → Sequences with higher inherent divergence → proportionally larger budget (up to 2x floor)
   → ★★★★★ Adaptive: each sequence calibrates its own budget from its own divergence statistics!
 
-★★★★★ Implementation details:
+★★★★★★ Implementation details (verified from #6731 PR diff, core_algos.py):
   → Mask computed under torch.no_grad() → trust-region gate, NOT part of loss!
-  → Position weight uses fixed padded length (not valid length)
-  → Prefix sums: torch.cumsum with one-token right-shift (S_prev, W_prev)
-  → Empty sequences: NaN quantile → torch.nan_to_num → fallback to δ_b
-  → Truncated importance sampling: clip_ratio_c=20.0
+  → Position weight uses fixed padded length T_fixed (not valid length)
+  → pos = torch.arange(1, resp_len+1) → 1-based, decreasing
+  → frac = ((T_fixed - pos) / max(T_fixed - 1, 1)).clamp(0, 1)
+  → w_t = (w_min + (1 - w_min) * frac) * response_mask_f → masked!
+  → Prefix sums: torch.cumsum → one-token right shift (S_prev, W_prev)
+  → S_prev = cat([zeros, S_cum[:, :-1]]) → S_0 = W_0 = 0
+  → Empty sequences: NaN quantile → torch.nan_to_num → fallback to delta_b
+  → Truncated importance sampling: clip_ratio_c=20.0 → same as DPPO
+  → valid_mask = (toward_mu | feasible).detach().float() * response_mask_f
+  → pg_loss = -advantages * truncated_ratio * log_prob * valid_mask
 ```
 
 ## 4. ★★★★★ Config参数
