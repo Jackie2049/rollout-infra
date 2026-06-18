@@ -50,7 +50,7 @@ class FrameworkSyncProfile:
 FRAMEWORK_PROFILES = {
     "verl": FrameworkSyncProfile(
         name="verl HYBRID",
-        sync_mode="ZMQ IPC bucket (512MB)",
+        sync_mode="ZMQ IPC bucket (512MB) / in-process generator",
         has_sleep_wake=True,
         buffer_transfer_includes_constants=False,  # NOT verified!
         known_corruption_bugs=[
@@ -62,10 +62,12 @@ FRAMEWORK_PROFILES = {
                        "HIGH", "#6699", "detach model_output (MERGED for FSDP, UNFIXED for 3 backends)", True),
             BufferRisk("CPU memory leak", "verl FSDP2", "0.6-6.3 GiB/step CPU memory growth during weight sync",
                        "HIGH", "#6468", "Not yet fixed → Ray OOM", True),
+            BufferRisk("LoRA rank=64 EOS", "verl vLLM rollout", "LoRA rank=64 breaks EOS token → infinite generation",
+                       "CRITICAL", "#6782", "MUST use rank=32/alpha=64", True),
         ],
         safe_on_single_gpu=True,
         overlap_comm_safe=True,  # verl doesn't use DeepSpeed overlap_comm
-        recommended_config="HYBRID + FSDP2 + bypass_mode + CPPO + sync TransferQueue",
+        recommended_config="HYBRID + FSDP2 + bypass_mode + CPPO + sleep_level=1 (LoRA adapter)",
     ),
     "deepspeed": FrameworkSyncProfile(
         name="DeepSpeed ZeRO-2",
@@ -128,23 +130,27 @@ FRAMEWORK_PROFILES = {
         recommended_config="Used as verl rollout backend → HYBRID mode",
     ),
     "sglang": FrameworkSyncProfile(
-        name="SGLang (inference only)",
-        sync_mode="No training sync (pure inference)",
-        has_sleep_wake=False,
-        buffer_transfer_includes_constants=True,
+        name="SGLang (inference + verl HYBRID rollout)",
+        sync_mode="HTTP release_memory_occupation/resume_memory_occupation (tag-based)",
+        has_sleep_wake=True,
+        buffer_transfer_includes_constants=True,  # tag-based: ["kv_cache"] or ["weights", "kv_cache"]
         known_corruption_bugs=[
             BufferRisk("DSV4 MTP revert", "SGLang", "DSV4 MTP → swa_loc cache → stale → accept-length collapse",
                        "HIGH", "#28591/#28520", "Per-step dynamic data MUST NOT cache", True),
+            BufferRisk("DSV4 C128 state mapping", "SGLang", "C128 slots derived from stale full_to_swa_index_mapping",
+                       "HIGH", "#28612", "Derive directly from full_loc/128 instead of unstable mapping", True),
             BufferRisk("multi-LoRA determinism", "SGLang", "4 factors cause non-determinism in multi-LoRA serving",
                        "MEDIUM", "#27097", "Fix all 4 factors (#28499/#28566/#28588)", True),
             BufferRisk("CRITICAL RCE", "SGLang", "CVSS 9.8 RCE vulnerability in serve endpoint",
                        "CRITICAL", "#28582", "PATCH immediately! Authentication required", True),
             BufferRisk("image decompression bomb", "SGLang", "PIL MAX_IMAGE_PIXELS=None → decompression bomb risk",
                        "HIGH", "#28588", "Set PIL.Image.MAX_IMAGE_PIXELS=89478485", True),
+            BufferRisk("sleep_level=1 LoRA only KV", "SGLang", "sleep_level=1 releases only kv_cache → base weights stay → LoRA delta sync",
+                       "MEDIUM", "source code", "sleep_level=1 + merge=false + LoRA adapter path → RTX 4090 optimal", True),
         ],
         safe_on_single_gpu=True,
         overlap_comm_safe=True,
-        recommended_config="Used as verl rollout backend → HYBRID mode + set PIL limits",
+        recommended_config="verl HYBRID + SGLang + sleep_level=1 + LoRA rank=32/alpha=64 + enforce_eager + PIL limits",
     ),
     "vllm_ascend": FrameworkSyncProfile(
         name="vLLM-Ascend (NPU inference)",
@@ -325,6 +331,8 @@ def rtx4090_check(config: str = "verl_hybrid"):
         print(f"    → overlap_comm=False (if DeepSpeed backend)")
         print(f"    → gradient_clipping=1.0")
         print(f"    → LoRA rank=32/alpha=64 (NOT rank=64 → #6782)")
+        print(f"    → sleep_level=1 + merge=false (LoRA adapter path → 80x payload reduction)")
+        print(f"    → SGLang rollout backend (best LoRA adapter + sleep/wake support)")
         print(f"    → Verify DSA Hadamard preservation on Wake (when GPU available)")
     elif config == "deepspeed_zero2":
         print(f"    → overlap_comm=False (MANDATORY)")
@@ -342,6 +350,8 @@ def rtx4090_check(config: str = "verl_hybrid"):
         print(f"    → Use LoRA rank=64 (#6782 breaks EOS)")
         print(f"    → Use Automodel/Megatron/TorchTitan backends (detach leak unfixed)")
         print(f"    → Use overlap_comm=True (NaN risk)")
+        print(f"    → Use sleep_level=2 + merge=true (full weight re-transfer every step → 80x slower)")
+        print(f"    → Use vLLM-Ascend backend (sleep_level=1 NOT supported → always full sleep)")
     elif config == "deepspeed_zero2":
         print(f"    → Use overlap_comm=True (NaN #8061)")
         print(f"    → Use ZeRO-3 on single GPU (pure overhead)")
@@ -349,6 +359,21 @@ def rtx4090_check(config: str = "verl_hybrid"):
     elif config == "rllm_tinker":
         print(f"    → Train without fixing #605 (GRPO = REINFORCE → no variance reduction)")
         print(f"    → Use pre-#663 version (all rewards = 0.0)")
+
+    # Sleep/Wake Level Guide
+    if config == "verl_hybrid":
+        print(f"\n  SLEEP/WAKE LEVEL GUIDE (verl HYBRID RTX 4090):")
+        print(f"    sleep_level=1 (LoRA adapter, merge=false):")
+        print(f"      → Release: tags=['kv_cache'] → base weights STAY on GPU")
+        print(f"      → Resume: tags=['kv_cache'] → only restore KV cache space")
+        print(f"      → Weight sync: LoRA deltas only (~200 MiB vs ~16 GiB → 80x reduction)")
+        print(f"      → Base sync: ONE TIME only (first step) → then adapter sync per step")
+        print(f"      → ★★★ OPTIMAL for RTX 4090 GRPO training!")
+        print(f"    sleep_level=2 (merge mode, merge=true):")
+        print(f"      → Release: tags=['kv_cache', 'weights'] → EVERYTHING released")
+        print(f"      → Resume: tags=['weights'] then tags=['kv_cache'] → full restore needed")
+        print(f"      → Weight sync: FULL model weights every step (~16 GiB → slow)")
+        print(f"      → ★★★ AVOID on RTX 4090 → much slower weight transfer cycle")
 
 
 def main():
