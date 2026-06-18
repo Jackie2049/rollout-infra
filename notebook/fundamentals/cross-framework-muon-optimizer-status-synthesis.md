@@ -12,10 +12,11 @@
 ```
 ★★★★★★★★★ Muon optimizer status on RTX 4090: NOT VIABLE
 
-3 BLOCKERS:
+4 BLOCKERS:
   1. Muon CPU offload BLOCKED (#7939 closed without merge) → can't fit 24GB
   2. Global gradient clipping DESTROYS Muon (#7776/#8068/#5394) → stalls Newton-Schulz
   3. Single-GPU Muon CRASHES (#5219 still OPEN) → dp_cp_params_list=None → TypeError
+  4. Muon package NOT INSTALLABLE (#5179 OPEN) → PyPI stub v999.9.9 → placeholder → can't even import
 
 ★★★★★★★★★ Current RTX 4090 optimizer recommendation:
   → AdamW with CPU_Adam → ZeRO-2 + param_offload + optimizer_offload
@@ -195,17 +196,17 @@ Long term (3-6 months):
 
 ★★★★★★★★★ Recommendation: DON'T WAIT for Muon → use AdamW + CPU_Adam NOW
   → AdamW is proven, stable, no blockers
-  → Muon will be better WHEN it works → but timeline uncertain
-  → ★★★★★★★★ Start with AdamW → switch to Muon when all blockers resolve
+  → Muon will be better WHEN it works → but 4 blockers make timeline uncertain
+  → ★★★★★★★★ Start with AdamW → switch to Muon when ALL 4 blockers resolve
 ```
 
 ---
 
 ## Key Findings Summary
 
-★★★★★★★★★ Muon RTX 4090 status: NOT VIABLE → 3 blockers → AdamW remains ONLY option
+★★★★★★★★★ Muon RTX 4090 status: NOT VIABLE → 4 blockers → AdamW remains ONLY option
 ★★★★★★★★★ DeepSpeed: #7939 CPU offload BLOCKED → #7776/#8068 clipping bug → #7878 reduce_scatter
-★★★★★★★★★ Megatron: #5219 crash fix Final Review → #5395 skip_grad_norm_clip → #5391 compact DDP
+★★★★★★★★★ Megatron: #5219 crash fix Final Review → #5395 skip_grad_norm_clip → #5391 compact DDP → #5179 PyPI stub!
 ★★★★★★★★★ verl: #6765 OptimStepParams → enables Muon LR scheduling → but needs DeepSpeed backend
 ★★★★★★★★★ rLLM: NO Muon support → not on roadmap → #605 blocks GRPO anyway
 ★★★★★★★★★ Cross-framework pattern: 3 independent discoveries of global clipping bug → same root cause
