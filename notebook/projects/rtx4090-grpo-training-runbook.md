@@ -294,6 +294,73 @@ After fix:
 4.  MUST NOT use Muon optimizer          # crash + clipping + CPU offload blocked
 5.  MUST NOT use automodel/megatron/torchtitan engine  # memory leak
 6.  MUST NOT use rLLM for GRPO          # #605 grouping bug → BROKEN
+7.  MUST NOT use CUDA graph for DSV4 inference  # 4 failures in 4 days → enforce_eager=True MANDATORY
+8.  MUST NOT attempt DSV4 full model on RTX 4090  # requires minimum 128 GPUs (TP1/ETP1 fixed)
+```
+
+---
+
+## DeepSeek-V4 Special Considerations
+
+### DSV4 is NOT feasible on single RTX 4090
+
+```
+★★★★★★★★★ DSV4 architecture constraints:
+  → TP1/ETP1 fixed — no tensor parallelism support → each GPU holds full non-expert params
+  → Minimum: 16 nodes (128 GPUs) for flash variant (PP4 EP8 CP4)
+  → 64 nodes (512 GPUs) for pro variant (PP8 EP16 CP4)
+  → ALL_OFFLOAD=True by default → memory is TIGHT even with 128 GPUs
+  → RTX 4090 (24 GiB) CANNOT fit DSV4 even with INT4 quantization!
+```
+
+### DSV4-related models that ARE feasible on RTX 4090
+
+```
+★★★★★★★★★ Models that use DSV4 techniques but fit on RTX 4090:
+  → Qwen3.5-35B-A3B: GDN + MLA + MoE → fits with ZeRO-2+LoRA+CPU_offload
+  → Kimi-K2.5: MLA + MoE → feasible with similar configuration
+  → GLM-5: may be feasible depending on size
+  → ★★★★★★★★ Key: use models that use SUBSETS of DSV4 techniques (GDN, MLA, MoE) but are smaller!
+```
+
+### DSV4 CUDA Graph Rule: enforce_eager=True
+
+```
+★★★★★★★★★ DSV4 + CUDA graph = systematic fragility (4 failures, 4 days, 2 frameworks + Ascend):
+  → vLLM #45972: cudagraph optimization → garbage output → MERGED revert
+  → SGLang #28591: MTP Online Compress → testing revert
+  → SGLang #28569: EAGLE3 CUDA graph → illegal memory access crash
+  → vLLM-Ascend #10628/#10640: DSV4 failure + MTP startup crash on Ascend!
+
+★★★★★★★★★ Rule: ANY per-request dynamic routing MUST run eagerly:
+  → MoE expert selection → MUST run eagerly
+  → DSA indexer → MUST run eagerly
+  → MTP draft decisions → MUST run eagerly
+  → Online compress decisions → MUST run eagerly
+
+★★★★★★★★★ Config for DSV4-like models (Qwen3.5-35B-A3B) on RTX 4090:
+  vllm:
+    enforce_eager: True    # MANDATORY for DSV4-like models!
+    gpu_memory_utilization: 0.90
+  verl:
+    algorithm.rollout_correction.bypass_mode: True
+    actor.policy_loss.loss_mode: cppo  # position-weighted trust region → especially important for DSV4-like models!
+```
+
+### DSV4 GRPO Training Pathway
+
+```
+★★★★★★★★★ verl #6791 (MERGED June 18): DSv4/GLM5/KimiK2.5 via Megatron Lite
+  → For multi-node DSV4 training (128+ GPUs) → use Megatron Lite backend
+  → For single RTX 4090 → use Qwen3.5-35B-A3B with FSDP2 backend
+  → ★★★★★★★★ CPPO + bypass_mode + FSDP2 = optimal RTX 4090 DSV4-like GRPO training!
+
+★★★★★★★★★ Megatron #5384 (OPEN): DSA Indexer Replay for RL training stability
+  → When training models with DSA sparse attention → MUST record indexer top-k decisions during rollout
+  → Replay during training → prevents train/rollout mismatch → same pattern as MoE RouterReplay
+  → Needed for models like DeepSeek-V3.2, DeepSeek-V4 that use DSA
+
+★★★★★★★★★ See full DSV4 synthesis: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
 ```
 
 ---
@@ -309,4 +376,9 @@ After fix:
 - DeepSpeed #8061: overlap_comm NaN
 - DeepSpeed #8072/#8073: ZeRO-3+PEFT regression
 - rLLM #605: GRPO grouping bug
+- verl #6791: https://github.com/verl-project/verl/pull/6791 (DSv4/GLM5/KimiK2.5 Megatron Lite)
+- vLLM #45972: REVERT of DSV4 cudagraph optimization
+- SGLang #28591/#28569: DSV4 MTP revert + EAGLE3 crash
+- Megatron #5384: DSA Indexer Replay feature request
+- DSV4 synthesis: notebook/projects/dsv4-systematic-instability-pattern-synthesis.md
 - Tools: rtx4090_grpo_config_reference.py, verl_engine_backend_safety.py, grpo_troubleshooter_4090.py
