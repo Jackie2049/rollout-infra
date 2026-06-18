@@ -54,6 +54,7 @@
 ## SM89 Must-Do / Must-Avoid
 
 ### MUST DO:
+- `--enforce-eager` for ALL models with dynamic routing (MoE, DSA, MTP, spec decode) — 4 DSV4 failures in 4 days!
 - `--enforce-eager` for batch invariance (vLLM) or `--enable-deterministic-inference` (SGLang)
 - INT8 FlashInfer KV cache (only viable KV quantization on SM89)
 - INT4 Marlin/Triton for 8B models (v0.23.0 fallback works on SM89)
@@ -72,7 +73,9 @@
 - Full model training without LoRA (exceeds 24GB)
 - Megatron core on single GPU (crash #5203)
 - CUDA graphs on SM89 with compile (batch-dependent)
+- CUDA graphs on ANY model with dynamic routing (DSV4: 5 layers → 41% mismatch → garbage/crash!)
 - torch 2.13 upgrade (#187484: vLLM Inductor breaks → 150+ failures!)
+- DSV4 full model on single RTX 4090 (requires 128+ GPUs, TP1/ETP1 fixed)
 - rLLM GRPO training (#605 grouping bug → group size=1 → advantage=raw reward → BROKEN!)
 - LoRA rank=64 in verl (#6782: breaks EOS in vLLM rollout)
 
