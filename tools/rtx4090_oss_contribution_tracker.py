@@ -351,6 +351,49 @@ CONTRIBUTIONS = [
         gpu_needed=False,
         unique_contribution=True,
     ),
+    Contribution(
+        id="C14",
+        title="Comment on verl #6794 — CUDA stream safety cross-framework pattern",
+        target="verl-project/verl",
+        tier=Tier.TIER1_COMMENT,
+        priority=8,
+        status=Status.DRAFT_READY,
+        issue_ref="verl-project/verl #6794",
+        description="Cross-framework CUDA stream safety pattern: verl #6794 CRITICAL-1 "
+                    "(missing record_stream) shares SAME root cause as DeepSpeed #8061 "
+                    "(overlap_comm multi-stream race). Both are CUDA stream synchronization "
+                    "issues causing silent data corruption or NaN. Pattern documented across "
+                    "3 frameworks. Suggest adding record_stream to ALL multi-stream code paths.",
+        draft_ref="notebook/projects/verl-6794-delta-weight-sync-reading.md",
+        next_steps=[
+            "Post cross-framework CUDA stream safety comment on #6794",
+            "Reference DeepSpeed #8061 as precedent",
+            "Suggest systematic review of all multi-stream code paths in verl"
+        ],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
+    Contribution(
+        id="C15",
+        title="Comment on verl #6468 — FSDP2 CPU leak RTX 4090 workaround",
+        target="verl-project/verl",
+        tier=Tier.TIER1_COMMENT,
+        priority=7,
+        status=Status.DRAFT_READY,
+        issue_ref="verl-project/verl #6468",
+        description="FSDP2 CPU memory leak scaling: 0.6 GiB/step (2B) → 6.3 GiB/step (35B). "
+                    "RTX 4090 workaround: MUST use FSDP1 backend + per-unit LoRA summon (#6512). "
+                    "FSDP2 makes long-running GRPO (>100 steps) impossible on RTX 4090. "
+                    "Host RAM monitoring recommendation for training scripts.",
+        draft_ref="notebook/projects/verl-6468-fsdp2-cpu-memory-leak-reading.md",
+        next_steps=[
+            "Post FSDP2 leak RTX 4090 workaround comment on #6468",
+            "Recommend FSDP1 + #6512 per-unit summon as safe alternative",
+            "Provide host RAM monitoring code snippet"
+        ],
+        gpu_needed=False,
+        unique_contribution=True,
+    ),
 ]
 
 
