@@ -407,7 +407,7 @@ def show_rtx4090():
     print(f"  ★★★★★★★★ CPPO position-weighted trust region → especially important for dynamic routing!")
 
     print(f"\nCUDA Graph Systematic Fragility Pattern:")
-    print(f"  6 failures across ALL frameworks → SYSTEMATIC pattern")
+    print(f"  11 failures across 4 frameworks → SYSTEMATIC pattern (DSV4 is the most fragile production MoE model!)")
     print(f"  Root cause: graph replay assumes STATIC execution path")
     print(f"  ANY per-request dynamic routing → MUST run eagerly")
     print(f"  @eager_break_during_capture = CORRECT separation boundary")

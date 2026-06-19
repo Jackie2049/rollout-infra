@@ -13,7 +13,7 @@ MUST_DO = [
     ("ZeRO-2 + CPU_Adam", "18Ψ→3.8Ψ optimizer offload, #8072/#8076 ZeRO-3 regression"),
     ("bypass_mode=True", "Removes ref model → saves 18Ψ, verl #6790"),
     ("gradient_clipping=1.0", "#8068 default 0→1.0 regression, MUST set explicitly"),
-    ("enforce_eager=True", "10 DSV4 failures across 3 frameworks, cudagraph crashes"),
+    ("enforce_eager=True", "11 DSV4 failures across 4 frameworks, cudagraph crashes"),
     ("SGLang rollout + sleep_level=1", "80x payload reduction, LoRA adapter path"),
     ("LoRA rank=32 alpha=64", "#6782 rank=64 breaks EOS, MUST use 32"),
     ("overlap_comm=False", "#8061 NaN on single GPU, multi-stream data race"),
@@ -70,7 +70,7 @@ ulimit -n 65536              # fd leak safety (#8075)
 
 DSV4_RULES = """
 # ★★★★★★★★ DSV4 SAFETY RULES ★★★★★★★★
-# 10 failures across 3 frameworks!
+# 11 failures across 4 frameworks!
 
 1. enforce_eager=True        # ALWAYS (cudagraph crashes on DSV4)
 2. Never cache per-step data  # Dynamic routing changes each step
