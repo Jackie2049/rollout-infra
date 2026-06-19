@@ -376,6 +376,40 @@ CONNECTIONS = {
             },
         ],
     },
+    "insecure_deserialization": {
+        "name": "Insecure Deserialization Pattern Family",
+        "note": "notebook/fundamentals/cross-framework-insecure-deserialization-pattern-family.md",
+        "connections": [
+            {
+                "component": "Network RCE via pickle.loads",
+                "math_property": "pickle can execute arbitrary Python code during deserialization → no sandbox → full RCE",
+                "bugs": ["vLLM-Ascend #10592: NPUIPC HTTP+pickle endpoint", "SGLang #28582: IPC+pickle endpoint"],
+                "decision": "Replace pickle with safetensors or remove HTTP+pickle mode entirely",
+                "formula": "RCE_risk = 1.0 if pickle.loads(untrusted_data) — no probabilistic defense",
+            },
+            {
+                "component": "UntypedStorage device mismatch",
+                "math_property": "pickle preserves UntypedStorage with sender's device → logical device update ≠ physical device → cross-device corruption",
+                "bugs": ["vLLM-Ascend #10592: storage.device ≠ tensor.device after pickle.loads"],
+                "decision": "Rebind storage to local device after deserialization, or use safetensors (device-agnostic)",
+                "formula": "P(corruption) = 1.0 if storage_device ≠ local_device",
+            },
+            {
+                "component": "Image decompression bomb",
+                "math_property": "MAX_IMAGE_PIXELS=None → unbounded allocation → O(N_pixels) memory → DoS",
+                "bugs": ["SGLang #28588: nano_nemotron_vl.py disables PIL guard"],
+                "decision": "MAX_IMAGE_PIXELS ≤ 10M for ALL image endpoints",
+                "formula": "OOM_risk = P(allocation > available_memory) → 1.0 for crafted 10^9 pixel images",
+            },
+            {
+                "component": "Environment variable security gate",
+                "math_property": "VLLM_ALLOW_INSECURE_SERIALIZATION is opt-in → easy to misconfigure → conflates model loading with weight sync security",
+                "bugs": ["vLLM-Ascend #10592: same env var for both concerns"],
+                "decision": "Remove unsafe paths entirely, not gate them with env vars",
+                "formula": "P(misconfiguration) ≈ 0.3 for production deployments",
+            },
+        ],
+    },
     "cuda_stream": {
         "name": "CUDA Stream Safety Pattern",
         "note": "notebook/fundamentals/cuda-stream-safety-cross-framework-pattern.md",
