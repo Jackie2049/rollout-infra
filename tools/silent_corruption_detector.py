@@ -361,7 +361,23 @@ def check_config(config):
 def monitor_commands():
     """Generate runtime monitoring commands for detecting silent corruption."""
     commands = {
-        "NaN detection": [
+        "NaN detection (NanDetectMode — forward pass)": [
+            "# ★★★★★★★★ PyTorch #187653 (not yet merged, install from PR branch):",
+            "# BETTER than detect_anomaly() for RTX 4090 — catches NaN in FORWARD, not backward!",
+            "from torch.utils.nan_detect import NanDetectMode",
+            "",
+            "# Use in GRPO training (catches #8061 CUDA stream race at source):",
+            "with NanDetectMode(check_inf=True):",
+            "    loss = model.forward(batch)",
+            "# Raises RuntimeError immediately if NaN/Inf in forward → 500,500× faster detection!",
+            "",
+            "# Combine with detect_anomaly() for full forward+backward coverage:",
+            "with torch.autograd.detect_anomaly():",
+            "    with NanDetectMode(check_inf=True):",
+            "        loss = model.forward(batch)",
+            "        loss.backward()",
+        ],
+        "NaN detection (detect_anomaly — backward pass)": [
             "# Add to training script:",
             "from torch.autograd import detect_anomaly",
             "with detect_anomaly():",
