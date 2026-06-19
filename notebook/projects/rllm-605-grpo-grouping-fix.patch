@@ -1,0 +1,41 @@
+From 5df48eda5ba3f3eea1063905f52442acd46a37fc Mon Sep 17 00:00:00 2001
+From: Jackie2049 <jackie2049@foxmail.com>
+Date: Fri, 19 Jun 2026 12:57:31 +0800
+Subject: [PATCH] fix: group trajectories by task_id instead of
+ task_id:trajectory.name for GRPO
+
+The current grouping key f"{task_id}:{trajectory.name}" causes GRPO
+to produce groups of size 1 when different agents/flows have different
+trajectory names. With group size = 1, GRPO advantage computation
+degrades to REINFORCE (no variance reduction) since std(group_rewards)
+= 0.
+
+Grouping by task_id alone ensures all responses to the same prompt
+are in the same group, matching standard GRPO practice across verl,
+DeepSpeed, and Megatron frameworks.
+
+Fixes #605
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+---
+ rllm/experimental/common/transform.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/rllm/experimental/common/transform.py b/rllm/experimental/common/transform.py
+index cfdca49..adceba7 100644
+--- a/rllm/experimental/common/transform.py
++++ b/rllm/experimental/common/transform.py
+@@ -122,8 +122,8 @@ def _build_trajectory_groups(episodes: list[Episode], compact_filtering_config:
+         for trajectory in episode.trajectories:
+             if len(trajectory.steps) == 0:
+                 continue
+-            trajectories_by_name[f"{task_id}:{trajectory.name}"].append(trajectory)
+-            metadata_by_name[f"{task_id}:{trajectory.name}"].append(
++            trajectories_by_name[task_id].append(trajectory)
++            metadata_by_name[task_id].append(
+                 {
+                     "episode_id": episode.id,
+                     "termination_reason": episode.termination_reason,
+-- 
+2.39.5 (Apple Git-154)
+
