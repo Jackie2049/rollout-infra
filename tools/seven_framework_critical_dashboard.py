@@ -450,6 +450,51 @@ CRITICAL_ISSUES = [
         "fix_pr": "New feature → NPU-native IPC for weight transfer",
         "url": "https://github.com/vllm-project/vllm-ascend/issues/10592",
     },
+    # ── NEW: vLLM encoder cache revert ──
+    {
+        "id": "VL-5",
+        "framework": "vLLM",
+        "issue": "#46125",
+        "title": "REVERT stale encoder cache fix — RLHF CRITICAL",
+        "severity": "CRITICAL",
+        "status": "OPEN",
+        "rtx4090": "★★★★★★★★ RLHF/GRPO BLOCKER! Reverting #45093 cache reset after weight update → stale KV/encoder outputs = SILENT CORRUPTION. Same pattern family as SGLang #28676 MoE cache clobber, #28679 GDN degeneracy, vLLM #44395 illegal memory",
+        "must": "★★★★★★★★ MUST NOT merge this revert for RL training! Alternative: make reset_cache configurable (default=True). MUST reset prefix+encoder cache after EVERY weight update in GRPO loop",
+        "days_open": 1,
+        "comments": 0,
+        "fix_pr": "#45093 MERGED (+12/-0, reset cache after weight update) → #46125 REVERTS it!",
+        "url": "https://github.com/vllm-project/vllm/pull/46125",
+    },
+    # ── NEW: Megatron 6th Muon blocker ──
+    {
+        "id": "MG-7",
+        "framework": "Megatron-LM",
+        "issue": "#5400",
+        "title": "6th Muon blocker — GDN in_proj routing to Adam fallback",
+        "severity": "HIGH",
+        "status": "OPEN",
+        "rtx4090": "Further confirms Muon NOT viable for RTX 4090. 6th blocker.",
+        "must": "AdamW remains ONLY viable optimizer for RTX 4090 GRPO",
+        "days_open": 1,
+        "comments": 2,
+        "fix_pr": "Draft — routes GDN in_proj to Adam fallback",
+        "url": "https://github.com/NVIDIA/Megatron-LM/issues/5400",
+    },
+    # ── NEW: verl FSDP2 leak confirmed multi-user ──
+    {
+        "id": "VE-4",
+        "framework": "verl",
+        "issue": "#6468",
+        "title": "FSDP2 CPU memory leak — 0.6-6.3 GiB/step scaling with model size",
+        "severity": "CRITICAL",
+        "status": "OPEN",
+        "rtx4090": "★★★★★★★★ Leak scales with model size: qwen3.5-2B=0.6 GiB/step, qwen2.5-3B=5.3 GiB/step, Qwen3-35B=6.3 GiB/step. Monotonic growth → Ray OOM after ~40 steps for 7B model on RTX 4090",
+        "must": "MUST monitor memory usage during GRPO training. MUST use FSDP1 (not FSDP2) until this is fixed. MUST restart training periodically if leak observed",
+        "days_open": 15,
+        "comments": 3,
+        "fix_pr": "No fix PR yet — root cause under investigation",
+        "url": "https://github.com/verl-project/verl/issues/6468",
+    },
 ]
 
 # ═══════════════════════════════════════════════════════════════
