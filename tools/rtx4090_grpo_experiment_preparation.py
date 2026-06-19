@@ -214,6 +214,33 @@ EXPERIMENTS = [
         ],
         "estimated_time": "2-4 hours for profiling runs",
     },
+    {
+        "id": 7,
+        "name": "V1 trainer_sync vs Legacy main_ppo comparison",
+        "priority": "★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ #1 ARCH",
+        "algorithm": "CPPO + bypass_mode",
+        "model": "Qwen3-8B",
+        "framework": "verl (V1 vs Legacy)",
+        "backend": "fsdp",
+        "optimizer": "CPU_Adam + ZeRO-2 offload",
+        "theory_prediction": "V1 trainer_sync should match legacy quality with cleaner lifecycle. NCCL broadcast = identity on dp=1 → no overhead. CheckpointEngineManager (ZMQ+NCCL+CuPy) replaces manual weight sync.",
+        "prediction_formula": "V1 quality ≈ legacy quality (same algorithm), V1 config cleaner (config-driven vs manual args), dp=1 NCCL identity → same throughput",
+        "validation_criteria": [
+            "V1 and legacy produce same reward progression",
+            "V1 peak memory ≈ legacy peak memory (~4-6 GiB)",
+            "V1 lifecycle hooks match legacy flow",
+            "CheckpointEngineManager handles sleep/wake correctly",
+            "V1 nccl checkpoint engine = identity broadcast on dp=1",
+        ],
+        "theory_validated": [
+            "V1 trainer architecture: register_trainer() pattern",
+            "Checkpoint engine registry: 5 backends (nccl for RTX 4090)",
+            "dp=1 NCCL identity: no actual data transfer needed",
+            "CPPO integration: register_trainer('cppo') → seamless in V1",
+            "State lifecycle: update_weights → train → sleep_replicas → repeat",
+        ],
+        "estimated_time": "4-6 hours (2 runs + comparison)",
+    },
 ]
 
 
