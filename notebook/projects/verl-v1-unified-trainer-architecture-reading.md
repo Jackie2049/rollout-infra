@@ -61,13 +61,35 @@ The `trainer_colocate_async` might also work on RTX 4090 for future exploration:
 
 | Engine | Backend | RTX 4090 |
 |--------|---------|----------|
-| nccl_checkpoint_engine | NCCL | ★★★★★★★★ YES (standard CUDA) |
+| nccl_checkpoint_engine | ZMQ + NCCL broadcast + CuPy | ★★★★★★★★ YES (standard CUDA) |
 | hccl_checkpoint_engine | HCCL | NO (Ascend NPU only) |
 | mooncake_checkpoint_engine | Mooncake | NO (multi-node RDMA) |
 | nixl_checkpoint_engine | NIXL | NO (experimental) |
 | kimi_checkpoint_engine | Kimi | NO (Moonshot proprietary) |
 
 RTX 4090 uses `nccl_checkpoint_engine` — same as existing weight sync path.
+
+### Checkpoint Engine Internals (NCCL)
+
+★★★★★★★★★ NCCL checkpoint engine source code reveals the **actual weight sync mechanism**:
+
+1. **ZMQ for metadata**: ZMQ pub/sub socket for control messages (weight names, shapes, dtypes, offsets)
+2. **NCCL broadcast for weight data**: `ray.util.collective` NCCL broadcast for tensor data transfer
+3. **CuPy (cupy) for GPU memory**: CuPy arrays for efficient GPU-to-GPU memory operations
+4. **BroadcastOperation**: async broadcast in separate thread → non-blocking weight sync
+5. **TensorMeta**: structured metadata for each weight tensor (name, shape, dtype, chunk_offset, chunk_size, offset)
+6. **merge_weight_chunks / split_weight_chunks**: chunk-based weight transfer for efficient bandwidth use
+
+Key classes:
+- `MasterMetadata(zmq_ip, zmq_port)`: master node metadata for ZMQ communication
+- `BroadcastOperation(rank, group_name, bucket, metadata, socket, topic)`: async NCCL broadcast
+- `CheckpointEngineRegistry`: registry for checkpoint engines (same pattern as trainer registry)
+
+★★★★★★★★★ This confirms our earlier weight sync analysis:
+- ZMQ (not NCCL alone) is used for metadata → validates our IPC comparison
+- NCCL broadcast for actual data → efficient on CUDA
+- Async broadcast in executor thread → non-blocking
+- dp=1 RTX 4090: NCCL broadcast = self-broadcast (identity) → no actual data transfer needed!
 
 ### Key New Components
 
