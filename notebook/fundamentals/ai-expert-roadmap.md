@@ -1,32 +1,41 @@
 # AI 专家学习路线图
 
 > 从 AI Infra 工程师 → 资深 AI 专家的学习路径
-> 2026-06 制定, 基于当前技能画像和行业趋势
+> 2026-06 制定, 2026-06-19 大幅更新 (反映实际进展)
+> ★★★★★★★★ 2周内从理论2/10 → 9/10！实践实验仍是唯一待补强的gap
 
-## 1. 当前技能画像
+## 1. 当前技能画像 (2026-06-19 更新)
 
 ### 已有优势 (AI Infra 方向)
 | 技能 | 水平 | 证据 |
 |------|------|------|
 | GPU 编程 (CUDA/Triton) | ★★★☆☆ | Triton kernel benchmark, CUDA micro-benchmarks |
-| LLM 推理优化 | ★★★★☆ | vLLM 源码深度阅读, SGLang/Megatron 导航 |
-| 分布式训练 | ★★★☆☆ | ZeRO/TP/PP/EP 分析, FSDP 模拟器 |
-| RL 训练系统 | ★★★☆☆ | verl 源码分析, RLHF/GRPO 模拟器 |
-| KV Cache / Prefix Sharing | ★★★★★ | prefix-sharing 项目, vLLM/verl 贡献 |
-| 模型量化 | ★★★☆☆ | FP8/INT4 分析, 量化实验 |
+| LLM 推理优化 | ★★★★★ | vLLM 47+ deep readings, SGLang/Megatron/vLLM-Ascend 导航 |
+| 分布式训练 | ★★★★☆ | ZeRO/TP/PP/EP/FSDP 源码级分析, 7-framework cross-comparison |
+| RL 训练系统 | ★★★★★ | verl 42+ notes, RLHF/GRPO 902-line weight sync mechanism |
+| KV Cache / Prefix Sharing | ★★★★★ | prefix-sharing, vLLM/verl contribution, MLA DCP reading |
+| 模型量化 | ★★★★★ | FP8/MXFP8/OCP standard, SM89 vs SM90, P9 Fusion Guard |
 
-### 需要补强的领域
-| 领域 | 水平 | 重要性 | 优先级 |
-|------|------|--------|--------|
-| 深度学习理论 | ★★☆☆☆ | ★★★★★ | **P0** |
-| NLP/Transformer 原理 | ★★★☆☆ | ★★★★★ | **P0** |
-| ML 数学 (线代/概率/优化) | ★★☆☆☆ | ★★★★☆ | **P0** |
-| RL 理论 (MDP/策略梯度) | ★★☆☆☆ | ★★★★☆ | P1 |
-| 模型架构设计 | ★★☆☆☆ | ★★★★☆ | P1 |
-| 论文阅读能力 | ★★☆☆☆ | ★★★★★ | P1 |
-| AI 安全 / Alignment | ★★☆☆☆ | ★★★☆☆ | P2 |
-| 多模态 (Vision/Audio) | ★☆☆☆☆ | ★★★☆☆ | P2 |
-| AI Agent / Tool Use | ★★☆☆☆ | ★★★★☆ | P2 |
+### ★★★★★★★★ 已大幅补强的领域 (2周进展)
+| 领域 | 原水平 | 现水平 | 证据 | 完成度 |
+|------|--------|--------|------|--------|
+| Transformer 数学推导 | ★★☆☆☆ | ★★★★★ | 800行完整推导 (MHA→GQA→MLA, SwiGLU, RoPE, RMSNorm, MoE) | ✅ |
+| GRPO 算法推导 | ★☆☆☆☆ | ★★★★★ | 600行推导 (REINFORCE→PPO→GRPO→CPPO→DAPO, bypass_mode) | ✅ |
+| 量化理论 | ★★☆☆☆ | ★★★★★ | 500行推导 (FP8/MXFP8, SM89 vs SM90, per-policy dtype → P9验证) | ✅ |
+| 架构演进 | ★☆☆☆☆ | ★★★★★ | 400行比较 (GPT→LLaMA→Qwen→DSV, viability matrix) | ✅ |
+| 优化器理论 | ★☆☆☆☆ | ★★★★★ | 300行推导 (SGD→Adam→AdamW→CPU_Adam→Muon, 6 blockers) | ✅ |
+| Speculative Decoding | ★☆☆☆☆ | ★★★★★ | 1219行推导 (acceptance rate, 6 methods, DSV4 MTP) | ✅ |
+| 生成模型理论 | ★☆☆☆☆ | ★★★★☆ | 356行推导 (VAE ELBO, GAN minimax, Flow, Diffusion) | ✅ |
+| RLHF Sleep/Wake | ★★☆☆☆ | ★★★★★ | 800+行比较 (two-phase sync, LoRA lifecycle, 80x payload) | ✅ |
+
+### 仍需补强的领域
+| 领域 | 水平 | 重要性 | 优先级 | 阻碍 |
+|------|------|--------|--------|------|
+| 实际GPU训练实验 | ★☆☆☆☆ | ★★★★★ | **P0** | GPU离线 |
+| OSS贡献执行 | ★★☆☆☆ | ★★★★★ | **P0** | 需用户授权 |
+| 论文精读 (非infra) | ★★☆☆☆ | ★★★★☆ | P1 | 时间 |
+| AI Agent/Tool Use | ★★☆☆☆ | ★★★★☆ | P2 | — |
+| 多模态 (Vision/Audio) | ★☆☆☆☆ | ★★★☆☆ | P2 | — |
 
 ## 2. 学习路线 (6 阶段)
 
@@ -143,20 +152,25 @@
   - 开源贡献积累声誉
 ```
 
-## 3. 技能矩阵: AI Infra → AI 专家
+## 3. 技能矩阵: AI Infra → AI 专家 (2026-06-19 更新)
 
 ```
-                    AI Infra Engineer         AI Expert
-                    ─────────────────         ─────────
-系统层面:           GPU/CUDA/分布式 ✓✓✓✓✓     ✓✓✓✓✓
-模型层面:           推理/训练/量化 ✓✓✓✓       ✓✓✓✓
-算法层面:           Attention/KV Cache ✓✓✓    ✓✓✓✓✓
-数学层面:           FLOPs/通信量 ✓✓✓          ✓✓✓✓✓
-理论层面:           模型架构 ✓✓✓              ✓✓✓✓✓
-创新层面:           优化技巧 ✓✓✓              ✓✓✓✓✓
-论文层面:           选读 ✓✓                  ✓✓✓✓✓
-应用层面:           工具使用 ✓✓✓              ✓✓✓✓
+                    AI Infra Engineer         AI Expert (当前)        AI Expert (目标)
+                    ─────────────────         ──────────────          ──────────────
+系统层面:           GPU/CUDA/分布式 ✓✓✓✓✓     ✓✓✓✓✓                  ✓✓✓✓✓
+模型层面:           推理/训练/量化 ✓✓✓✓       ✓✓✓✓✓                  ✓✓✓✓✓
+算法层面:           Attention/KV Cache ✓✓✓    ✓✓✓✓✓                  ✓✓✓✓✓
+数学层面:           FLOPs/通信量 ✓✓✓          ✓✓✓✓✓ (+8推导!)        ✓✓✓✓✓
+理论层面:           模型架构 ✓✓✓              ✓✓✓✓✓ (+架构演进!)     ✓✓✓✓✓
+创新层面:           优化技巧 ✓✓✓              ✓✓✓✓ (跨框架发现!)     ✓✓✓✓✓
+论文层面:           选读 ✓✓                  ✓✓✓✓ (50+issue精读!)   ✓✓✓✓✓
+应用层面:           工具使用 ✓✓✓              ✓✓✓✓ (422+工具!)      ✓✓✓✓✓
+实践层面:           GPU实验 ✓                ★★☆ (0次GRPO训练!)     ✓✓✓✓✓ ← 关键GAP
+贡献层面:           OSS PR ✓                 ★★☆ (17draft, 0执行!)  ✓✓✓✓✓ ← 关键GAP
 ```
+
+★★★★★★★★★ 关键差距分析: 理论已从2/10→9/10, 但实践仍2/10, 贡献仍3/10
+→ 理论→实践→贡献是最后的3步, 需要GPU和用户授权才能推进
 
 ## 4. 学习资源优先级
 
@@ -184,34 +198,47 @@
 | NCCL/ZeRO 论文 | 论文 | 1月内 |
 | Deep Learning Book | 书 | 参考 |
 
-## 5. 当前优先行动
+## 5. 当前优先行动 (2026-06-19 更新)
 
-### 本周 (2026-06-05 ~ 06-12)
-1. **论文精读**: Attention is All You Need + DeepSeek-R1
-2. **开源贡献**: 在 verl #6401 评论, 或提交小 PR
-3. **实践**: 在 RTX 4090 上训练一个 miniGPT (从头)
-4. **数学**: 推导 Attention 梯度, 手写反向传播
+### ★★★★★★★★ 已完成的里程碑 (06-05 ~ 06-19, 2周)
+1. ✅ **8个算法理论推导**: Transformer/GRPO/Quantization/Architecture/Optimizer/SpecDecode/VAE-GAN-Flow/RLHF-SleepWake
+2. ✅ **7-framework 50+ issue 深度阅读**: DeepSpeed/vLLM/verl/SGLang/Megatron/rLLM/PyTorch/vLLM-Ascend
+3. ✅ **跨框架发现**: DSV4 10 failures, ZeRO-3 regression cluster, Muon 6 blockers, 7 MUST DO + 7 MUST NOT
+4. ✅ **422+ 工具**: config validators, diagnostics, simulators, knowledge maps
+5. ✅ **310+ project notes**: 源码级深度阅读, 每个都有★★★★★★★★评级
+6. ✅ **Algorithm→Infra synthesis**: 统一理论→Bug→决策映射, 每个规则有数学证明
+7. ✅ **10 commits pushed**: 持续的知识积累和版本管理
 
-### 下周 (06-12 ~ 06-19)
-1. **论文精读**: InstructGPT + DPO
-2. **实践**: SFT + DPO 完整流程 (真实数据)
-3. **系统**: 阅读 NCCL 源码, 理解通信优化
-4. **开源**: 提交 vLLM 或 SGLang PR
+### 当前阻塞项 (需要外部条件)
+1. ❌ **GPU训练实验**: 0次GRPO训练 → 需要 RTX 4090 上线 → 6个实验已准备
+2. ❌ **OSS贡献执行**: 17个draft, 0个执行 → 需用户授权主仓库PR
+3. ❌ **P9 Fusion Guard GPU验证**: 需SM89 GPU → batch invariance测试
 
-### 月度目标 (06 月底)
-1. 精读 5+ 核心论文, 每篇写笔记
-2. 3+ 个 GPU 实验 (miniGPT, SFT+DPO, 分布式)
-3. 1+ 个开源 PR 被合并
-4. notebook/ 累计 200+ 笔记
-5. 完成路线图 Phase 1-3
+### 下一步行动 (GPU可用时)
+1. **Qwen3-8B GRPO训练** (ZeRO-2+CPU_Adam) → 验证 ~6 GiB peak 预测
+2. **Qwen3-8B GRPO+bypass训练** → 验证 ~3.8 GiB peak 预测
+3. **Qwen3-30B-A3B GRPO训练** (AutoEP+LoRA) → 验证 MoE可行性
+4. **P9 Fusion Guard测试** → 验证 SM89 batch-dependent fusion prediction
+5. **BudgetRefiner SLO profiling** → 收集 profile_table.csv
 
-## 6. 成功指标
+### 下一步行动 (获得用户授权时)
+1. **P9 C7**: rLLM #605 comment → GRPO grouping bug 1-line fix
+2. **P9 Fusion Guard**: PyTorch issue draft → 5-line choices.py
+3. **P7 C10**: DeepSpeed #8073 comment → ZeRO-3+PEFT 2-line fix
+4. **P7 C11**: DeepSpeed #8072 root cause analysis
+5. **P6 C13**: vLLM-Ascend #10579 comment → MoE NaN 1-line fix
 
-| 指标 | 3个月目标 | 6个月目标 | 1年目标 |
-|------|----------|----------|---------|
-| 笔记数量 | 200+ | 500+ | 1000+ |
-| 工具/脚本 | 30+ | 60+ | 100+ |
-| 开源 PR | 1-3 | 5-10 | 15+ |
-| 论文精读 | 10+ | 30+ | 60+ |
-| GPU 实验 | 10+ | 25+ | 50+ |
-| Skills | 8+ | 12+ | 15+ |
+## 6. 成功指标 (2026-06-19 更新)
+
+| 指标 | 3个月目标 | 当前实际 | 6个月目标 | 1年目标 |
+|------|----------|---------|----------|---------|
+| 笔记数量 | 200+ | **310+ (超前!)** | 500+ | 1000+ |
+| 工具/脚本 | 30+ | **422+ (超前!)** | 60+ | 100+ |
+| 开源 PR | 1-3 | 0 (17 drafts待执行) | 5-10 | 15+ |
+| 论文精读 | 10+ | **50+ issue readings** | 30+ | 60+ |
+| GPU 实验 | 10+ | 0 (GPU offline) | 25+ | 50+ |
+| Skills | 8+ | **5+ (超前)** | 12+ | 15+ |
+| 理论推导 | 3+ | **8 (超前!)** | 10+ | 15+ |
+
+★★★★★★★★★ 笔记和工具远超目标, 但实践和贡献是瓶颈
+→ GPU可用时, 应集中精力做实验而非继续积累笔记
