@@ -77,11 +77,66 @@ V1_TRAINERS = {
 }
 
 CHECKPOINT_ENGINES = {
-    "nccl": {"backend": "NCCL", "rtx4090": True, "description": "Standard CUDA, RTX 4090 default"},
-    "hccl": {"backend": "HCCL", "rtx4090": False, "description": "Ascend NPU only"},
-    "mooncake": {"backend": "Mooncake", "rtx4090": False, "description": "Multi-node RDMA"},
-    "nixl": {"backend": "NIXL", "rtx4090": False, "description": "Experimental"},
-    "kimi": {"backend": "Kimi", "rtx4090": False, "description": "Moonshot proprietary"},
+    "naive": {
+        "backend": "ColocatedCheckpointEngine",
+        "rtx4090": True,
+        "rtx4090_ranking": "★★★★★★★★ BEST for RTX 4090 single-GPU (sync trainer)",
+        "description": "In-process Python yield — zero IPC overhead, no process groups",
+        "transport": "Python generator yield",
+        "memory": "0 extra (just Python reference)",
+        "forced_by": "sync trainer automatically sets backend=naive",
+        "platform": "Any (CPU, GPU, NPU)",
+    },
+    "nccl": {
+        "backend": "NCCLCheckpointEngine",
+        "rtx4090": True,
+        "rtx4090_ranking": "Good for multi-GPU, overkill for single GPU",
+        "description": "NCCL broadcast + ZeroMQ PUB/SUB metadata",
+        "transport": "NCCL collective broadcast + ZeroMQ",
+        "memory": "2 * bucket_size (send_buf + recv_buf), cupy on master",
+        "forced_by": "separate_async requires non-naive backend",
+        "platform": "NVIDIA GPU only",
+    },
+    "hccl": {
+        "backend": "HCCLCheckpointEngine",
+        "rtx4090": False,
+        "rtx4090_ranking": "NOT usable on RTX 4090 — requires torch.npu",
+        "description": "HCCL collective broadcast + ZeroMQ — Ascend NPU only",
+        "transport": "HCCL broadcast + ZeroMQ",
+        "memory": "2 * bucket_size",
+        "forced_by": "Ascend NPU deployments only",
+        "platform": "Ascend NPU only (torch.npu)",
+    },
+    "nixl": {
+        "backend": "NIXLCheckpointEngine",
+        "rtx4090": False,
+        "rtx4090_ranking": "NOT viable — requires RDMA NIC (not on consumer RTX 4090)",
+        "description": "NIXL p2p (RDMA/UCX/UCCL/Mooncake) + ZeroMQ — ring topology",
+        "transport": "NIXL p2p RDMA/UCX + ZeroMQ",
+        "memory": "2 * bucket_size, cupy or CPU pinned",
+        "forced_by": "separate_async requires non-naive backend",
+        "platform": "GPU + RDMA-capable NICs",
+    },
+    "kimi": {
+        "backend": "KimiCheckpointEngine",
+        "rtx4090": False,
+        "rtx4090_ranking": "Complex, multi-GPU only — uses external checkpoint_engine package",
+        "description": "ParameterServer + distributed collective — H2DBucket",
+        "transport": "ParameterServer + distributed",
+        "memory": "H2DBucket (host-to-device)",
+        "forced_by": "separate_async requires non-naive backend",
+        "platform": "NVIDIA GPU, multi-GPU",
+    },
+    "mooncake": {
+        "backend": "MooncakeCheckpointEngine",
+        "rtx4090": False,
+        "rtx4090_ranking": "NOT viable — requires RDMA or Ascend Direct",
+        "description": "Mooncake TransferEngine p2p RDMA — supports Ascend NPU via ascend_direct",
+        "transport": "Mooncake TransferEngine p2p RDMA",
+        "memory": "2 * bucket_size + 4KB magic_buf",
+        "forced_by": "separate_async requires non-naive backend",
+        "platform": "GPU with RDMA or Ascend NPU",
+    },
 }
 
 # ============================================================
@@ -136,7 +191,9 @@ MUST_DO = [
     ("LoRA rank=32 (NOT 64)", "#6782 rank=64 breaks EOS"),
     ("overlap_comm=False", "#8061 NaN on single GPU"),
     ("cosine decay + warmup", "standard LR schedule"),
-    ("group_size≥2", "#605 normalization undefined at |G|=1"),
+    ("group_size≥2", "#605 normalization undefined at |G|=1 → ALL frameworks degenerate to REINFORCE!"),
+    ("reset_prefix+encoder_cache after weight update", "#45093/#46125 stale cache = silent corruption in RLHF"),
+    ("FSDP1 (NOT FSDP2)", "#6468 FSDP2 CPU memory leak 0.6-6.3 GiB/step"),
     ("ulimit -n 65536", "#8075 fd leak safety"),
 ]
 
