@@ -12,6 +12,7 @@ Based on cross-framework DSV4 systematic instability analysis:
   - SGLang #28520: AMD MTP accept-length bug → 2.17 (NOT CUDA graph, EAGER mode!)
   - SGLang #28569: EAGLE3 CUDA graph → illegal memory access crash
   - SGLang #28676: MXFP8 MoE shuffle cache CLOBBERED → 64x accuracy blowup (10th failure!)
+  - Megatron #5317: DSv4-Hybrid apply_rope_fusion=True → NaN at iter 2 (11th failure!)
   - vLLM-Ascend #10628/#10640: DSV4 failure + MTP crash on Ascend
   - Universal rule: ANY per-request dynamic routing MUST run eagerly
   - Extended rule: ANY per-step dynamic data MUST NOT be cached across steps
@@ -355,6 +356,7 @@ def show_matrix():
     print(f"  SGLang #28591: DSV4 MTP revert (OPEN)")
     print(f"  SGLang #28569: EAGLE3 crash (OPEN)")
     print(f"  SGLang #28676: MXFP8 MoE shuffle cache CLOBBERED (OPEN — 10th failure!)")
+    print(f"  Megatron #5317: DSv4-Hybrid apply_rope_fusion NaN (OPEN — 11th failure!)")
     print(f"  vLLM-Ascend #10628/#10640: Ascend failures")
     print(f"  vLLM-Ascend #10724: PD-Mix crash")
     print(f"  vLLM #39096: SM89 batch invariance")

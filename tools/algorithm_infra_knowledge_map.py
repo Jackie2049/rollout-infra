@@ -335,6 +335,47 @@ CONNECTIONS = {
             },
         ],
     },
+    "lifecycle": {
+        "name": "State Lifecycle Mismatch Pattern Family",
+        "note": "notebook/fundamentals/state-lifecycle-mismatch-pattern-family-derivation.md",
+        "connections": [
+            {
+                "component": "Physical clobber (Level 2)",
+                "math_property": "GPU allocator reuses cache physical address for new weights → destroys derived state",
+                "bugs": ["#28676 MXFP8 MoE shuffle cache CLOBBERED (64x blowup)", "#5317 DSv4-Hybrid NaN at iter 2"],
+                "decision": "dict.clear() on all derived caches at weight-reload boundary",
+                "formula": "P(clobber) = |cache|/|weight_region| × reload_freq/cache_freq",
+            },
+            {
+                "component": "Stale reference (Level 1)",
+                "math_property": "Derived state references outdated but physically intact computation from previous LoRA",
+                "bugs": ["#28591/#28612 DSV4 MTP state mapping", "#8072/#8076 ZeRO-3 dtype mismatch", "#8068 gradient clipping default"],
+                "decision": "Never cache per-step data, invalidate ALL caches at step boundary",
+                "formula": "P(stale) = 1 - (1 - changed/E)^top_k ≈ 12% for 30B-A3B",
+            },
+            {
+                "component": "Batch invariant violation (Level 4)",
+                "math_property": "Compiled kernels assume constant batch → variable GRPO batch → crash or NaN",
+                "bugs": ["#45309 cudagraph crash", "#45972 eager_break garbage", "#46088 MTP kv-dtype garbage"],
+                "decision": "enforce_eager=True for DSV4/MoE on RTX 4090",
+                "formula": "CUDAGraphSafe(K) iff grid_dims(K) ⊥ batch_size",
+            },
+            {
+                "component": "Intermittent accumulation (Level 5)",
+                "math_property": "State errors accumulate linearly without reset → silent corruption over time",
+                "bugs": ["#28679 GDN intermittent degeneracy", "#8075 fd leak in long-running", "#6468 FSDP2 CPU leak"],
+                "decision": "Output quality monitoring + periodic engine restart every 20-50 steps",
+                "formula": "E(t) = α·t·(1-β)^{t/T_step}, β≈0 for GDN → linear growth",
+            },
+            {
+                "component": "5-level severity taxonomy",
+                "math_property": "Unified framework: Stale(1) → Clobber(2) → Transfer(3) → Batch(4) → Accumulate(5)",
+                "bugs": ["11 DSV4 failures + 8 non-DSV4 pattern family members across 4 frameworks"],
+                "decision": "4-layer defense: Framework Safety → Cache Mgmt → Monitoring → Algorithmic",
+                "formula": "severity = impact × detectability⁻¹ × frequency",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -464,6 +505,7 @@ def show_theory(domain_name):
         "gen": "generative", "generative": "generative", "vae": "generative", "gan": "generative", "flow": "generative",
         "rlhf": "rlhf", "sleep": "rlhf", "wake": "rlhf", "weight_sync": "rlhf",
         "inductor": "inductor", "compile": "inductor", "torch_compile": "inductor", "fusion": "inductor", "prologue": "inductor", "p9": "inductor",
+        "lifecycle": "lifecycle", "state": "lifecycle", "mismatch": "lifecycle", "clobber": "lifecycle", "stale": "lifecycle", "boundary": "lifecycle",
     }
     key = aliases.get(domain_name, domain_name)
 
