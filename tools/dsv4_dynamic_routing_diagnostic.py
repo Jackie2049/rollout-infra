@@ -7,13 +7,15 @@ if ANY dynamic routing is detected.
 
 Based on cross-framework DSV4 systematic instability analysis:
   - vLLM #45972: DSV4 cudagraph → garbage output → MERGED revert
-  - vLLM #45979: DSV4 flashinfer sparse cache → GSM8K 6.75% → OPEN revert
+  - vLLM #45979: DSV4 flashinfer sparse cache → FALSE ALARM, VINDICATED
   - SGLang #28591: DSV4 MTP → testing revert
   - SGLang #28520: AMD MTP accept-length bug → 2.17 (NOT CUDA graph, EAGER mode!)
   - SGLang #28569: EAGLE3 CUDA graph → illegal memory access crash
+  - SGLang #28676: MXFP8 MoE shuffle cache CLOBBERED → 64x accuracy blowup (10th failure!)
   - vLLM-Ascend #10628/#10640: DSV4 failure + MTP crash on Ascend
   - Universal rule: ANY per-request dynamic routing MUST run eagerly
   - Extended rule: ANY per-step dynamic data MUST NOT be cached across steps
+  - Extended rule: ANY GPU-resident cache MUST be invalidated at weight-reload boundary
 
 Usage:
   python dsv4_dynamic_routing_diagnostic.py check <model_name>
@@ -235,11 +237,15 @@ def check_model(model_name):
     if n_routing >= 2:
         print(f"\nCross-Framework Evidence (June 2026):")
         print(f"  vLLM #45972: DSV4 cudagraph → garbage output → MERGED revert June 18")
+        print(f"  vLLM #45979: sparse cache → FALSE ALARM, VINDICATED by retesting")
         print(f"  SGLang #28591: DSV4 MTP revert → OPEN for testing")
         print(f"  SGLang #28569: EAGLE3 CUDA graph → illegal memory access crash")
+        print(f"  SGLang #28676: MXFP8 MoE shuffle cache CLOBBERED → 64x accuracy blowup (10th!)")
         print(f"  vLLM-Ascend #10628/#10640: DSV4 + MTP failure on Ascend")
+        print(f"  vLLM-Ascend #10724: 2*A2 PD-Mix crash (8th failure)")
         print(f"  vLLM #39096: SM89 batch invariance → Inductor fuses under cudagraph")
         print(f"  Universal rule: @eager_break_during_capture = correct separation boundary")
+        print(f"  Extended rule: GPU-resident cache MUST be invalidated at weight-reload boundary")
 
 
 def generate_config(model_name):
@@ -348,10 +354,16 @@ def show_matrix():
     print(f"  vLLM #45972: DSV4 cudagraph revert (MERGED)")
     print(f"  SGLang #28591: DSV4 MTP revert (OPEN)")
     print(f"  SGLang #28569: EAGLE3 crash (OPEN)")
+    print(f"  SGLang #28676: MXFP8 MoE shuffle cache CLOBBERED (OPEN — 10th failure!)")
     print(f"  vLLM-Ascend #10628/#10640: Ascend failures")
+    print(f"  vLLM-Ascend #10724: PD-Mix crash")
     print(f"  vLLM #39096: SM89 batch invariance")
     print(f"\nKey insight: DSV4 with 5 dynamic routing layers → ~41% mismatch rate → EXTREMELY fragile!")
     print(f"  Each layer ~10% disagreement → (1-0.9^5) ≈ 41% of forward passes have at least one mismatch")
+    print(f"\nExtended insight: #28676 adds PHYSICAL memory clobber subclass")
+    print(f"  Previous bugs: logical stale reference (cache hit returns old data)")
+    print(f"  #28676: physical clobber (memory overwritten → data is GARBAGE)")
+    print(f"  → Physical clobber is WORSE than stale reference!")
 
 
 def show_rtx4090():
