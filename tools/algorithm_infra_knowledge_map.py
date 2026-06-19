@@ -294,6 +294,47 @@ CONNECTIONS = {
             },
         ],
     },
+    "inductor": {
+        "name": "PyTorch Inductor Compilation Path Theory",
+        "note": "notebook/fundamentals/pytorch-inductor-compilation-path-theory.md",
+        "connections": [
+            {
+                "component": "FP8→BF16 prologue fusion",
+                "math_property": "SM89 stores FP8 but computes BF16 → dequant inline → batch-dependent grid",
+                "bugs": ["#184119 SM89 fp8 guard", "#187484 w8a8 Inductor breaks"],
+                "decision": "P9 Fusion Guard prevents prologue fusion on SM<90",
+                "formula": "grid_x = (batch * seq_len) / BLOCK_M → batch-dependent!",
+            },
+            {
+                "component": "Batch-dependent autotune",
+                "math_property": "argmin latency(config, actual_batch) → config changes per batch",
+                "bugs": ["#187636 autotune_at_compile_time → default False"],
+                "decision": "Compile-time autotune + P9 = batch-independent",
+                "formula": "runtime: argmin_c latency(c, batch) → compile: argmin_c latency(c, symbolic)",
+            },
+            {
+                "component": "CUDA graph constant batch",
+                "math_property": "CUDAGraph replay requires constant grid_dims → batch changes break replay",
+                "bugs": ["#45309 cudagraph DSV4 crash", "#45972 eager_break"],
+                "decision": "enforce_eager=True for DSV4/MoE on RTX 4090",
+                "formula": "CUDAGraphSafe(K) iff grid_dims(K) ⊥ batch_size",
+            },
+            {
+                "component": "SM89 capability gap (no wgmma/TMA)",
+                "math_property": "SM89: FP8 storage-only; SM90: FP8 compute → different fusion decisions",
+                "bugs": ["#28618/#28620 DeepGEMM disabled SM89", "#184119 SM89 guard"],
+                "decision": "SM89 = Triton backend, P9 + enforce_eager",
+                "formula": "SM89: dequant(FP8→BF16) + mma; SM90: wgmma(FP8) direct",
+            },
+            {
+                "component": "aot_eager piecewise compilation",
+                "math_property": "Static subgraphs AOT + dynamic subgraphs eager → partial compile + full batch safety",
+                "bugs": ["#46085 aot_eager backend NEW"],
+                "decision": "aot_eager = potential RTX 4090 best backend",
+                "formula": "K_aot = K_static(grid=const) ∪ K_dynamic(eager)",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -422,6 +463,7 @@ def show_theory(domain_name):
         "arch": "architecture", "architecture": "architecture", "model": "architecture",
         "gen": "generative", "generative": "generative", "vae": "generative", "gan": "generative", "flow": "generative",
         "rlhf": "rlhf", "sleep": "rlhf", "wake": "rlhf", "weight_sync": "rlhf",
+        "inductor": "inductor", "compile": "inductor", "torch_compile": "inductor", "fusion": "inductor", "prologue": "inductor", "p9": "inductor",
     }
     key = aliases.get(domain_name, domain_name)
 
