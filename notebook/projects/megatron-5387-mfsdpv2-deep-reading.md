@@ -944,6 +944,7 @@ MFSDPv2 #5387:
   → fully_shard entry point → FsdpModule mixin → FsdpParameterGroup
   → Forward/backward lifecycle → storage release/reallocate
   → Gradient reduction → mixed precision → version counter preservation
+  → Gradient reduction → mixed precision → version counter preservation
   → 8 test cases → 27 passed, 6 skipped
 
 ★★★★★★★★★ Phase 2: #5369 (meta params, +2398/-0) → OPEN draft
@@ -977,6 +978,64 @@ MFSDPv2 #5387:
   → But: DBuffer ≠ DTensor → need conversion layer
   → ★★★★★★★★ verl FSDP2 remains #1 for RTX 4090 → MFSDPv2 is future multi-GPU path
 ```
+
+---
+
+### 8.3 New Architectural Insights (Session 3 Agent Research)
+
+**Gradient accumulation contract (GRPO micro-batching relevance):**
+
+`reduce_gradients()` implements a precise accumulation contract:
+- `zero_grad(set_to_none=True)` clears sharded grads → next backward reduces directly into `main_grad` (can_reduce_into_main_grad=True)
+- `zero_grad(set_to_none=False)` leaves sharded grads → next backward accumulates via `add_()`
+- `ReduceOp.AVG` for inter-rank, SUM for accumulation across backward calls
+- ★★★★★★★★ This is the CORRECT pattern for GRPO micro-batching: accumulate across multiple rollout groups, then single optimizer step
+
+**Lazy main_grad allocation (future RTX 4090 optimization):**
+
+Comment in FsdpParameterGroup.__init__():
+> "For micro-batch size 1, this allocation could be delayed until post_backward
+> and then eagerly deallocated right after optimizer.step(), avoiding main_grad
+> storage during forward. That requires a separate lifetime contract with the
+> optimizer, so this version keeps the simpler persistent buffer."
+
+★★★★★★★★★ Potential savings: main_grad for 7B bf16 model = ~14 GiB → delaying until post-backward means forward only needs sharded gradient shards (dp_size times smaller). This mirrors verl #6512 per-unit LoRA summon pattern — both delay allocation until compute needs it.
+
+**Version counter preservation ≡ verl #6699 (detach fix) — same underlying pattern:**
+
+MFSDPv2 uses `torch.autograd._unsafe_preserve_version_counter` to allow in-place redistribution without triggering "modified by an inplace operation" errors. After compute, `release_storage(0)` frees the allocation while preserving the Storage object so that autograd aliases (saved views) still exist but point to empty storage.
+
+★★★★★★★★★ This is the SAME underlying issue as verl #6699 (detach memory fix):
+- verl #6699: `.detach()` breaks the autograd graph → 4x memory reduction
+- MFSDPv2: `_unsafe_preserve_version_counter` + `release_storage(0)` keeps the graph intact but releases backing storage
+- Both handle autograd's lifetime management of intermediate tensors
+- MFSDPv2's approach is MORE subtle: doesn't break the graph, just releases backing storage → autograd can still traverse but forward views point to empty (will be reallocated before backward)
+- ★★★★★★★★ Pattern family: Storage Lifecycle Management — 3 members now (verl detach, MFSDPv2 release/preserve, DeepSpeed #8058 contiguous bug)
+
+**DBuffer vs PyTorch FlatParamHandle — detailed comparison:**
+
+| Feature | DBuffer | FlatParamHandle |
+|---------|---------|-----------------|
+| Scope | Group of logical tensors | One flat param per module group |
+| Packing | LCM chunk_size row-aligned | FlatParameter packs sequentially |
+| Collective | Single call for ALL params in group | Per-module-group collective |
+| TP metadata | Preserved via FsdpParameterGroup | Lost (FlatParameter ignores custom attrs) |
+| Storage lifecycle | release_storage/reallocate (preserves aliases) | Separate swap buffers (may break aliases) |
+| Version counter | _unsafe_preserve_version_counter | _check_training_state assertions |
+| Gradient hooks | Completion-based (all params accumulated) | Module-level post-backward (can fire early) |
+| Frozen params | main_grad=None (skip gradient buffer) | No equivalent optimization |
+
+★★★★★★★★★ DBuffer's group-based approach = fewer collective calls = lower latency for multi-module models
+★★★★★★★★★ Completion-based gradient hooks = more robust for MoE/LoRA/GDN (module-level hooks can fire before all grads ready)
+
+**Shared reshard storage-release design choice:**
+
+Comment in `reshard_parameters()`:
+> "An alternative would be replacing unsharded parameter .data with size-0
+> empty tensors at post-backward (since autograd has consumed forward views),
+> but the author chose to keep the shared path for code cleanliness."
+
+Both post-forward and post-backward reshard share `release_storage()` behavior → unified lifecycle → simpler code but slightly more allocation than strictly necessary at post-backward.
 
 ---
 

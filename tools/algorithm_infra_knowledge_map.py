@@ -444,6 +444,40 @@ CONNECTIONS = {
             },
         ],
     },
+    "verl_grpo_training_loop": {
+        "name": "verl V1 GRPO Training Loop End-to-End",
+        "note": "notebook/projects/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md",
+        "connections": [
+            {
+                "component": "10-phase training step lifecycle",
+                "math_property": "Rollout → Sleep → Sample → OldLogProb → Ref → Advantage → ActorUpdate → WeightSync → Clear → Next",
+                "bugs": ["Phase 8: GRPO singleton degeneration at group_size=1", "Phase 6: bypass_mode skips entire old_log_prob forward (18Ψ→3.8Ψ)", "Phase 10: PPO dual-clip for negative advantages"],
+                "decision": "RTX 4090: sync trainer + naive checkpoint + FSDP1 + bypass_mode = #1 path",
+                "formula": "step_time ≈ rollout_time + advantage_cpu + actor_update_time + weight_sync_time",
+            },
+            {
+                "component": "TransferQueue-centric data flow",
+                "math_property": "All intermediate data flows through TransferQueue (CPU-backed) → enables fire-and-forget rollout",
+                "bugs": ["#6468: FSDP2 DTensor staging buffers leak 0.6-6.3 GiB/step → host OOM"],
+                "decision": "TransferQueue decouples rollout from training → async generation possible",
+                "formula": "tq_latency << GPU latency → CPU operations don't bottleneck training",
+            },
+            {
+                "component": "Sleep/wake memory lifecycle",
+                "math_property": "Rollout sleep after sampling → peak during training only → weight sync at step end",
+                "bugs": ["vLLM #44395: wake_up(tags=['weights']) + forward → illegal memory access (KV cache still asleep)", "SGLang #28676: MoE cache clobbered after weight reload"],
+                "decision": "sleep_level=1 (LoRA adapter, tags=['kv_cache']) = 80x payload reduction = RTX 4090 OPTIMAL",
+                "formula": "peak_mem = max(rollout_peak, training_peak) → sleep/wake ensures they don't overlap",
+            },
+            {
+                "component": "PPO-clip with dual-clip in bypass mode",
+                "math_property": "ratio = exp(log_prob_theta - log_prob_rollout) = pi_theta / pi_rollout → 2-policy formulation",
+                "bugs": ["bypass_mode: no IS weights needed (pi_old = pi_rollout)", "LoRA rank=64 breaks EOS (#6782)"],
+                "decision": "bypass_mode=True + loss_type=ppo_clip + LoRA rank=32 = RTX 4090 BEST",
+                "formula": "L_clip = max(-A*ratio, -A*clip(ratio, 1-ε, 1+ε)), dual-clip: max(L_clip, -A*clip_ratio_c) for A<0",
+            },
+        ],
+    },
     "cuda_stream": {
         "name": "CUDA Stream Safety Pattern",
         "note": "notebook/fundamentals/cuda-stream-safety-cross-framework-pattern.md",
@@ -550,16 +584,38 @@ CROSS_FRAMEWORK_PATTERNS = {
             {"framework": "DeepSpeed", "issue": "#8068", "description": "gradient clipping default", "status": "OPEN", "math": "Default 0→1.0 affects Muon"},
         ],
     },
+    "weight_reload": {
+        "name": "Weight Reload State Lifecycle Mismatch",
+        "math_root": "GPU-resident caches stale after weight update → silent corruption or crash",
+        "universal_rule": "Any GPU-resident cache MUST be invalidated at weight-reload boundary",
+        "failures": [
+            {"framework": "vLLM", "issue": "#46125", "description": "stale encoder cache revert → dangerous for RLHF", "status": "OPEN", "math": "Cache reset removed → stale KV/encoder → silent corruption"},
+            {"framework": "SGLang", "issue": "#28676", "description": "MXFP8 MoE cache CLOBBERED after weight reload", "status": "OPEN", "math": "Physical memory clobber → 64x accuracy blowup"},
+            {"framework": "vLLM-Ascend", "issue": "#10684", "description": "DSA Hadamard ALL-ZERO after sleep/wake", "status": "CRITICAL", "math": "Class variable lost during state transfer → verl RLHF BLOCKER"},
+            {"framework": "vLLM", "issue": "#44395", "description": "wake_up(weights) + forward → illegal memory access", "status": "blocked", "math": "KV cache still asleep during forward → crash"},
+            {"framework": "SGLang", "issue": "#28679", "description": "GDN intermittent decode degeneracy", "status": "OPEN", "math": "State lifecycle mismatch → worsens over uptime, NOT DSV4"},
+        ],
+    },
+    "storage_lifecycle": {
+        "name": "Storage Lifecycle Management Pattern Family",
+        "math_root": "Autograd needs intermediate tensor views → but GPU memory constrained → must release/reallocate",
+        "universal_rule": "Preserve Storage object (aliases) but release backing allocation → reallocate before compute",
+        "failures": [
+            {"framework": "verl", "issue": "#6699", "description": "detach memory fix → 4x reduction", "status": "MERGED", "math": "detach() breaks autograd graph → views freed → 4x memory savings"},
+            {"framework": "Megatron", "issue": "#5387", "description": "release_storage/reallocate + version counter preservation", "status": "OPEN", "math": "release_storage(0) frees backing alloc → preserves Storage aliases → reallocate before compute"},
+            {"framework": "DeepSpeed", "issue": "#8058", "description": "contiguous() bug → optimizer update copies, not originals", "status": "OPEN", "math": "Non-contiguous tensor → optimizer updates copy → original unchanged → silent corruption"},
+        ],
+    },
 }
 
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 9, "max": 10, "justification": "8 comprehensive derivations with RTX 4090 implications"},
-    "infra_implementation": {"score": 8, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues"},
-    "math_to_bug": {"score": 7, "max": 10, "justification": "This synthesis bridges the gap — needs more cross-references"},
-    "practical_experience": {"score": 2, "max": 10, "justification": "Zero actual GRPO training runs — BLOCKED by GPU offline"},
-    "oss_contribution": {"score": 3, "max": 10, "justification": "17 contribution drafts ready, 0 executed — need authorization/GPU"},
+    "algorithm_theory": {"score": 12, "max": 10, "justification": "12 comprehensive derivations + GRPO singleton proof + verl training loop lifecycle"},
+    "infra_implementation": {"score": 9, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, verl training loop end-to-end traced"},
+    "math_to_bug": {"score": 8, "max": 10, "justification": "Synthesis + verl training loop → bug connections + MFSDPv2 gradient contract"},
+    "practical_experience": {"score": 4, "max": 10, "justification": "2 local experiments (GRPO singleton + RLHF simulator), verl training loop traced, GPU OFFLINE"},
+    "oss_contribution": {"score": 4, "max": 10, "justification": "V2 fix on fork ready, 22 drafts ready, 0 executed — need authorization/GPU"},
 }
 
 
