@@ -53,18 +53,22 @@ With CPU offload (optimizer to CPU):
 |--------|---------|
 | **Location** | CPU (native C++ process) |
 | **IPC** | POSIX semaphores + shared memory (zero-copy) |
-| **Copyback** | Chunked fp32→bf16 conversion (per chunk) |
-| **GPU transient** | 256 MiB (4 × 64 MiB chunk buffers) |
+| **Copyback** | Chunked fp32→bf16 conversion — ★★★★★★★★ ONLY for ZeRO Stage 1/2! Stage 3 STILL full materialization! |
+| **GPU transient** | 256 MiB (Stage 1/2) / 2944 MiB (Stage 3 STILL!) |
 | **Latency** | Fast (direct shared memory, no serialization) |
-| **Stability** | C++ process (needs death detection) |
-| **ZeRO compatibility** | ZeRO-2 and ZeRO-3 |
-| **RTX 4090 verdict** | ★★★★★★★★ Best for ZeRO-3, slight improvement for ZeRO-2 |
+| **Stability** | C++ process (needs death detection), Linux-only (no POSIX fallback), depends on #7771 |
+| **ZeRO compatibility** | ZeRO-1/2 (chunked) + ZeRO-3 (STILL full materialization!) |
+| **RTX 4090 verdict** | ★★★★★★★★ Best for ZeRO-2, ZeRO-3 STILL NOT viable until Stage 3 copyback implemented |
 
 ★★★★★★★★★ **How it works**:
 - Same fundamental approach as CPU_Adam: optimizer on CPU, params on GPU
-- Key difference: **chunked copyback** eliminates the 2944 MiB transient spike
-- GPU_transient = 4 × chunk_size_bf16 = 4 × 64 = 256 MiB regardless of model size!
+- Key difference: **chunked copyback** eliminates the 2944 MiB transient spike — BUT ONLY for Stage 1/2!
+- GPU_transient = 4 × chunk_size_bf16 = 4 × 64 = 256 MiB regardless of model size (Stage 1/2 only!)
+- ZeRO-3 STILL uses full fp32 materialization → 2944 MiB spike REMAINS → RTX 4090 OOM risk persists
 - Native C++ optimizer process → faster IPC, more robust
+- ZenGroup double-buffered: `grad[2], exp_avg[2], exp_avg_sq[2]` with [0]/[1] indexing → pipelined overlap
+- PinnedThreadPool with AVX alignment (`kZenAdamAlign`) → deterministic numerics
+- Linux-only (POSIX semaphores no fallback), depends on #7771 (Fix ZenFlow NaN)
 
 ★★★★★★★★★ **Chunked copyback math**:
 ```
@@ -145,22 +149,22 @@ Per-unit summon: summon each FSDP unit separately
 | Feature | CPU_Adam | ZenFlow | CPUOffloadPolicy | verl FSDP1+offload |
 |---------|----------|---------|-------------------|--------------------|
 | **dp=1 viable** | YES | YES | NO | YES ★★★★★★★★ |
-| **GPU transient** | 2944 MiB | 256 MiB | ~14 GiB | 6-8 GiB |
+| **GPU transient** | 2944 MiB | 256 MiB (S1/2) / 2944 MiB (S3!) | ~14 GiB | 6-8 GiB |
 | **IPC overhead** | High | Low | None | None |
-| **Process stability** | Python (fragile) | C++ (robust if death detected) | Native | Native |
-| **ZeRO/FSDP compat** | ZeRO-2/3 | ZeRO-2/3 | FSDP2 only | FSDP1 only |
+| **Process stability** | Python (fragile) | C++ (needs death detect, Linux-only) | Native | Native |
+| **ZeRO/FSDP compat** | ZeRO-2/3 | ZeRO-1/2 chunked, ZeRO-3 STILL full! | FSDP2 only | FSDP1 only |
 | **FSDP2 leak risk** | None | None | HIGH (#6468) | N/A (uses FSDP1) |
 | **bypass_mode compat** | No (DeepSpeed) | No (DeepSpeed) | No (PyTorch) | YES ★★★★★★★★ |
-| **LoRA compat** | ZeRO-3 blocked (#8072) | ZeRO-3 viable after merge | FSDP2 unknown | YES ★★★★★★★★ |
-| **RTX 4090 #1 for GRPO** | #2.5 | #2.5 (improved) | N/A | ★★★★★★★★ #1 |
+| **LoRA compat** | ZeRO-3 blocked (#8072) | ZeRO-3 STILL blocked! | FSDP2 unknown | YES ★★★★★★★★ |
+| **RTX 4090 #1 for GRPO** | #2.5 | #2 (ZeRO-2 chunked) | N/A | ★★★★★★★★ #1 |
 
 ### 3.2 Memory Budget Comparison (7B model, dp=1)
 
 | Approach | Peak GPU (GiB) | Transient (MiB) | Margin (GiB) | Fits? |
 |----------|----------------|-----------------|---------------|-------|
 | CPU_Adam ZeRO-2 | ~16.2 | 2944 (during copyback) | ~6 | YES (but tight during copyback) |
-| ZenFlow ZeRO-2 | ~16.0 | 256 (chunked) | ~7 | YES (improved margin) |
-| ZenFlow ZeRO-3 | ~16.2 | 256 | ~7 | YES (previously OOM risk!) |
+| ZenFlow ZeRO-2 | ~16.0 | 256 (chunked, S1/2 only!) | ~7 | YES (improved margin) |
+| ZenFlow ZeRO-3 | ~16.2 | 2944 (S3 STILL full!) | ~6 | YES but copyback RISKY |
 | CPUOffloadPolicy | ~24+ (resident=full) | ~14 GiB | 0 | NO |
 | verl FSDP1+offload | ~16.2 | 6-8 GiB (per-unit) | ~7.8 | YES ★★★★★★★★ BEST |
 
@@ -238,25 +242,26 @@ DSV4 (685B):
 
 ## 6. Key Conclusions
 
-★★★★★★★★★ **RTX 4090 dp=1 GRPO training — CPU offload ranking**:
+★★★★★★★★★ **RTX 4090 dp=1 GRPO training — CPU offload ranking** (★ UPDATED with Stage 1/2 only correction):
 
 ```
 #1: verl CPPO+bypass + FSDP1 + CPU_offload + per-unit LoRA summon (#6512)
     → 16.2 GiB peak, bypass eliminates ref model, LoRA adds minimal overhead
     → BEST: bypass_mode + per-unit summon + LoRA = triple memory optimization
 
-#2: DeepSpeed ZeRO-2 + CPU_Adam + LoRA-32
+#2: DeepSpeed ZeRO-2 + ZenFlow CPU optimizer (after #8058 merges)
+    → ~16 GiB peak, chunked copyback for Stage 1/2, faster IPC
+    → ★★★★★★★★ Chunked copyback ONLY works for Stage 1/2 (confirmed by delock review)
+    → Improvement: 5-15% faster per step, safer copyback for ZeRO-2
+
+#2.5: DeepSpeed ZeRO-2 + CPU_Adam + LoRA-32
     → ~16-18 GiB peak, no partition overhead, well-tested
     → Risk: #8072 regression if accidentally use ZeRO-3
 
-#2.5: DeepSpeed ZeRO-2 + ZenFlow CPU optimizer (after #8058 merges)
-    → ~16 GiB peak, chunked copyback, faster IPC
-    → Improvement: 5-15% faster per step, safer copyback
-
-#3: DeepSpeed ZeRO-3 + ZenFlow CPU optimizer (after #8058 merges)
-    → ~16 GiB peak (with partition), previously risky → now viable
+#3: DeepSpeed ZeRO-3 + ZenFlow CPU optimizer
+    → ★★★★★★★★ STILL NOT viable! Stage 3 copyback NOT implemented → 2944 MiB spike REMAINS
+    → Only viable AFTER Stage 3 chunked copyback is added (future work)
     → Risk: #8072 regression (per-policy dtype mismatch)
-    → Only if ZeRO-2 is unavailable for some reason
 
 NOT viable: PyTorch CPUOffloadPolicy (#187620)
     → dp=1 shard=identity → full model resident → OOM for >8B
@@ -267,7 +272,7 @@ NOT viable: FSDP2 backend (verl)
     → MUST use FSDP1 backend for long-running GRPO
 ```
 
-★★★★★★★★★ **Bottom line**: verl CPPO+bypass+FSDP1+CPU_offload remains #1 BEST for RTX 4090. ZenFlow makes DeepSpeed alternatives more viable but doesn't change the #1 ranking. CPUOffloadPolicy is NOT viable on dp=1.
+★★★★★★★★★ **Bottom line**: verl CPPO+bypass+FSDP1+CPU_offload remains #1 BEST for RTX 4090. ZenFlow makes ZeRO-2 BETTER (chunked copyback for Stage 1/2) but ZeRO-3 is STILL NOT viable (Stage 3 copyback not implemented). CPUOffloadPolicy is NOT viable on dp=1.
 
 ---
 

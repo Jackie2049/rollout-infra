@@ -117,13 +117,23 @@ The +445/-15 changes add:
    - Gradient buffers in shared memory → zero-copy transfer
    - Optimizer state (fp32 momentum, variance) in process-local memory
 
-2. **Chunked copyback mechanism**:
+2. **ZenGroup double-buffered design**:
+   - Gradient and optimizer states use double-buffered arrays: `grad[2], exp_avg[2], exp_avg_sq[2]`
+   - `[0]/[1]` indexing alternates each step → pipelined overlap between gradient computation and optimizer update
+   - While optimizer updates buffer[0], next gradient fills buffer[1] → near-zero idle time
+   - **PinnedThreadPool**: AVX-aligned thread pool for deterministic numerics
+     - `kZenAdamAlign = SIMD_WIDTH * 8` → ensures optimizer state vectors aligned for SIMD ops
+     - Prevents subtle numeric differences between runs (important for reproducibility!)
+
+3. **Chunked copyback mechanism** (★★★★★★★★★ ONLY for ZeRO Stage 1/2, NOT Stage 3!):
    - Instead of: `bf16_param[i] = (bf16)fp32_param[i]` for entire partition
    - New approach: iterate over chunks of size `chunk_size`
    - Each chunk: read fp32 from optimizer → convert to bf16 → write to shared memory
    - GPU reads one chunk at a time → only `chunk_size × 2` bytes (bf16) on GPU
+   - **CRITICAL**: Chunked copyback ONLY implemented for Stage 1/2 — Stage 3 STILL uses full materialization!
+   - This was confirmed by delock's review comment: Stage 3 copyback still unimplemented
 
-3. **POSIX semaphore signaling**:
+4. **POSIX semaphore signaling**:
    ```cpp
    // Training process signals optimizer
    sem_post(gradient_ready_sem);
@@ -138,18 +148,27 @@ The +445/-15 changes add:
    sem_wait(copyback_ready_sem);
    ```
 
+5. **Platform constraint**: Linux-only (POSIX semaphores `sem_open/sem_wait/sem_post` have NO fallback path for macOS/Windows). This is fine for RTX 4090 Linux training environments.
+
+6. **Merge dependency**: ★★★★★★★★ PR #7771 (Fix ZenFlow NaN) was MERGED on June 12! This dependency is now SATISFIED. ZenFlow (#8058) can proceed without NaN risk.
+
 ### 3.4 Chunked Copyback: The 2944→256 MiB Magic
 
 ★★★★★★★★★ The mathematical analysis:
 
-**Full materialization** (old approach):
+★★★★★★★★★ **IMPORTANT CORRECTION**: Chunked copyback is ONLY implemented for ZeRO Stage 1/2. Stage 3 still uses full materialization — confirmed by delock review comment #4. This means:
+- **ZeRO-1/2**: chunked copyback works → 256 MiB transient → GREAT
+- **ZeRO-3**: still full fp32 materialization → 2944 MiB transient → OOM risk REMAINS on RTX 4090!
+- For RTX 4090 dp=1: ZeRO-2 is optimal anyway (no partition overhead), so this limitation is acceptable
+
+**Full materialization** (old approach, STILL used for ZeRO-3):
 ```
 GPU memory needed = partition_size_fp32 = (model_params × 4) / dp
 For 7B dp=1: 28 GiB → OOM on RTX 4090 (24 GiB)
 For 7B dp=4: 7 GiB → fits, but still wastes 7 GiB transient
 ```
 
-**Chunked copyback** (new approach):
+**Chunked copyback** (new approach, ONLY for ZeRO-1/2):
 ```
 GPU memory needed = chunk_size × 2  (bf16 chunk only)
 Default chunk_size = 128 MiB (fp32) → 64 MiB (bf16)
@@ -162,9 +181,13 @@ For ANY model/dp: 256 MiB → fits on ANY GPU including RTX 4090!
 - 4 buffers for pipeline overlap: 4 × 64 = 256 MiB
 - Total transient overhead: 256 MiB regardless of model size or dp!
 
+★★★★★★★★★ **contiguous() correctness bug**: `ds_adam_step_multi()` calls `.contiguous()` on gradient tensors before copy. For non-contiguous tensors, `.contiguous()` creates a NEW copy → the optimizer updates the copy → **original param NOT updated** → silent correctness bug. This is analogous to the CUDA stream race in #8061 (both cause silent corruption without error signal).
+
 ---
 
-## 4. delock Review Comments (4 substantive)
+## 4. delock Review Comments (5 substantive)
+
+★★★★★★★★★ **CORRECTION**: Initially counted 4 comments, but deep source reading reveals 5 substantive comments.
 
 ### 4.1 Comment 1: Optimizer Process Death Detection
 
@@ -201,20 +224,44 @@ sem_timedwait(sem, &timeout); // timeout = 5 seconds
 
 **Status**: Easy fix, add env var override.
 
-### 4.4 Comment 4: Chunked Copyback for Stage 3
+### 4.4 Comment 4: Chunked Copyback Scope — ONLY Stage 1/2
 
-**Issue**: The chunked copyback is currently only implemented for ZeRO-3.
-- For ZeRO-2: fp32 optimizer states are already CPU-resident → no copyback needed?
-- Actually: ZeRO-2 also needs copyback for fp32→bf16 conversion of UPDATED parameters
-- Current implementation: ZeRO-2 still uses full materialization?
+★★★★★★★★★ **CRITICAL CORRECTION**: The chunked copyback is currently only implemented for ZeRO Stage 1/2, NOT Stage 3!
 
-**Status**: Need to verify. If ZeRO-2 doesn't get chunked copyback → RTX 4090 still benefits (ZeRO-2 doesn't have the partition-level copyback issue, but fp32→bf16 per-parameter update still needs optimization).
+**Issue**: The PR description claims chunked copyback for ZeRO-3, but source code reveals:
+- Stage 1/2: chunked copyback path implemented → 256 MiB transient
+- Stage 3: copyback NOT yet implemented → still uses full fp32 materialization → 2944 MiB transient
+- This means ZeRO-3+ZenFlow is STILL risky on RTX 4090 until Stage 3 copyback is added
 
-★★★★★★★★★ **RTX 4090 insight**: For our optimal config (ZeRO-2 + CPU_Adam), the chunked copyback may NOT apply directly because:
+**For ZeRO-2**: fp32 optimizer states are already CPU-resident → no partition-level copyback needed
+- ZeRO-2 benefits from chunked transfer of updated params (256 MiB buffer instead of full param set)
+- But ZeRO-2 doesn't have the 2944 MiB transient spike in the first place → chunked copyback less critical
+
+★★★★★★★★★ **RTX 4090 insight**: For our optimal config (ZeRO-2 + CPU_Adam), the chunked copyback still provides benefit:
 - ZeRO-2 keeps full parameters on each GPU (no partitioning)
 - CPU_Adam offloads optimizer states to CPU
 - The copyback path: CPU fp32 updated → GPU bf16 copy
-- Still benefits from chunked transfer (256 MiB buffer instead of full param set)
+- Chunked transfer reduces GPU transient during this copyback phase
+
+### 4.5 Comment 5: Missing Unit Tests + contiguous() Bug
+
+**Issue 1**: No unit tests for the native C++ optimizer process:
+- ZenFlowAdam class has zero test coverage
+- Shared memory allocation, semaphore signaling, chunked copyback → all untested
+- Risk: production failures in long-running GRPO training without test guardrails
+
+**Issue 2**: `.contiguous()` correctness bug in `ds_adam_step_multi`:
+```cpp
+// This creates a COPY for non-contiguous tensors → original param NOT updated!
+auto grad = gradient.contiguous();
+// Optimizer updates grad (the copy), not the original gradient tensor
+// → silent correctness bug: param update written to copy, not original
+```
+- For contiguous tensors: `.contiguous()` returns self → no bug
+- For non-contiguous tensors: `.contiguous()` allocates new memory → optimizer updates copy → **original param unchanged**
+- Same pattern family as CUDA stream race (#8061): silent corruption without error signal
+
+**Status**: Both need fixes. contiguous() bug should use `.view()` or check contiguity first.
 
 ---
 
@@ -351,16 +398,19 @@ verl uses DeepSpeed's CPU_Adam optimizer for its RTX 4090 optimal config:
 ## 8. delock Review Status
 
 **Reviewer**: delock (DeepSpeed maintainer)
-**Comments**: 4 substantive
+**Comments**: 5 substantive (corrected from initial count of 4)
 **Status**: OPEN, reviewing
 **Sentiment**: Positive overall — engaging with technical details, suggesting improvements
-**Blocking issues**: None identified yet, but need:
+**Blocking issues**: Need to address before merge:
 1. Process death detection mechanism
 2. CPU affinity fix (minor)
 3. Configurable semaphore timeout
-4. ZeRO-2 chunked copyback extension
+4. Stage 3 chunked copyback (currently ONLY Stage 1/2 implemented!)
+5. Unit tests for native C++ optimizer (zero coverage)
+6. contiguous() correctness bug → silent param update loss
+7. Merge dependency: ★★★★★★★★ PR #7771 (Fix ZenFlow NaN) was MERGED June 12 → dependency SATISFIED!
 
-★★★★★★★★★ **Prediction**: PR likely to merge within 2-4 weeks with minor fixes. Major positive from delock's engagement level (4 detailed comments = thorough review = interest).
+★★★★★★★★★ **Updated prediction**: PR needs more work before merge. Stage 3 copyback, unit tests, and contiguous() fix are substantive requirements. Likely 4-8 weeks, not 2-4 weeks as initially estimated. But: #7771 dependency RESOLVED, delock's engagement (5 comments) = thorough review = interest = positive signal.
 
 ---
 
@@ -404,17 +454,19 @@ RTX 4090 GRPO Training Options (dp=1):
   4. FSDP2 + CPU_offload → BLOCKED (#6468 CPU leak)
 ```
 
-### 10.2 After ZenFlow (If Merged)
+### 10.2 After ZenFlow (If Merged — with Stage 1/2 ONLY chunked copyback)
+
+★★★★★★★★★ **IMPORTANT**: Chunked copyback ONLY for ZeRO Stage 1/2. Stage 3 STILL full materialization!
 
 ```
 RTX 4090 GRPO Training Options (dp=1):
-  1. ZeRO-2 + CPU_Adam → STILL BEST (ZenFlow makes it faster)
-  2. ZeRO-3 + CPU_offload + ZenFlow → NOW VIABLE (256 MiB transient → fits!)
+  1. ZeRO-2 + CPU_Adam → STILL BEST (ZenFlow chunked copyback works for Stage 1/2!)
+  2. ZeRO-3 + CPU_offload + ZenFlow → STILL RISKY (Stage 3 copyback NOT implemented → 2944 MiB spike REMAINS)
   3. FSDP1 + CPU_offload → BEST for verl (ZenFlow adaptation needed)
   4. FSDP2 + CPU_offload → STILL BLOCKED (#6468 CPU leak)
 ```
 
-★★★★★★★★★ **Key change**: ZeRO-3 becomes viable on RTX 4090 after ZenFlow merges. But ZeRO-2 is still preferred (no partition overhead, simpler code path).
+★★★★★★★★★ **Key CORRECTION**: ZeRO-3 does NOT become viable after ZenFlow — Stage 3 copyback is still full materialization. Only ZeRO-1/2 benefits from chunked copyback. But ZeRO-2 is already our #1 choice anyway, so this is fine.
 
 ### 10.3 For verl RTX 4090 Optimal Config
 
@@ -426,15 +478,32 @@ With ZenFlow: FSDP1 + ZenFlow CPU_optimizer + bypass_mode + LoRA-32 → ~15 GiB 
   → Same memory budget, faster training
 ```
 
-★★★★★★★★★ **Verdict**: ZenFlow makes our EXISTING optimal config faster, and makes previously risky configs viable. It doesn't change the #1 recommendation (verl CPPO+bypass), but it strengthens the CPU offload argument.
+★★★★★★★★★ **Verdict**: ZenFlow makes our EXISTING optimal config faster (ZeRO-2 chunked copyback works). ZeRO-3 does NOT become viable until Stage 3 copyback is implemented. The #1 recommendation (verl CPPO+bypass) unchanged.
 
 ---
 
-## 11. Future Research Questions
+## 11. Platform & Dependency Constraints
 
-1. **Chunked copyback for FSDP1**: Can ZenFlow's chunked approach be adapted for FSDP1's whole-model summon path?
+★★★★★★★★★ **Linux-only**: POSIX semaphores (`sem_open/sem_wait/sem_post`) have NO fallback for macOS or Windows. This is acceptable for RTX 4090 training environments (always Linux), but means ZenFlow cannot be tested on macOS dev machines.
 
-2. **ZeRO-2 + ZenFlow**: Does ZeRO-2 benefit from chunked copyback? ZeRO-2 doesn't have partition-level copyback, but fp32→bf16 per-parameter conversion still occurs.
+★★★★★★★★★ **Merge dependency RESOLVED**: PR #7771 (Fix ZenFlow NaN) was MERGED on June 12! This dependency is now SATISFIED. Previously, without #7771:
+- ZenFlow had a NaN path under certain gradient patterns
+- The NaN arose from uninitialized shared memory buffers on first use
+- #7771 added proper initialization of ZenGroup double-buffered arrays before first optimizer step
+- RTX 4090 implication: ZenFlow NOW safe to use without NaN risk → #7771 already merged!
+
+★★★★★★★★★ **contiguous() silent bug**: `.contiguous()` in `ds_adam_step_multi` creates a COPY for non-contiguous tensors → optimizer updates copy, not original → **silent correctness bug**. This is the same pattern family as:
+- DeepSpeed #8061: CUDA stream race → reads stale gradient → silent NaN
+- Both: no error signal, subtle conditions trigger, hard to diagnose
+- Fix: check `.is_contiguous()` first, only call `.contiguous()` if needed, then copy result back
+
+---
+
+## 12. Future Research Questions
+
+1. **Chunked copyback for Stage 3**: When will ZeRO-3 get chunked copyback? Until then, ZeRO-3+ZenFlow is STILL risky on RTX 4090.
+
+2. **ZeRO-2 + ZenFlow**: Does ZeRO-2 benefit from chunked copyback? YES — reduces GPU transient during fp32→bf16 copyback. But ZeRO-2 transient is already smaller than ZeRO-3's.
 
 3. **verl integration**: Can verl use ZenFlow's native optimizer process instead of DeepSpeed's Python subprocess?
 
@@ -442,19 +511,25 @@ With ZenFlow: FSDP1 + ZenFlow CPU_optimizer + bypass_mode + LoRA-32 → ~15 GiB 
 
 5. **ZenFlow + delta sync**: Combined chunked transfer + delta encoding → minimal GPU memory AND minimal transfer payload?
 
+6. **contiguous() fix**: Replace `.contiguous()` with proper contiguity check + copy-back, or use `.view()` reshape instead.
+
+7. **Unit tests**: What test coverage should ZenFlowAdam have? Shared memory, semaphore signaling, chunked copyback, double-buffered ZenGroup lifecycle.
+
 ---
 
 ## References
 
 - DeepSpeed #8058: https://github.com/deepspeedai/DeepSpeed/pull/8058
+- DeepSpeed #7771: Fix ZenFlow NaN (★★★★★★★★★ MERGED June 12! Dependency SATISFIED)
 - DeepSpeed #8061: overlap_comm NaN (same framework, different root cause)
 - DeepSpeed #8072: ZeRO-3+PEFT regression (ZenFlow may help avoid)
 - DeepSpeed #8058 ZenFlow: native C++ optimizer process, chunked copyback
 - verl #6794: delta weight sync (~100x payload reduction)
 - PyTorch #187620: CPUOffloadPolicy (fractional CPU offload, dp>=2 only)
 - CUDA stream safety: notebook/fundamentals/cuda-stream-safety-cross-framework-pattern.md
+- CPU offload comparison: notebook/fundamentals/cross-framework-cpu-offload-comparison.md
 - RTX 4090 runbook: notebook/projects/rtx4090-grpo-training-runbook.md
 
 ---
 
-*Created 2026-06-19. ZenFlow native CPU optimizer deep reading — 2944→256 MiB = RTX 4090 game-changer.*
+*Created 2026-06-19. Updated 2026-06-19 with deep source findings: chunked copyback ONLY for Stage 1/2 (NOT Stage 3!), ZenGroup double-buffered, PinnedThreadPool AVX-aligned, 5 delock comments (not 4), contiguous() bug, Linux-only, #7771 dependency RESOLVED (MERGED June 12).*
