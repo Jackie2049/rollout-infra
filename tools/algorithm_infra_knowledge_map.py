@@ -376,6 +376,40 @@ CONNECTIONS = {
             },
         ],
     },
+    "cuda_stream": {
+        "name": "CUDA Stream Safety Pattern",
+        "note": "notebook/fundamentals/cuda-stream-safety-cross-framework-pattern.md",
+        "connections": [
+            {
+                "component": "Multi-producer single-consumer race",
+                "math_property": "Multiple streams write to shared buffer → consumer reads before ALL producers complete",
+                "bugs": ["DeepSpeed #8061: IPG bucket multi-stream race → NaN", "verl #6794: d2h_stream copy without record_stream → silent corruption"],
+                "decision": "wait_stream(ALL producer streams) or overlap_comm=False on dp=1",
+                "formula": "P(race) = P(C reads before ALL P_i write) ≈ 1 on multi-stream paths",
+            },
+            {
+                "component": "Allocator lifetime tracking bypass",
+                "math_property": "PyTorch caching allocator assumes default stream → non-default stream use requires record_stream",
+                "bugs": ["verl #6794 CRITICAL-1: missing record_stream → allocator reclaims → silent corruption"],
+                "decision": "tensor.record_stream(side_stream) on ALL async copy sources",
+                "formula": "P(corruption) = P(allocator reclaims before side_stream completes) → ≈ 1 for long-running",
+            },
+            {
+                "component": "Overlap communication overhead",
+                "math_property": "On dp=1, gradient reduction = identity → overlap_comm provides zero benefit",
+                "bugs": ["DeepSpeed #8061: overlap_comm+compile=NaN", "overlap_comm=False → no NaN"],
+                "decision": "overlap_comm=False on single GPU (safe AND faster)",
+                "formula": "dp=1: NCCL all-reduce = identity → overlap_comm overhead > 0, benefit = 0",
+            },
+            {
+                "component": "FSDP2 CPU staging buffer leak",
+                "math_property": "DTensor full tensor materialization creates CPU staging buffers that leak monotonically",
+                "bugs": ["verl #6468: 0.6 GiB/step (2B) → 6.3 GiB/step (35B)", "host OOM in ~8-22 steps"],
+                "decision": "FSDP1 backend + per-unit LoRA summon (#6512)",
+                "formula": "leak_rate ≈ 0.3 × n_params/B GiB/step → linear growth → guaranteed OOM",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -388,6 +422,9 @@ MUST_DO = [
     {"rule": "Group by prompt", "proof": "Group normalization σ requires ≥2 samples per group → σ=0 when |G|=1", "bug": "#605 grouping by trajectory → σ=0 → BROKEN", "formula": "A_i = (r_i - μ_G) / σ_G, σ_G=0 when |G|=1"},
     {"rule": "Use enforce_eager for DSV4", "proof": "CUDA graph requires constant batch → DSV4 has dynamic routing", "bug": "9+ DSV4 failures across 3 frameworks", "formula": "CUDA graph: static input → batch must be constant → DSV4 violates"},
     {"rule": "Use cosine decay + warmup", "proof": "Cosine annealing proven convergence, warmup prevents early gradient explosion", "bug": "Standard practice, no specific bug", "formula": "η_t = η_min + (η_max-η_min)/2 · (1 + cos(πt/T))"},
+    {"rule": "record_stream on ALL async copies", "proof": "PyTorch allocator assumes default stream → missing record_stream → silent corruption", "bug": "#6794 CRITICAL-1 delta snapshot data corruption", "formula": "P(corruption) = P(allocator reclaims before side_stream completes)"},
+    {"rule": "Use FSDP1 backend (NOT FSDP2)", "proof": "FSDP2 DTensor materialization creates CPU staging buffers that leak 0.6-6.3 GiB/step", "bug": "#6468 FSDP2 CPU memory leak → host OOM in ~8-22 steps", "formula": "leak_rate ≈ 0.3 × n_params/B GiB/step → linear growth"},
+    {"rule": "Monitor host RAM during training", "proof": "FSDP2 leak + Ray overhead → host OOM → process killed → training abort", "bug": "#6468 host OOM kills workers", "formula": "rss(t) ≈ rss(0) + leak_rate × t → OOM at rss(t) > 0.8 × total"},
 ]
 
 MUST_NOT = [
@@ -398,6 +435,8 @@ MUST_NOT = [
     {"rule": "NOT use NVMe offload", "proof": "fd leak accumulates → process crash in long-running training", "bug": "#8075 fd leak (latent bug)", "formula": "fd_count ~ 2 * n_steps → exhaust at ulimit"},
     {"rule": "NOT use autocast_adapter_dtype with ZeRO-3", "proof": "fp32 LoRA + bf16 base → partition dtype mismatch", "bug": "#8072/#8076 confirmed regression", "formula": "PEFT LoRA fp32 + ZeRO-3 bf16 partition → TypeError"},
     {"rule": "NOT use DeepSpeed v0.19.2 with ZeRO-3+LoRA", "proof": "#8066 per-policy dtype removed blanket cast → exposed latent bug", "bug": "#8072, #8076 regression", "formula": "module.bfloat16() removed → LoRA stays fp32 → mismatch"},
+    {"rule": "NOT use FSDP2 backend for long-running GRPO", "proof": "CPU staging buffers leak monotonically → host OOM", "bug": "#6468 confirmed 0.6-6.3 GiB/step", "formula": "rss(t) grows linearly → OOM in ~8-22 steps"},
+    {"rule": "NOT use async side-stream copies without record_stream", "proof": "Allocator reclaims tensor before side stream completes → silent corruption", "bug": "#6794 CRITICAL-1 delta snapshot corruption", "formula": "P(corruption) ≈ 1 for long-running training"},
 ]
 
 # ─── Cross-Framework Patterns ──────────────────────────────────────────────
