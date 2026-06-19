@@ -185,11 +185,11 @@ CONNECTIONS = {
                 "formula": "if ||∇||_2 > C: ∇ ← ∇ · C / ||∇||_2",
             },
             {
-                "component": "ZenFlow CPU optimizer",
-                "math_property": "Sharded optimizer states on CPU (2944→256 MiB)",
-                "bugs": ["DeepSpeed #8058 ZenFlow under review by delock"],
-                "decision": "ZenFlow ★★★★★★★★ = potential alternative to CPU_Adam",
-                "formula": "sharded_m = m_per_param_group, sharded_v = v_per_param_group",
+                "component": "ZenFlow chunked CPU optimizer copyback",
+                "math_property": "Chunked fp32→bf16 conversion: GPU_transient = chunk_size×2×n_buffers (256 MiB) instead of partition_size×4 (2944 MiB)",
+                "bugs": ["DeepSpeed #8058: native C++ optimizer + POSIX semaphores + chunked copyback → 11.5x GPU transient reduction"],
+                "decision": "ZenFlow ★★★★★★★★ = makes ZeRO-3+CPU_offload VIABLE on RTX 4090 (previously OOM risk), ZeRO-2+CPU_Adam still #1",
+                "formula": "GPU_transient = 4 × chunk_size_bf16 = 4 × 64 = 256 MiB (vs 2944 MiB full materialization)",
             },
             {
                 "component": "Cosine decay + warmup",
