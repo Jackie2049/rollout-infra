@@ -1,12 +1,13 @@
 # verl #6794 — Delta Weight Sync (Bytewise Diff Encoding)
 
-> 2026-06-18 | OPEN (draft/RFC) | +1290/-7 lines, 9 files | Author: ChangyiYang
+> 2026-06-19 | OPEN (blocked) | +1110/-7 lines, 9 files | Author: ChangyiYang
 > Branch: feat/delta-weight-sync-sglang | Base: main
 > ★★★★★★★★ ~100x payload reduction via bytewise diff encoding — dtype-agnostic, lossless, bit-identical
 > ★★★★★★★★ 3 encoding formats: indices (int32 absolute), deltas (uint16 gap), deltas_zstd (gap+zstd)
 > ★★★★★★★★ RTX 4090 HYBRID mode: limited benefit (in-process IPC) — LoRA delta deferred explicitly
 > ★★★★★★★★ SGLang-only; vLLM deferred pending #31848/#39451 sparse weight-update API
 > ★★★★★★★★ 4 review issues (2 CRITICAL): missing record_stream, TP>1 disk race+incomplete file list, big_values concat overhead, makedirs race
+> ★★★★★★★★ UPDATED June 19: Added RTX 4090 OOM risk analysis for big_values, cross-framework #8061 connection, sleep/wake interaction, LoRA delta future pathway
 
 ---
 
@@ -658,9 +659,131 @@ The three-stream pipelining (H2D prefetch, default-stream compute, D2H snapshot 
 
 ---
 
+## 16. RTX 4090 OOM Risk: `big_values` Concatenation (NEW June 19)
+
+★★★★★★★★★ **The `_sparse_boundaries()` function allocates a massive temporary GPU tensor that can OOM on RTX 4090!**
+
+```python
+big_values = torch.cat([d.values.contiguous().view(-1) for d in diffs], dim=0)
+```
+
+For an 8B model in BF16:
+- `d.values` for all parameters = ~16 GiB (the entire model weights)
+- `big_values` concatenates ALL values into one flat tensor → another ~16 GiB temporary allocation
+- On RTX 4090 (24 GiB), base model weights already consume ~16 GiB
+- Adding `big_values` temporary → ~32 GiB total → **OOM!**
+
+★★★★★★★★★ **This is a MUST FIX for RTX 4090 deployment**. The fix (per-parameter indexing) avoids the 16 GiB temporary entirely:
+
+```python
+# Instead of big_values = torch.cat([...]):
+# Index into each d.values individually:
+for i, d in enumerate(diffs):
+    b = bounds[i]
+    nnz = b - prev_b
+    if nnz > 0:
+        local_idx = big_idx[prev_b:b] - prev_param_start
+        val_pieces.append(d.values.contiguous().view(-1)[local_idx.to(d.values.device)])
+```
+
+### RTX 4090 Memory Budget with Delta Sync (8B BF16)
+
+| Component | GPU Memory | Host Memory |
+|-----------|-----------|-------------|
+| Base model weights | ~16 GiB | — |
+| LoRA adapter (rank=32) | ~4 MiB | — |
+| Optimizer (CPU_Adam offloaded) | — | ~3.8 GiB |
+| Delta snapshot (pinned) | — | ~16 GiB |
+| `big_values` temporary (BUG) | ~16 GiB! | — |
+| **Total GPU (with bug)** | **~32 GiB → OOM!** | — |
+| **Total GPU (fixed)** | **~16-18 GiB ✓** | — |
+| **Total Host** | — | ~36-48 GiB |
+
+★★★★★★★★★ Without the `big_values` fix, delta sync is NOT viable on RTX 4090 for any model >4B parameters. The fix MUST be applied before testing.
+
+---
+
+## 17. Cross-Framework Connection: `record_stream` = DeepSpeed #8061 Pattern (NEW June 19)
+
+★★★★★★★★★ **The `record_stream` bug in `update_snapshot_async()` is the SAME root cause as DeepSpeed #8061 (overlap_comm NaN)!**
+
+| Issue | Framework | Root Cause | Symptom |
+|-------|-----------|-----------|---------|
+| #6794 review CRITICAL-1 | verl | Missing `tensor.record_stream(side_stream)` on async D2H copy | Silent data corruption in snapshot |
+| #8061 | DeepSpeed | Multi-stream gradient copy without stream ordering | NaN from race condition |
+
+Both issues share the same **CUDA stream safety** pattern:
+1. Async operations on a non-default CUDA stream
+2. Missing `record_stream()` or stream synchronization
+3. PyTorch caching allocator assumes default stream for lifetime tracking
+4. Tensor memory can be reclaimed before async operation completes
+
+★★★★★★★★★ **Lesson**: ANY multi-stream code path in CUDA must include `record_stream()` calls. This applies to:
+- verl delta sync D2H/H2D side streams
+- DeepSpeed overlap_comm gradient bucket streams
+- Megatron ChainedOptimizer side streams
+- Any `torch.cuda.Stream()` usage in weight sync, gradient computation, or optimizer step
+
+★★★★★★★★★ **4-layer defense update**: Layer 1 (Framework Safety) should include "verify record_stream on ALL multi-stream code paths". This is a systematic concern across 3 frameworks.
+
+---
+
+## 18. Sleep/Wake Interaction Analysis (NEW June 19)
+
+★★★★★★★★★ **How does delta sync interact with SGLang sleep/wake for GRPO?**
+
+### Current sleep/wake flow (sleep_level=1, LoRA adapter path):
+
+```
+Step 1: Trainer trains on batch → LoRA adapter updated
+Step 2: Trainer: update_weights() → SGLang wake → receive LoRA adapter tags
+Step 3: Rollout generates responses
+Step 4: Trainer: SGLang sleep → LoRA adapter unloaded → KV cache preserved
+Step 5: Repeat
+```
+
+### Delta sync in this flow:
+
+The `DeltaState.snapshot` is seeded from initial model weights and persists across calls. After LoRA update:
+- Snapshot stores LAST broadcast state (updated via `update_snapshot_async`)
+- Each call computes diff from snapshot → captures ALL accumulated changes
+- Even after SLEEP → WAKE → UPDATE_WEIGHTS cycle, the diff should be correct
+
+★★★★★★★★★ **But**: Current delta sync does NOT handle LoRA-only updates. The PR explicitly says: "LoRA path (`peft_config + base_sync_done`): orthogonal — base sync stays full, adapter sync could be delta later."
+
+For RTX 4090 sleep_level=1 (LoRA adapter path):
+- **Base model sync**: already one-time, stays resident → delta sync irrelevant
+- **LoRA adapter sync**: ~4 MiB per step → delta sync would compress to ~80 KiB at 2% sparsity → minimal additional savings
+- **Current delta sync targets FULL parameter updates, NOT LoRA-only updates**
+
+★★★★★★★★★ **RTX 4090 verdict**: Delta sync is NOT beneficial for the optimal sleep_level=1 LoRA adapter path. The LoRA adapter payload (~4 MiB) is already 80x smaller than full model (~16 GiB). Delta compression of LoRA deltas would save ~3.2 MiB per step — negligible compared to the 80x already achieved by sleep_level=1.
+
+### Future LoRA Delta Pathway
+
+When LoRA delta is eventually implemented:
+- Delta of LoRA adapter → from ~4 MiB to ~80 KiB (at 2% LoRA sparsity)
+- Combined with sleep_level=1 → LoRA adapter tags + delta encoding
+- Further reduces per-step payload by ~50x
+- But this requires: (1) LoRA delta support in #6794, (2) SGLang delta receiver for LoRA
+
+---
+
+## 19. Updated RTX 4090 Decision Matrix (NEW June 19)
+
+| Config | Payload (8B) | Per-Step | RTX 4090 Rank |
+|--------|-------------|----------|---------------|
+| sleep_level=1 LoRA full | ~4 MiB | NCCL tags | ★★★★★★★★ #1 BEST |
+| sleep_level=1 LoRA delta (future) | ~80 KiB | NCCL tags + delta | ★★★★★★★★ #1+ (future) |
+| Full broadcast | ~16 GiB | NCCL full | ★★ (avoid) |
+| Full broadcast delta (after fixes) | ~0.16-0.32 GiB | NCCL delta | ★★★★ #3 (dp>1) |
+
+★★★★★★★★★ **Migration path**: sleep_level=1 LoRA full → sleep_level=1 LoRA delta (after #6794 adds LoRA delta support) → full delta for dp>1 setups.
+
+---
+
 ## References
 
-- verl #6794: https://github.com/volcengine/verl/pull/6794 (delta weight sync sender)
+- verl #6794: https://github.com/verl-project/verl/pull/6794 (delta weight sync sender)
 - SGLang #26519: https://github.com/sgl-project/sglang/pull/26519 (delta weight update receiver)
 - THUDM/slime: https://github.com/THUDM/slime (original bytewise diff design)
 - PULSE: arXiv:2502.03839 (>99% bytes unchanged at RL learning rates)
@@ -669,3 +792,5 @@ The three-stream pipelining (H2D prefetch, default-stream compute, D2H snapshot 
 - verl #6512: per-unit LoRA summon (10x memory reduction, complementary)
 - verl #6699: detach memory fix (4x reduction, complementary)
 - radixark/miles#1235: companion PR to SGLang #26519
+- DeepSpeed #8061: overlap_comm NaN — SAME root cause as record_stream bug (multi-stream CUDA safety)
+- Cross-framework GRPO training stack final reference: notebook/synthesis/cross-framework-grpo-training-stack-rtx4090-final-reference.md

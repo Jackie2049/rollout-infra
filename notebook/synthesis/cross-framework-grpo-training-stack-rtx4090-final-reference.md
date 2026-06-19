@@ -76,6 +76,20 @@
 2. Sleep_level=1 LoRA adapter path (80x payload reduction)
 3. ReplaySSM spec decode (+13.1% throughput, Triton on SM89)
 4. Tag-based sleep/wake (more extensible than integer-based)
+5. Delta weight sync receiver (#26519) — ~100x payload reduction for dp>1
+
+### Weight Sync Mechanism Comparison (from #6794 deep reading)
+
+| Mechanism | Payload (8B) | Per-Step | RTX 4090 Relevance | dp=1? |
+|-----------|-------------|----------|-------------------|-------|
+| Full broadcast | ~16 GiB | NCCL broadcast | ★★ (identity, overhead) | ✓ dp=1 NCCL=id |
+| sleep_level=1 LoRA | ~4 MiB | LoRA adapter tags | ★★★★★★★★ #1 BEST | ✓ |
+| Delta sync (full params) | ~0.16-0.32 GiB | NCCL delta | ★★★★ (dp>1 benefit) | ✓ but limited benefit |
+| Delta sync (LoRA) | ~80 KiB (future) | LoRA delta | ★★★★★★★★ (future #1+) | ✓ potential |
+
+★★★★★★★★★ **RTX 4090 verdict**: Delta sync (#6794) is NOT beneficial for sleep_level=1 LoRA path (LoRA payload already ~80x smaller than full model). Delta sync targets FULL parameter updates, not LoRA-only. Future LoRA delta path could further reduce LoRA payload from ~4 MiB to ~80 KiB.
+
+★★★★★★★★★ **#6794 concerns for RTX 4090**: (1) `big_values` concat OOM risk — MUST fix before deployment; (2) `record_stream` missing — same pattern as #8061 multi-stream race; (3) Host RAM snapshot cost — ~16 GiB pinned memory.
 
 ---
 
