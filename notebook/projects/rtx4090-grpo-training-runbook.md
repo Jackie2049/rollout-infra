@@ -277,25 +277,31 @@ After fix:
 2.  lora_alpha = 2 * lora_rank         # scaling = 2.0 standard
 3.  lora.merge = False                  # unmerged for HYBRID mode
 4.  bypass_mode = True                  # 18Ψ→3.8Ψ → ref model eliminated
-5.  engine = fsdp (NOT automodel/megatron/torchtitan)  # #6699 unfixed leak!
+5.  engine = fsdp (FSDP1, NOT FSDP2!)   # #6699 unfixed leak + #6468 FSDP2 CPU leak!
 6.  zero_stage = 2 (NOT 3)              # ZeRO-3 overhead + regression
-7.  overlap_comm = False                # #8061: NaN bug
+7.  overlap_comm = False                # #8061: NaN bug (multi-stream race)
 8.  gradient_clipping = 1.0             # #8068: default 0→1.0
 9.  enforce_eager = True                # avoid CUDA graph issues
 10. free_cache_engine = True            # memory management
 11. layered_summon = True               # #6512: per-unit summon
 12. verl version >= #6699               # detach fix → 4x memory reduction
+13. FSDP backend (FSDP1, NOT FSDP2)     # #6468: FSDP2 CPU leak 0.6-6.3 GiB/step → host OOM!
+14. record_stream on ALL async copies   # #6794: missing record_stream → silent corruption
+15. Monitor host RAM during training    # #6468: host OOM kills workers
+16. ulimit -n 65536                     # #8075: fd leak safety
 
 ★★★★★★★★★ MUST NOT rules:
 
 1.  MUST NOT use lora_rank > 32         # #6782 EOS bug
 2.  MUST NOT use ZeRO-3                 # regression + pure overhead
-3.  MUST NOT use overlap_comm = True     # NaN bug
-4.  MUST NOT use Muon optimizer          # crash + clipping + CPU offload blocked
+3.  MUST NOT use overlap_comm = True     # NaN bug (multi-stream race confirmed)
+4.  MUST NOT use Muon optimizer          # 6 blockers: #5394/#5395/#8068/#5400/#5179/#7939
 5.  MUST NOT use automodel/megatron/torchtitan engine  # memory leak
 6.  MUST NOT use rLLM for GRPO          # #605 grouping bug → BROKEN
-7.  MUST NOT use CUDA graph for DSV4 inference  # 4 failures in 4 days → enforce_eager=True MANDATORY
-8.  MUST NOT attempt DSV4 full model on RTX 4090  # requires minimum 128 GPUs (TP1/ETP1 fixed)
+7.  MUST NOT use CUDA graph for DSV4 inference  # 11 failures across 4 frameworks
+8.  MUST NOT use FSDP2 backend           # #6468: CPU leak 0.6-6.3 GiB/step → host OOM
+9.  MUST NOT use async side-stream copies without record_stream  # silent corruption
+10. MUST NOT run GRPO >100 steps without host RAM monitoring
 ```
 
 ---
