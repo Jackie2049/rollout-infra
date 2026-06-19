@@ -115,7 +115,56 @@ python3 tools/rtx4090_cross_framework_safety_matrix.py --mode framework deepspee
 python3 tools/rtx4090_cross_framework_safety_matrix.py --mode category critical
 ```
 
-## Files Reference
+## RTX 4090 verl GRPO Training (BEST #1 Path)
+
+★★★★★★★★ verl V1 sync PPOTrainer + bypass_mode = RTX 4090 #1 GRPO training path
+
+### 10-Phase Training Step Lifecycle
+```
+Phase 0: Weight Sync (previous step) → naive backend, in-process, LoRA delta
+Phase 1: Rollout Generation → fire-and-forget, n trajectories per prompt
+Phase 2: Replay Buffer Sampling → TransferQueue metadata poll
+Phase 3: Sleep Replicas → free rollout GPU memory (weights + KV cache)
+Phase 5: Batch Balancing → seqlen balance across DP ranks
+Phase 6: Old Log Prob → bypass: TransferQueue rename, full: actor forward
+Phase 7: Ref Log Prob → LoRA-detached (no separate worker)
+Phase 8: GRPO Advantage → CPU-only, group by uid, normalize per group
+Phase 10: Actor Update → mini-batch PPO-clip, per-unit LoRA summon
+Post-Step: Weight Sync + TransferQueue CLEAR
+```
+
+### RTX 4090 GRPO Optimal Config
+```
+trainer_mode=sync | rollout.n=8 | bypass_mode=True | loss_type=ppo_clip
+actor.strategy=fsdp | lora_rank=32 | enforce_eager=True | checkpoint=naive
+use_critic=False | ref_in_actor=True | gradient_clipping=1.0
+sleep_level=1 | free_cache_engine=True | overlap_comm=False
+```
+
+### Memory Lifecycle
+- Peak = max(rollout_peak, training_peak) → NOT sum (sleep/wake ensures non-overlap)
+- Rollout peak: model weights + KV cache (9-15 GiB for 4-7B)
+- Training peak: FSDP unshard + LoRA summon + optimizer (8-14 GiB for 4-7B)
+- With per-unit LoRA summon (#6512): 60→6-8 GiB peak
+
+### Key Rules (validated by numerical experiments)
+- group_size=1 → REINFORCE degeneration (mean=0, std=1 → A=r)
+- bypass_mode → 18Ψ→3.8Ψ memory savings (skip old_log_prob forward)
+- dual-clip c=3.0 → prevents ratio explosion for negative advantages
+- LoRA rank=64 → breaks EOS (#6782), MUST use rank=32
+- ZeRO-3 → pure overhead on dp=1, MUST use ZeRO-2+CPU_Adam
+
+### Validation Tools
+```
+python3 tools/verl_grpo_step_simulator.py simulate --model qwen2.5-7b --group_size 8 --bypass_mode True
+python3 tools/verl_grpo_step_simulator.py compare  # bypass vs full, group_size sweep
+python3 tools/verl_grpo_step_simulator.py rtx4090   # 24 GiB budget analysis
+python3 tools/verl_grpo_step_simulator.py lifecycle  # 10-phase diagram
+python3 tools/ppo_clip_loss_validation.py           # PPO-clip numerical validation
+python3 tools/grpo_singleton_degeneration_experiment.py  # GRPO degeneration proof
+```
+
+Deep reading: notebook/projects/verl-v1-sync-ppo-trainer-grpo-training-loop-deep-reading.md
 
 Key benchmark result files in `results/`:
 - `fsdp_scaling_125m_benchmark.json` — FSDP/DDP scaling
