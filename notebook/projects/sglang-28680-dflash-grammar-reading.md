@@ -1,9 +1,10 @@
 # SGLang #28680 — DFlash Grammar Constrained Decoding Deep Reading
 
-> 2026-06-19 | PR #28680 OPEN | Author: dcw02 | +515/-15 | 0 comments, 0 reviews
+> 2026-06-19 | PR #28680 OPEN (blocked, CI failing) | Author: dcw02 | +515/-15 | 0 human comments, 0 reviews
 > ★★★★★★★★ DFlash ecosystem expansion: grammar-constrained decoding for spec-v2
-> ★★★★★★★★ XGrammar integration + custom Proposer hooks for 3rd-party spec-decode
-> ★★★★★★★★ RTX 4090 RELEVANCE: grammar+MTP conflict (#46118) — MUST resolve before deploying
+> ★★★★★★★★ Probe-and-rollback FSM traversal + triple-buffered async overlap pipeline
+> ★★★★★★★★ Architecturally SAFER than vLLM MTP+grammar (#46118): never forces FSM into invalid state
+> ★★★★★★★★ SM89-compatible for RTX 4090 deployment
 
 ---
 
@@ -29,17 +30,36 @@ Reviews: 0
 
 **Core feature:** Enables grammar-constrained decoding (JSON schema, regex) during DFlash speculative verification.
 
-### Architecture
+### Architecture: Probe-and-Rollback FSM + Triple-Buffered Async Pipeline
 
-1. **Grammar mask propagation**: Grammar mask is propagated per draft token creation → verification
-   - Tokens that violate grammar constraints (JSON schema or regex) are rejected EARLY
-   - Prevents invalid draft tokens from wasting verification computation
+★★★★★★★★★ The algorithm is a **probe-and-rollback FSM traversal** combined with a **triple-buffered async overlap pipeline**:
 
-2. **DFlash spec-v2 hook**: Custom `Proposer` classes can register their own `sp_prepare_draft_batch` implementations
-   - 3rd-party spec-decode methods (like DFlash) seamlessly integrate grammar constraints
-   - Extensible — doesn't hardcode DFlash-specific logic
+#### Phase 1: D2H Draft Copy
+Draft tokens land on GPU during speculative draft phase. They are D2H-copied to a pinned CPU buffer on the overlap stream.
 
-3. **Integration with XGrammar**: Uses SGLang's existing XGrammar engine for FSM compilation and token masking
+#### Phase 2: CPU Mask Generation (Probe-and-Rollback)
+`generate_dflash_linear_vocab_mask()` iterates over each request's grammar FSM:
+- For position j=0: fills mask row with tokens the FSM currently allows
+- For position j>0: feeds draft_token_tail[j-1] to FSM, checks if token was allowed by previous mask row
+- If draft token violates grammar → stops advancing for that request
+- **After probing**: `grammar.rollback(accepted_for_probe)` restores FSM to original state
+- The live FSM is only advanced later during acceptance processing with actually-accepted tokens
+
+★★★★★★★★★ This is the KEY architectural insight: grammar state is **probed but NOT committed** during mask generation. This prevents FSM corruption by speculative tokens that might be rejected during verification.
+
+#### Phase 3: H2D Mask Copy (Overlap with Target Forward)
+Mask is H2D-copied to GPU on the overlap stream, overlapping with target model's verify forward pass.
+
+#### Phase 4: Apply Mask to Logits
+After target logits are computed, wait for H2D event, then apply mask to logits tensor. This replaces the regular single-row-per-request mask with a multi-row (bs * block_size) mask.
+
+#### Triple Buffering (Ring Size 3)
+`_DFLASH_GRAMMAR_MASK_RING_SIZE = 3`: Triple-buffered grammar mask slots that rotate, enabling overlap between:
+- Slot 0: CPU mask generation
+- Slot 1: H2D copy
+- Slot 2: GPU application
+
+Same double/triple-buffering pattern as DeepSpeed ZenFlow's ZenGroup `[0]/[1]` indexing.
 
 ### Server Command
 
