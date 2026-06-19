@@ -1,0 +1,22 @@
+{
+  "config": "basic_nan_detection",
+  "device": "cpu",
+  "torch_version": "2.2.2",
+  "forward_no_nan": {
+    "output_mean": -0.013905704021453857,
+    "output_std": 0.23642179369926453,
+    "has_nan": false
+  },
+  "forward_with_nan": {
+    "output_has_nan": true,
+    "nan_count": 8192,
+    "total_elements": 8192
+  },
+  "detect_anomaly_time": 1.0181820392608643,
+  "manual_check_time": 0.3461751937866211,
+  "baseline_time": 0.310528039932251,
+  "overhead_ratios": {
+    "detect_anomaly_vs_baseline": 3.2788731075074726,
+    "manual_check_vs_baseline": 1.1147952818114184
+  }
+}

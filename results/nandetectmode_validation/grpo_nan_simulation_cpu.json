@@ -1,0 +1,22 @@
+{
+  "config": "grpo_nan_simulation",
+  "device": "cpu",
+  "torch_version": "2.2.2",
+  "forward_no_nan": {
+    "output_mean": 0.00419961754232645,
+    "output_std": 0.2247394621372223,
+    "has_nan": false
+  },
+  "forward_with_nan": {
+    "output_has_nan": true,
+    "nan_count": 2048,
+    "total_elements": 2048
+  },
+  "detect_anomaly_time": 1.4362478256225586,
+  "manual_check_time": 0.7612502574920654,
+  "baseline_time": 0.34130001068115234,
+  "overhead_ratios": {
+    "detect_anomaly_vs_baseline": 4.208168123863094,
+    "manual_check_vs_baseline": 2.230443110660307
+  }
+}

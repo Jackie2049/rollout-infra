@@ -1,0 +1,22 @@
+{
+  "config": "performance_benchmark",
+  "device": "cpu",
+  "torch_version": "2.2.2",
+  "forward_no_nan": {
+    "output_mean": 0.0006748693995177746,
+    "output_std": 0.25439727306365967,
+    "has_nan": false
+  },
+  "forward_with_nan": {
+    "output_has_nan": true,
+    "nan_count": 8192,
+    "total_elements": 8192
+  },
+  "detect_anomaly_time": 0.98378586769104,
+  "manual_check_time": 0.37981271743774414,
+  "baseline_time": 0.47729992866516113,
+  "overhead_ratios": {
+    "detect_anomaly_vs_baseline": 2.0611481557148785,
+    "manual_check_vs_baseline": 0.7957527219833151
+  }
+}

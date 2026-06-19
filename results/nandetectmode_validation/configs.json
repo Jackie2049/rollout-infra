@@ -1,0 +1,51 @@
+{
+  "dependencies": {
+    "torch": null,
+    "numpy": null,
+    "nandetectmode_available": false,
+    "cuda_available": false,
+    "gpu_name": null
+  },
+  "configs": [
+    {
+      "name": "basic_nan_detection",
+      "description": "Test NanDetectMode vs detect_anomaly() for basic NaN injection",
+      "model_size": 256,
+      "hidden_dim": 64,
+      "num_layers": 4,
+      "batch_size": 32,
+      "seq_len": 128,
+      "nan_injection_layers": [
+        2
+      ],
+      "num_iterations": 100
+    },
+    {
+      "name": "grpo_nan_simulation",
+      "description": "Simulate GRPO training NaN scenarios",
+      "model_size": 256,
+      "hidden_dim": 64,
+      "num_layers": 4,
+      "batch_size": 8,
+      "seq_len": 64,
+      "nan_injection_layers": [
+        1,
+        3
+      ],
+      "num_iterations": 50,
+      "grpo_group_size": 4
+    },
+    {
+      "name": "performance_benchmark",
+      "description": "Benchmark NanDetectMode vs detect_anomaly() performance",
+      "model_size": 256,
+      "hidden_dim": 64,
+      "num_layers": 4,
+      "batch_size": 32,
+      "seq_len": 128,
+      "nan_injection_layers": [],
+      "num_iterations": 1000,
+      "measure_time": true
+    }
+  ]
+}
