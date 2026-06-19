@@ -594,6 +594,7 @@ CROSS_FRAMEWORK_PATTERNS = {
             {"framework": "vLLM-Ascend", "issue": "#10684", "description": "DSA Hadamard ALL-ZERO after sleep/wake", "status": "CRITICAL", "math": "Class variable lost during state transfer → verl RLHF BLOCKER"},
             {"framework": "vLLM", "issue": "#44395", "description": "wake_up(weights) + forward → illegal memory access", "status": "blocked", "math": "KV cache still asleep during forward → crash"},
             {"framework": "SGLang", "issue": "#28679", "description": "GDN intermittent decode degeneracy", "status": "OPEN", "math": "State lifecycle mismatch → worsens over uptime, NOT DSV4"},
+            {"framework": "vLLM", "issue": "#45552", "description": "cumem sleep/wake missing cuda.synchronize() → CUDART illegal-memory crash", "status": "OPEN", "math": "In-flight kernels still running when cuMemUnmap + cudaMemcpy execute → cudaErrorIllegalAddress"},
         ],
     },
     "storage_lifecycle": {
