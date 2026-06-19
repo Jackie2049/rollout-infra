@@ -124,6 +124,12 @@ FRAMEWORK_PROFILES = {
                        "HIGH", "#45972", "enforce_eager=True for DSV4", True),
             BufferRisk("DSV4 flashinfer cache", "vLLM", "flashinfer sparse cache → stale → GSM8K regression",
                        "HIGH", "#45979", "Clear cache between steps", True),
+            BufferRisk("cumem sleep/wake missing cuda.synchronize()", "vLLM",
+                       "CuMemAllocator sleep/wake missing torch.cuda.synchronize() → in-flight kernels race cuMemUnmap → cudaErrorIllegalAddress crash",
+                       "CRITICAL", "#45552", "Add torch.cuda.synchronize() before cuMemUnmap in sleep() and after wake_up()", False),
+            BufferRisk("encoder cache stale after weight update", "vLLM",
+                       "#45093 added cache reset after weight update → #46125 REVERTS it → stale KV/encoder for RLHF",
+                       "HIGH", "#46125/#45093", "MUST reset prefix_cache + encoder_cache after finish_weight_update()", False),
         ],
         safe_on_single_gpu=True,
         overlap_comm_safe=True,
@@ -135,6 +141,10 @@ FRAMEWORK_PROFILES = {
         has_sleep_wake=True,
         buffer_transfer_includes_constants=True,  # tag-based: ["kv_cache"] or ["weights", "kv_cache"]
         known_corruption_bugs=[
+            BufferRisk("MXFP8 MoE cache CLOBBERED", "SGLang", "MoE shuffle cache clobbered on RL weight reload → 64x accuracy blowup",
+                       "CRITICAL", "#28676", "dict.clear() on cache + weight-load funnel call (+28/-2)", False),
+            BufferRisk("GDN intermittent degeneracy", "SGLang", "GDN decode degeneracy → worsens over uptime → silent corruption",
+                       "HIGH", "#28679", "Periodic flush mechanism (ReplaySSM #28695)", False),
             BufferRisk("DSV4 MTP revert", "SGLang", "DSV4 MTP → swa_loc cache → stale → accept-length collapse",
                        "HIGH", "#28591/#28520", "Per-step dynamic data MUST NOT cache", True),
             BufferRisk("DSV4 C128 state mapping", "SGLang", "C128 slots derived from stale full_to_swa_index_mapping",
