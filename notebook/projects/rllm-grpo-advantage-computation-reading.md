@@ -199,6 +199,38 @@ All these modules work on TrajectoryGroups — so the grouping bug affects ALL d
 
 ---
 
+## 7. Cross-Framework Singleton Degeneration (NEW — 2026-06-19 Session 2)
+
+★★★★★★★★ ALL GRPO frameworks have the SAME singleton group handling:
+
+| Framework | Grouping key | Singleton handling | Source |
+|-----------|-------------|-------------------|--------|
+| **verl** | uid (prompt ID) | mean=0, std=1 | core_algos.py ~342, groupwise.py ~130 |
+| **rLLM** (V2) | task_id (default) | implicit via std=0→ε | TransformConfig grouping_mode |
+| **TRL** | prompt | mean=0, std=1 | GRPOTrainer |
+
+The mathematical consequence: group_size=1 → advantage = raw reward → REINFORCE degeneracy.
+
+This is NOT a rLLM-specific bug — it's a **cross-framework design pattern** that all GRPO implementations inherit from the original paper's formulation.
+
+**verl's groupwise.py implementation** (most detailed):
+
+```python
+# verl/utils/groupwise.py — group_mean_std()
+single = count <= 1.0
+if torch.any(single):
+    mean = mean.clone()
+    std = std.clone()
+    mean[single] = 0.0    # ← same as rLLM
+    std[single] = 1.0     # ← same as rLLM
+```
+
+**verl's uid-based grouping is MORE correct**: All trajectories sharing the same prompt are naturally grouped together, unlike rLLM's task_id:name grouping which can accidentally split groups.
+
+See: `notebook/projects/cross-framework-grpo-advantage-comparison.md` for full analysis.
+
+---
+
 ## References
 
 - PR #667: https://github.com/rllm-org/rllm/pull/667
@@ -206,3 +238,5 @@ All these modules work on TrajectoryGroups — so the grouping bug affects ALL d
 - Transform pipeline: rllm/trainer/algorithms/transform.py
 - Advantage computation: rllm/trainer/algorithms/advantage.py + rl_algo.py
 - GRPO algorithm: notebook/fundamentals/transformer-architecture-mathematical-derivation.md
+- Cross-framework comparison: notebook/projects/cross-framework-grpo-advantage-comparison.md
+- verl V1 trainer: notebook/projects/verl-v1-trainer-architecture-deep-reading.md
