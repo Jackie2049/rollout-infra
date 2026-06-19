@@ -410,6 +410,40 @@ CONNECTIONS = {
             },
         ],
     },
+    "grpo_singleton_degeneration": {
+        "name": "GRPO Singleton Group Degeneration",
+        "note": "notebook/projects/cross-framework-grpo-advantage-comparison.md",
+        "connections": [
+            {
+                "component": "mean=0, std=1 fallback for singleton groups",
+                "math_property": "A_i = (r_i - 0) / (1 + ε) = r_i → GRPO degenerates to REINFORCE with zero baseline",
+                "bugs": ["verl core_algos.py: if len(id2score[idx]) == 1: mean=0, std=1", "verl groupwise.py: single = count<=1; mean[single]=0, std[single]=1", "rLLM #605: group_size=1 → std=0 → ε → near-REINFORCE", "TRL GRPOTrainer: same pattern"],
+                "decision": "group_size >= 2 REQUIRED for GRPO. Use uid/prompt-based grouping (verl-style). rLLM V2: grouping_mode='by_task_id' default",
+                "formula": "A_GRPO = (r_i - μ_g) / (σ_g + ε), μ_g=0, σ_g=1 for |G|=1 → A_i = r_i = REINFORCE(baseline=0)",
+            },
+            {
+                "component": "Group size impact on advantage variance",
+                "math_property": "σ_g decreases as |G| increases → advantage normalization becomes more precise → better gradient signal",
+                "bugs": ["rLLM #605: group_size=1 zero variance → undefined normalization", "verl: group_size=2 minimum but still high variance"],
+                "decision": "Minimum group_size=4 recommended for GRPO on RTX 4090 (8 even better)",
+                "formula": "Var(A) = Var(r) / |G| for normalized advantages → need |G| >= 4 for stable training",
+            },
+            {
+                "component": "verl PrefixGrouper shared-prefix optimization",
+                "math_property": "PrefixGrouper batches trajectories with same prompt prefix → single forward pass for shared tokens → O(prefix_len) saved per group member",
+                "bugs": [],
+                "decision": "Use PrefixGrouper for GRPO rollout with n>=4 per prompt",
+                "formula": "time_saved = (|G|-1) * prefix_len / total_len → significant for long prompts",
+            },
+            {
+                "component": "Dr.GRPO vs standard GRPO normalization",
+                "math_property": "Dr.GRPO: A_i = r_i - μ_g (no std normalization) → avoids ε amplification for small σ_g",
+                "bugs": ["verl norm_adv_by_std_in_grpo=False: still degenerates at |G|=1 (mean=0 fallback)"],
+                "decision": "norm_adv_by_std_in_grpo=True recommended for RTX 4090 (standard GRPO), False only if reward scale is well-controlled",
+                "formula": "Dr.GRPO: A = r - μ, Standard: A = (r - μ)/σ → Dr.GRPO avoids σ amplification but loses variance normalization",
+            },
+        ],
+    },
     "cuda_stream": {
         "name": "CUDA Stream Safety Pattern",
         "note": "notebook/fundamentals/cuda-stream-safety-cross-framework-pattern.md",
