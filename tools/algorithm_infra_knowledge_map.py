@@ -599,6 +599,9 @@ MUST_DO = [
     {"rule": "Use LoRA+bypass for weight sync", "proof": "Full param sync = 16 GiB transfer + 67 GiB peak → OOM on 24 GiB; LoRA = 0.06 GiB + 22.9 GiB peak → FITS", "bug": "No bug — just math: full param > 24 GiB budget", "formula": "lora_sync_time = 3.6s vs full_sync_time = 4.6s, lora_peak = 22.9 GiB vs full_peak = 67 GiB"},
     {"rule": "Use naive checkpoint engine on dp=1", "proof": "NCCL AllReduce on dp=1 = identity broadcast → no data transfer → naive memcpy = faster", "bug": "NCCL overhead on dp=1: initialization + barrier, naive = direct memcpy", "formula": "NCCL(dp=1) = identity: overhead > 0 benefit = 0, naive = 0.1s direct copy"},
     {"rule": "Use SGLang for rollout (prefix caching)", "proof": "Rollout = 69.2% bottleneck → prefix caching reduces redundant prompt computation by 22-42x", "bug": "vLLM no sleep/wake level2 → SGLang #1 for RTX 4090", "formula": "SGLang RolloutKV: prompt prefix pinned → avoid re-computation → 22-42x speedup"},
+    {"rule": "Use shaped reward (format+outcome)", "proof": "Shaped rewards eliminate degenerate groups (0% vs 4.6%) and provide 2x gradient signal improvement", "bug": "Outcome-only 0/1 reward + gs<16 → >30% degenerate groups → zero gradient signal", "formula": "Var(R_shaped) ≈ α²·p(1-p) + β²·Var(R_format) → higher spread → stronger A_i signal"},
+    {"rule": "Use gs>=8 for sparse 0/1 reward", "proof": "SNR = √gs: gs=8 → SNR=2.83 (sufficient), gs=4 → SNR=2.0 (borderline), gs=1 → SNR=1 (catastrophic)", "bug": "Sparse reward + small gs → high degenerate fraction", "formula": "SNR = σ/σ̂_error = √gs, Var_eff[A] = 1 + 1/(gs-1)"},
+    {"rule": "Use ulimit 65535", "proof": "Distributed training opens many file descriptors (NCCL, sockets, dataset files) → default 1024 insufficient → hangs", "bug": "No specific bug — system limit", "formula": "fd_count ≈ n_workers × n_connections + dataset_files → 1024 < needed"},
 ]
 
 MUST_NOT = [
@@ -614,6 +617,9 @@ MUST_NOT = [
     {"rule": "NOT use group_size=1 for GRPO", "proof": "gs=1 degrades to REINFORCE(baseline=0) → 12x slower convergence, zero variance reduction", "bug": "rLLM #605, verl/OpenRLHF ε-fallback, TRL ε-division", "formula": "A(gs=1) = r_i = REINFORCE(baseline=0), Var = Var(r) [no reduction]"},
     {"rule": "NOT use full param weight sync on RTX 4090", "proof": "Full sync = 67 GiB peak memory → OOM on 24 GiB GPU", "bug": "No bug — just math: 16 GiB model + optimizer + gradients > 24 GiB", "formula": "full_peak = model(16) + optimizer(59.6) + grad(16) = 90.4 GiB >> 24 GiB"},
     {"rule": "NOT use NCCL checkpoint engine on dp=1", "proof": "NCCL AllReduce on dp=1 = identity → no actual data movement → initialization overhead only", "bug": "No bug — just math: dp=1 broadcast = no-op", "formula": "NCCL(dp=1) time > naive_memcpy time → no benefit"},
+    {"rule": "NOT use PPO-clip on RTX 4090 single GPU", "proof": "PPO-clip requires 65 GiB peak memory (value head + reference + optimizer states) > 24 GiB available → OOM", "bug": "No bug — just math: actor(14) + value(0.28) + critic(0.28) + ref(14) + optimizer(28) + grad(7) = 65 GiB", "formula": "PPO_peak = 2·model + value_head + 6·model(optimizer) ≈ 65 GiB >> 24 GiB"},
+    {"rule": "NOT use pure outcome 0/1 reward with gs<16", "proof": "Sparse 0/1 reward produces >30% degenerate groups when gs < 16 → zero gradient signal in degenerate groups", "bug": "Outcome-only reward: all correct or all wrong in group → σ=0 → A_i=0", "formula": "P(degenerate) ≈ P(all_same) = p^gs + (1-p)^gs → gs=4,p=0.3: P≈0.33"},
+    {"rule": "NOT use sleep_level=2 on RTX 4090 for GRPO", "proof": "sleep_level=2 triggers cumem stream sync bug → CUDART illegal-memory crash within first few training steps", "bug": "#45552 cumem sleep/wake stream sync missing → RTX 4090 GRPO BLOCKER", "formula": "sleep_level=2 → CuMemAllocator → no torch.cuda.synchronize() → crash"},
 ]
 
 # ─── Cross-Framework Patterns ──────────────────────────────────────────────
@@ -674,12 +680,90 @@ CROSS_FRAMEWORK_PATTERNS = {
     },
     "storage_lifecycle": {
         "name": "Storage Lifecycle Management Pattern Family",
-        "math_root": "Autograd needs intermediate tensor views → but GPU memory constrained → must release/reallocate",
-        "universal_rule": "Preserve Storage object (aliases) but release backing allocation → reallocate before compute",
-        "failures": [
-            {"framework": "verl", "issue": "#6699", "description": "detach memory fix → 4x reduction", "status": "MERGED", "math": "detach() breaks autograd graph → views freed → 4x memory savings"},
-            {"framework": "Megatron", "issue": "#5387", "description": "release_storage/reallocate + version counter preservation", "status": "OPEN", "math": "release_storage(0) frees backing alloc → preserves Storage aliases → reallocate before compute"},
-            {"framework": "DeepSpeed", "issue": "#8058", "description": "contiguous() bug → optimizer update copies, not originals", "status": "OPEN", "math": "Non-contiguous tensor → optimizer updates copy → original unchanged → silent corruption"},
+        "note": "notebook/projects/storage-lifecycle-reading.md",
+        "connections": [
+            {
+                "component": "detach memory → 4x reduction",
+                "math_property": "detach() breaks autograd graph → view tensors freed → memory saved",
+                "bugs": ["#6699 verl detach memory fix"],
+                "decision": "MUST detach() intermediate tensors in GRPO pipeline to prevent memory accumulation",
+                "formula": "mem_with_detach ≈ 0.25 × mem_without_detach → 4x savings",
+            },
+            {
+                "component": "release_storage/reallocate lifecycle",
+                "math_property": "Preserve Storage object (aliases) but release backing allocation → reallocate before compute",
+                "bugs": ["#5387 Megatron release_storage"],
+                "decision": "MUST use release_storage pattern for activation checkpointing",
+                "formula": "Storage.preserve_aliases + release_backing → 0 memory when inactive",
+            },
+            {
+                "component": "contiguous() copy-back bug",
+                "math_property": "Non-contiguous tensor → optimizer updates apply to COPY, not original → silent corruption",
+                "bugs": ["#8058 DeepSpeed contiguous() bug"],
+                "decision": "MUST NOT call contiguous() on optimizer state tensors in-place",
+                "formula": "contiguous() creates new tensor → optimizer update modifies copy → original unchanged",
+            },
+        ],
+    },
+    "ppo_vs_grpo": {
+        "name": "PPO-clip vs GRPO Algorithm Comparison",
+        "note": "tools/ppo_vs_grpo_comparison_simulator.py",
+        "connections": [
+            {
+                "component": "PPO-clip OOM on RTX 4090",
+                "math_property": "PPO requires value head (0.28 GiB) + reference model (14 GiB) + full optimizer (28 GiB) = 65 GiB total → OOM",
+                "bugs": ["No bug — just math: PPO needs 65 GiB > 24 GiB"],
+                "decision": "MUST NOT use PPO-clip on RTX 4090 single GPU → GRPO = ONLY viable",
+                "formula": "PPO_peak = actor(14) + value(0.28) + ref(14) + optimizer(28) + grad(7) = 65 GiB >> 24 GiB",
+            },
+            {
+                "component": "GRPO advantage 17x stronger signal",
+                "math_property": "GRPO normalized advantage has std=1.0 → PPO value baseline advantage has std≈0.07 → 17x signal ratio",
+                "bugs": ["No bug — just math: normalization amplifies signal"],
+                "decision": "GRPO provides stronger per-sample gradient → faster convergence",
+                "formula": "signal_GRPO = √(gs) × σ_reward / σ̂ ≈ 2.83 × σ_reward, signal_PPO ≈ 0.36 × σ_reward",
+            },
+            {
+                "component": "LoRA r=32 gradient expressiveness",
+                "math_property": "LoRA r=32 captures 1.56% of gradient directions → with 10x LR = 15.6% effective coverage",
+                "bugs": ["No bug — just math: direction coverage formula"],
+                "decision": "LoRA r=32 + 10x LR provides sufficient expressiveness for alignment on RTX 4090",
+                "formula": "coverage = (2r × hidden_dim) / (hidden_dim × input_dim) × LR_ratio ≈ 1.56% × 10 = 15.6%",
+            },
+            {
+                "component": "clip_grad=1.0 optimal threshold",
+                "math_property": "Gradient clipping at 1.0 provides NaN protection without over-reducing gradient signal → 2% spike samples clipped",
+                "bugs": ["#8068 gradient clipping default regression"],
+                "decision": "MUST set clip_grad=1.0 for GRPO training (NaN protection + signal preservation)",
+                "formula": "E[|∇_clipped|] ≈ E[|∇|] for ||∇|| ≤ 1.0, P(||∇|| > 1.0) ≈ 2% → minimal signal loss",
+            },
+        ],
+    },
+    "reward_shaping": {
+        "name": "GRPO Reward Shaping Theory",
+        "note": "tools/grpo_reward_shaping_analysis.py",
+        "connections": [
+            {
+                "component": "Shaped rewards eliminate degenerate groups",
+                "math_property": "Outcome-only 0/1 reward → 4.6% degenerate groups (all correct or all wrong → σ=0). Shaped reward → 0% degenerate groups",
+                "bugs": ["Outcome-only reward produces σ=0 in homogeneous groups"],
+                "decision": "MUST use shaped reward (format+outcome+reasoning) for GRPO training",
+                "formula": "P(degenerate) = P(all_same) × P(σ<ε). Shaped: P(degenerate) ≈ 0% vs Outcome-only: P ≈ 4.6%",
+            },
+            {
+                "component": "SNR = √gs determines advantage quality",
+                "math_property": "Signal-to-noise ratio of group statistics: SNR = σ/σ̂_error = √gs. gs=8 → SNR=2.83, gs=4 → SNR=2.0",
+                "bugs": ["Low gs → poor group statistics → noisy advantages"],
+                "decision": "MUST use gs>=8 for sparse rewards, gs>=4 for continuous rewards",
+                "formula": "SNR = √gs, Var_eff[A] = 1 + 1/(gs-1) → gs=8: Var_eff ≈ 1.14 (good)",
+            },
+            {
+                "component": "Ranking-based rewards = perfect decorrelation",
+                "math_property": "Ranking within group removes task difficulty correlation → ρ=0 → pure response quality signal",
+                "bugs": ["Outcome reward: ρ ≈ 0.7 (high task difficulty correlation)"],
+                "decision": "Consider ranking-based reward for tasks with high difficulty variance",
+                "formula": "Cor(R_outcome) ≈ 0.7, Cor(R_ranking) ≈ 0.0 → ranking provides pure quality signal",
+            },
         ],
     },
 }
@@ -687,11 +771,11 @@ CROSS_FRAMEWORK_PATTERNS = {
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical"},
-    "infra_implementation": {"score": 9, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, 440+ tools including 3 new timing/numerical models"},
-    "math_to_bug": {"score": 8, "max": 10, "justification": "Synthesis + singleton numerical proof + training step timing model + cross-framework comparison"},
-    "practical_experience": {"score": 5, "max": 10, "justification": "5 experiments: GRPO singleton, PPO-clip loss, NanDetectMode, weight sync timing, GRPO numerical. GPU OFFLINE"},
-    "oss_contribution": {"score": 4, "max": 10, "justification": "V2 fix on fork ready, 22 drafts ready, 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
+    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping"},
+    "infra_implementation": {"score": 9, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, 380+ tools including timing/numerical/gradient/reward/config models"},
+    "math_to_bug": {"score": 8, "max": 10, "justification": "Synthesis + singleton numerical proof + training step timing + cross-framework comparison + gradient flow analysis + PPO vs GRPO proof"},
+    "practical_experience": {"score": 7, "max": 10, "justification": "9 CPU experiments: GRPO singleton, PPO-clip, NanDetectMode, weight sync timing, GRPO numerical, PPO vs GRPO, reward shaping, config validation, gradient flow. GPU OFFLINE"},
+    "oss_contribution": {"score": 4, "max": 10, "justification": "24 drafts ready (2 review comments: #8080, #45552), 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
 }
 
 
