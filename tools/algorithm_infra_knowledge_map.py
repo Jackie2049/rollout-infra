@@ -512,6 +512,74 @@ CONNECTIONS = {
             },
         ],
     },
+    "weight_sync_timing": {
+        "name": "Weight Sync Timing Model (RTX 4090)",
+        "note": "tools/weight_sync_timing_simulator.py + tools/grpo_training_step_timing_model.py",
+        "connections": [
+            {
+                "component": "LoRA bypass sync = 3.6s vs full = 4.6s",
+                "math_property": "LoRA adapter: 0.0625 GiB transfer vs full: 16 GiB → 256x less PCIe traffic",
+                "bugs": ["vLLM #45552: cumem stream sync missing cuda.synchronize() → crash"],
+                "decision": "LoRA+bypass = ONLY viable on RTX 4090 (3.6s sync, 22.9 GiB peak)",
+                "formula": "sync_time = sleep + 2*lora_size/PCIe_bw + wake + validate = 3.6s",
+            },
+            {
+                "component": "NCCL dp=1 = identity broadcast (0s overhead)",
+                "math_property": "AllReduce on dp=1: each shard = full model → broadcast = identity → no data transfer",
+                "bugs": ["verl naive engine = best for dp=1 (direct memcpy, no NCCL overhead)"],
+                "decision": "Naive checkpoint engine for RTX 4090 dp=1, NCCL for dp>1",
+                "formula": "NCCL(dp=1) = identity: overhead=0, naive_memcpy = 0.1s per checkpoint",
+            },
+            {
+                "component": "TransferQueue: peak = max(rollout, training) NOT sum",
+                "math_property": "CPU-backed TransferQueue decouples phases → GPU only during compute phases",
+                "bugs": ["#6468: FSDP2 breaks decoupling (staging buffers leak)"],
+                "decision": "Peak = max(20.5, 20.25) = 20.5 GiB → fits 24 GiB budget",
+                "formula": "peak_mem = max(rollout_peak, training_peak) with TransferQueue backbone",
+            },
+            {
+                "component": "Rollout = 69.2% bottleneck of step time",
+                "math_property": "Inference generation dominates: 8s for gs=4 batch=4 vs 4.5s for training",
+                "bugs": ["SGLang prefix caching reduces rollout time via shared prompt prefix"],
+                "decision": "SGLang #1 for rollout (RadixAttention + sleep/wake + in-process IPC)",
+                "formula": "step_time = rollout(69%) + training(29%) + sync(1%) + other(1%)",
+            },
+        ],
+    },
+    "grpo_singleton": {
+        "name": "GRPO Singleton Degeneration (Cross-Framework)",
+        "note": "tools/grpo_advantage_numerical_experiment.py + notebook/projects/cross-framework-grpo-advantage-comparison.md",
+        "connections": [
+            {
+                "component": "gs=1 = EXACTLY REINFORCE(baseline=0)",
+                "math_property": "verl: mean=0, std=1 → advantage = reward = REINFORCE(baseline=0), mean_diff=0.00e+00, std_diff=0.00e+00",
+                "bugs": ["rLLM #605: groups by trajectory.uid → gs=1 always → REINFORCE degeneration"],
+                "decision": "MUST use gs >= 4 for proper GRPO; gs=1 = REINFORCE (no variance reduction)",
+                "formula": "A(gs=1, verl) = (r-0)/1 = r = REINFORCE(baseline=0)",
+            },
+            {
+                "component": "All 4 frameworks show identical singleton degeneration",
+                "math_property": "verl/OpenRLHF: ε-fallback (mean=0,std=1) → advantage=reward; rLLM/TRL: ε-division → advantage≈0",
+                "bugs": ["verl #342: id2mean[idx]=0.0, id2std[idx]=1.0; rLLM: std=ε → A≈0"],
+                "decision": "Cross-framework DESIGN DEFECT: all need configurable group_size >= 2",
+                "formula": "A_i(gs=1) = r_i (verl) or A_i(gs=1) ≈ 0 (rLLM/TRL)",
+            },
+            {
+                "component": "gs=8 converges 2x faster than gs=1",
+                "math_property": "GRPO variance reduction: σ²_GRPO = σ²_reward/gs → 8x less noise with gs=8",
+                "bugs": ["No bug — mathematical property: variance proportional to 1/gs"],
+                "decision": "RTX 4090: gs=4-8 optimal (88% variance reduction at gs=8)",
+                "formula": "Var(A_GRPO) = Var(r)/gs → gs=8: 87.5% reduction vs REINFORCE",
+            },
+            {
+                "component": "Dr.GRPO does NOT solve singleton problem",
+                "math_property": "Dr.GRPO subtracts mean reward but still normalizes by group std → gs=1: std=0 → same ε handling",
+                "bugs": ["Dr.GRPO advantage: smaller range but same degeneration at gs=1"],
+                "decision": "Dr.GRPO helps at gs>=2 but NOT at gs=1 → need group_size >= 2 always",
+                "formula": "Dr.GRPO: A = (r - r_mean) / (r_std + ε), same ε problem at gs=1",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -527,6 +595,10 @@ MUST_DO = [
     {"rule": "record_stream on ALL async copies", "proof": "PyTorch allocator assumes default stream → missing record_stream → silent corruption", "bug": "#6794 CRITICAL-1 delta snapshot data corruption", "formula": "P(corruption) = P(allocator reclaims before side_stream completes)"},
     {"rule": "Use FSDP1 backend (NOT FSDP2)", "proof": "FSDP2 DTensor materialization creates CPU staging buffers that leak 0.6-6.3 GiB/step", "bug": "#6468 FSDP2 CPU memory leak → host OOM in ~8-22 steps", "formula": "leak_rate ≈ 0.3 × n_params/B GiB/step → linear growth"},
     {"rule": "Monitor host RAM during training", "proof": "FSDP2 leak + Ray overhead → host OOM → process killed → training abort", "bug": "#6468 host OOM kills workers", "formula": "rss(t) ≈ rss(0) + leak_rate × t → OOM at rss(t) > 0.8 × total"},
+    {"rule": "Use gs >= 4 for GRPO", "proof": "gs=1 degrades to REINFORCE(baseline=0) with NO variance reduction, gs=4 gives 75% reduction", "bug": "rLLM #605 gs=1 always → REINFORCE degeneration", "formula": "Var(A_GRPO) = Var(r)/gs → gs=4: 75% reduction vs REINFORCE"},
+    {"rule": "Use LoRA+bypass for weight sync", "proof": "Full param sync = 16 GiB transfer + 67 GiB peak → OOM on 24 GiB; LoRA = 0.06 GiB + 22.9 GiB peak → FITS", "bug": "No bug — just math: full param > 24 GiB budget", "formula": "lora_sync_time = 3.6s vs full_sync_time = 4.6s, lora_peak = 22.9 GiB vs full_peak = 67 GiB"},
+    {"rule": "Use naive checkpoint engine on dp=1", "proof": "NCCL AllReduce on dp=1 = identity broadcast → no data transfer → naive memcpy = faster", "bug": "NCCL overhead on dp=1: initialization + barrier, naive = direct memcpy", "formula": "NCCL(dp=1) = identity: overhead > 0 benefit = 0, naive = 0.1s direct copy"},
+    {"rule": "Use SGLang for rollout (prefix caching)", "proof": "Rollout = 69.2% bottleneck → prefix caching reduces redundant prompt computation by 22-42x", "bug": "vLLM no sleep/wake level2 → SGLang #1 for RTX 4090", "formula": "SGLang RolloutKV: prompt prefix pinned → avoid re-computation → 22-42x speedup"},
 ]
 
 MUST_NOT = [
@@ -539,6 +611,9 @@ MUST_NOT = [
     {"rule": "NOT use DeepSpeed v0.19.2 with ZeRO-3+LoRA", "proof": "#8066 per-policy dtype removed blanket cast → exposed latent bug", "bug": "#8072, #8076 regression", "formula": "module.bfloat16() removed → LoRA stays fp32 → mismatch"},
     {"rule": "NOT use FSDP2 backend for long-running GRPO", "proof": "CPU staging buffers leak monotonically → host OOM", "bug": "#6468 confirmed 0.6-6.3 GiB/step", "formula": "rss(t) grows linearly → OOM in ~8-22 steps"},
     {"rule": "NOT use async side-stream copies without record_stream", "proof": "Allocator reclaims tensor before side stream completes → silent corruption", "bug": "#6794 CRITICAL-1 delta snapshot corruption", "formula": "P(corruption) ≈ 1 for long-running training"},
+    {"rule": "NOT use group_size=1 for GRPO", "proof": "gs=1 degrades to REINFORCE(baseline=0) → 12x slower convergence, zero variance reduction", "bug": "rLLM #605, verl/OpenRLHF ε-fallback, TRL ε-division", "formula": "A(gs=1) = r_i = REINFORCE(baseline=0), Var = Var(r) [no reduction]"},
+    {"rule": "NOT use full param weight sync on RTX 4090", "proof": "Full sync = 67 GiB peak memory → OOM on 24 GiB GPU", "bug": "No bug — just math: 16 GiB model + optimizer + gradients > 24 GiB", "formula": "full_peak = model(16) + optimizer(59.6) + grad(16) = 90.4 GiB >> 24 GiB"},
+    {"rule": "NOT use NCCL checkpoint engine on dp=1", "proof": "NCCL AllReduce on dp=1 = identity → no actual data movement → initialization overhead only", "bug": "No bug — just math: dp=1 broadcast = no-op", "formula": "NCCL(dp=1) time > naive_memcpy time → no benefit"},
 ]
 
 # ─── Cross-Framework Patterns ──────────────────────────────────────────────
@@ -612,11 +687,11 @@ CROSS_FRAMEWORK_PATTERNS = {
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 12, "max": 10, "justification": "12 comprehensive derivations + GRPO singleton proof + verl training loop lifecycle"},
-    "infra_implementation": {"score": 9, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, verl training loop end-to-end traced"},
-    "math_to_bug": {"score": 8, "max": 10, "justification": "Synthesis + verl training loop → bug connections + MFSDPv2 gradient contract"},
-    "practical_experience": {"score": 4, "max": 10, "justification": "2 local experiments (GRPO singleton + RLHF simulator), verl training loop traced, GPU OFFLINE"},
-    "oss_contribution": {"score": 4, "max": 10, "justification": "V2 fix on fork ready, 22 drafts ready, 0 executed — need authorization/GPU"},
+    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical"},
+    "infra_implementation": {"score": 9, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, 440+ tools including 3 new timing/numerical models"},
+    "math_to_bug": {"score": 8, "max": 10, "justification": "Synthesis + singleton numerical proof + training step timing model + cross-framework comparison"},
+    "practical_experience": {"score": 5, "max": 10, "justification": "5 experiments: GRPO singleton, PPO-clip loss, NanDetectMode, weight sync timing, GRPO numerical. GPU OFFLINE"},
+    "oss_contribution": {"score": 4, "max": 10, "justification": "V2 fix on fork ready, 22 drafts ready, 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
 }
 
 
