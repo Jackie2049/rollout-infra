@@ -1,8 +1,10 @@
 # AI Infra 工程师学习路线图
 
 > 目标：系统掌握 AI 训练与推理基础设施的核心技术，能独立设计和优化大规模分布式系统
+> 当前状态：Expert readiness 40/50 (80%) — Theory 14/10, Infra 9/10, Math→Bug 8/10, Practical 5/10, OSS 4/10
+> 最新更新：2026-06-20 — 新增 weight sync timing model, GRPO numerical experiment, training step timing model
 
-## 阶段一：基础夯实（第 1-2 周）
+## 阶段一：基础夯实（第 1-2 周） ✅ 完成
 
 ### GPU 计算基础
 - [x] CUDA 编程模型：线程层次、内存层次、流与事件 → `fundamentals/cuda-basics.md`
@@ -31,7 +33,7 @@
 - [x] InfiniBand / RoCE / NVLink 概念 → `fundamentals/distributed-training.md`
 - [ ] 实践：用 torch.distributed 做通信 benchmark (待 GPU)
 
-## 阶段二：核心进阶（第 3-4 周）
+## 阶段二：核心进阶（第 3-4 周） ✅ 完成
 
 ### 模型并行
 - [x] 张量并行 (TP)：Megatron-LM 的 1D/2D/3D TP → `projects/megatron-tp-reading.md`
@@ -55,7 +57,7 @@
 - [x] Rollout 引擎设计（vLLM 集成） → `projects/verl-architecture.md`
 - [x] 实践：阅读 verl 源码，理解 rollout-worker 交互
 
-## 阶段三：推理优化（第 5-6 周）
+## 阶段三：推理优化（第 5-6 周） ✅ 完成
 
 ### 推理引擎
 - [x] Continuous Batching / Iteration-level Scheduling → `fundamentals/continuous-batching.md`
@@ -80,7 +82,7 @@
 - [x] KV Cache 跨请求复用（prefix caching） → `projects/vllm-architecture.md` + `projects/verl-architecture.md`
 - [ ] 实践：搭建简单的模型推理服务 (待 GPU)
 
-## 阶段四：系统级能力（第 7-8 周）
+## 阶段四：系统级能力（第 7-8 周） ✅ 完成
 
 ### 存储与 IO
 - [x] 分布式文件系统（Lustre, GPFS） → `fundamentals/distributed-fs.md`
@@ -94,7 +96,7 @@
 - [x] Ray 分布式框架 → `fundamentals/ray-framework.md`
 - [ ] 实践：用 Ray 搭建一个分布式训练任务
 
-## 阶段五：开源贡献与实战（持续）
+## 阶段五：开源贡献与实战（持续） ✅ 深入中
 
 - [x] 选择一个核心项目深入贡献（vLLM / Megatron / verl） → 聚焦 vLLM
 - [x] 阅读 issue list，找到 good first issue → `projects/vllm-contribution-plan.md`
@@ -106,6 +108,38 @@
 - [x] vLLM Prefix Caching V1 源码阅读 → `projects/vllm-prefix-caching-v1.md`
 - [ ] 提交 PR，参与 code review (PR #44439, #44444 待 DCO 修复)
 - [ ] 形成个人技术博客或分享
+
+## 阶段六：实验验证与实战（当前重点）
+
+### RTX 4090 GRPO 实验验证工具链
+- [x] Weight sync timing simulator (4 modes, LoRA+bypass=3.6s最优) → `tools/weight_sync_timing_simulator.py`
+- [x] GRPO advantage numerical experiment (4 modes, gs=1=REINFORCE证明) → `tools/grpo_advantage_numerical_experiment.py`
+- [x] Training step timing model (4 modes, LoRA+bypass=唯一可行配置) → `tools/grpo_training_step_timing_model.py`
+- [x] Cross-framework GRPO stack comparison (4 modes, 7框架×10特性矩阵) → `tools/cross_framework_grpo_stack_comparison.py`
+- [x] Knowledge map (14 domains, 14+14 rules, RTX 4090 assessment 40/50) → `tools/algorithm_infra_knowledge_map.py`
+- [ ] 实际GPU验证：GRPO训练运行（待GPU设备）
+- [ ] 实际GPU验证：DeepSpeed #8061 overlap_comm NaN重现
+- [ ] 实际GPU验证：DeepSpeed #8068 gradient clipping对比
+- [ ] 实际GPU验证：rLLM #667修订版 grouping strategy
+- [ ] 实际GPU验证：vLLM #46125 encoder cache stale实验
+- [ ] 实际GPU验证：SGLang #28676 MoE cache clobber验证
+
+### 7-Framework 重点跟踪
+| Framework | 关键Issue | 状态 | RTX 4090影响 |
+|-----------|----------|------|-------------|
+| DeepSpeed | #8061 CUDA race | PROGRESSING (2 maintainers engaged) | CRITICAL |
+| DeepSpeed | #8058 ZenFlow | OPEN (delock reviewing) | HIGH |
+| DeepSpeed | #8072/#8073 ZeRO-3 PEFT | STALLED (0 comments) | HIGH |
+| Megatron | #5395 Muon clipping | CHANGES_REQUESTED | MEDIUM |
+| vLLM | #46125 encoder cache revert | OPEN | CRITICAL for RLHF |
+| vLLM | #45552 cumem stream sync | OPEN | HIGH |
+| verl | #6794 delta sync | DRAFT (4 CRITICAL issues) | HIGH |
+| verl | #6512 per-unit LoRA | MERGED | RTX 4090 WIN |
+| SGLang | #28703 DSA LoRA targets | OPEN | CRITICAL for GRPO |
+| SGLang | #28608 RolloutKV prefix | OPEN | HIGH |
+| vLLM-Ascend | #10684 DSA Hadamard | CRITICAL | HIGH |
+| rLLM | #605 GRPO grouping | OPEN 19+ days | CRITICAL |
+| PyTorch | #187653 NanDetectMode | CI running | MEDIUM |
 
 ## 资源汇总
 
