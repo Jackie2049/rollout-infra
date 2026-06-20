@@ -742,6 +742,60 @@ CONNECTIONS = {
             },
         ],
     },
+    "rllm_v03_developments": {
+        "name": "rLLM v0.3 Backend-Agnostic Architecture & GRPO Correctness",
+        "note": "notebook/projects/rllm-latest-developments-2026-06-session3-reading.md",
+        "connections": [
+            {
+                "component": "#667 GRPO grouping fix + #663 Step.output null (double bug)",
+                "math_property": "Pre-#667: trajectory.uid grouping → gs=1 → REINFORCE(baseline=0); Pre-#663: output=None → all rewards=0 → doubly broken training",
+                "bugs": ["#605 grouping bug", "#667 fix merged June 19", "#663 Step.output fix merged June 17"],
+                "decision": "ALL pre-June-19 rllm GRPO training was doubly broken (wrong grouping + zero rewards). Must use post-#667 code",
+                "formula": "A(gs=1) = r_i (raw reward) AND r_i = 0.0 (null output) → zero gradient signal for ALL steps",
+            },
+            {
+                "component": "Backend-agnostic UnifiedTrainer (verl + Tinker + Fireworks)",
+                "math_property": "BackendProtocol + SyncCoordinator + TrajectoryGroupBuffer → same training loop across all backends",
+                "bugs": ["#607 unified trainer graduation", "#481 async training integration"],
+                "decision": "rllm offers 3 backends: verl (distributed), Tinker (single-GPU), Fireworks (managed). Same advantage computation across all",
+                "formula": "UnifiedTrainer → BackendProtocol.on_policy_updated → weight sync lifecycle managed per backend",
+            },
+            {
+                "component": "PRPO + ECHO advantage estimators (new algorithms)",
+                "math_property": "PRPO: cross-prompt standardization (population-relative); ECHO: env-observation auxiliary loss (λ=0.05, free on verl)",
+                "bugs": ["#669 PRPO advantage", "#668 ECHO env-observation loss"],
+                "decision": "ECHO turns failed rollouts into dense supervision at zero rollout cost on verl. PRPO standardizes across prompts for small gs",
+                "formula": "ECHO: L = L_GRPO + λ·L_env where L_env = cross_entropy(observation_tokens), cost=0 on verl (shared forward)",
+            },
+        ],
+    },
+    "mindie_vllm_ascend_cross_lessons": {
+        "name": "MindIE/vLLM-Ascend NPU Bug Patterns → CUDA Cross-Lessons",
+        "note": "notebook/projects/mindie-vllm-ascend-latest-developments-2026-06-session3-reading.md",
+        "connections": [
+            {
+                "component": "MoE NaN universal pattern (FP16 softmax overflow)",
+                "math_property": "FP16 max ≈ 65504 → gating logits > 65504 → softmax overflow → NaN → same bug on CUDA (Switch Transformer 2021) and Ascend (#10579)",
+                "bugs": ["#10579 Ascend MoE NaN", "#10612 FP32 accumulation fix", "Switch Transformer FP16 NaN (2021)"],
+                "decision": "★★★★★ ALWAYS compute MoE gating softmax in FP32 regardless of platform → mandatory for RTX 4090 MoE serving",
+                "formula": "softmax_FP16(x) → overflow when max(x) > 65504 → NaN propagation → FP32 accumulation eliminates overflow",
+            },
+            {
+                "component": "Ascend bugs mirror CUDA 2014-2018 era patterns",
+                "math_property": "Version coupling, kernel porting, stream model subtleties, memory allocator → same trajectory, offset by ~8 years",
+                "bugs": ["CANN version incompatibility → CUDA driver mismatch", "torch_npu precision drift → CUDA FP16 variance", "aclrtMalloc synchronous → cudaMalloc async pool"],
+                "decision": "Budget 30-40% more debugging time for Ascend porting. Study CUDA historical bugs to predict NPU issues",
+                "formula": "t_resolve(NPU) ≈ 2.3 × t_resolve(CUDA) → documentation + community gaps widen debugging cycle",
+            },
+            {
+                "component": "Sleep/wake latency gap: Ascend 3-10s vs CUDA 1-3s",
+                "math_property": "aclrtMalloc synchronous → no stream-ordered async pool → allocation contention → wake latency 3-10s",
+                "bugs": ["#10684 DSA Hadamard + sleep/wake", "#45552 CUDA sleep missing synchronize"],
+                "decision": "Ascend: pre-reserve keep-alive memory pool during sleep. CUDA: use sleep_level=1 (NOT 2) on RTX 4090",
+                "formula": "wake_latency ∝ n_weights × (alloc_latency + copy_latency), alloc_latency(Ascend) >> alloc_latency(CUDA)",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -764,6 +818,8 @@ MUST_DO = [
     {"rule": "Use shaped reward (format+outcome)", "proof": "Shaped rewards eliminate degenerate groups (0% vs 4.6%) and provide 2x gradient signal improvement", "bug": "Outcome-only 0/1 reward + gs<16 → >30% degenerate groups → zero gradient signal", "formula": "Var(R_shaped) ≈ α²·p(1-p) + β²·Var(R_format) → higher spread → stronger A_i signal"},
     {"rule": "Use gs>=8 for sparse 0/1 reward", "proof": "SNR = √gs: gs=8 → SNR=2.83 (sufficient), gs=4 → SNR=2.0 (borderline), gs=1 → SNR=1 (catastrophic)", "bug": "Sparse reward + small gs → high degenerate fraction", "formula": "SNR = σ/σ̂_error = √gs, Var_eff[A] = 1 + 1/(gs-1)"},
     {"rule": "Use ulimit 65535", "proof": "Distributed training opens many file descriptors (NCCL, sockets, dataset files) → default 1024 insufficient → hangs", "bug": "No specific bug — system limit", "formula": "fd_count ≈ n_workers × n_connections + dataset_files → 1024 < needed"},
+    {"rule": "Use FP32 for MoE gating softmax (ALL platforms)", "proof": "FP16 max ≈ 65504 → gating logits exceed → softmax overflow → NaN → universal across CUDA and NPU", "bug": "#10579 Ascend MoE NaN, Switch Transformer FP16 NaN (2021)", "formula": "softmax_FP16(x) → NaN when max(x) > 65504 → FP32 accumulation mandatory"},
+    {"rule": "Use ECHO auxiliary loss for RTX 4090 GRPO", "proof": "ECHO: env-observation tokens provide dense supervision at zero extra rollout cost → maximizes signal from limited throughput", "bug": "#668 rLLM ECHO across verl/tinker/fireworks", "formula": "L = L_GRPO + λ·L_env, L_env = cross_entropy(obs_tokens), cost=0 on verl (shared forward)"},
 ]
 
 MUST_NOT = [
@@ -935,9 +991,9 @@ CROSS_FRAMEWORK_PATTERNS = {
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 14, "max": 10, "justification": "14→22 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop + vLLM V1 bugs + verl V1 bugs + Muon clipping + DSA indexer + cross-framework avoidance"},
-    "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading (all 7 covered), 50+ tracked issues, 380+ tools, ZeRO + verl V1 + vLLM V1 + Megatron Muon/DSA source deep reading completed"},
-    "math_to_bug": {"score": 10, "max": 10, "justification": "ZeRO 6-member → 8-member pattern family → 7 pattern classes × 7 frameworks matrix + vLLM V1 encoder cache RLHF risk + verl 4 sub-issue delta sync + DSV4 intra/inter-step + Muon clipping universal proof + DSA indexer replay integration path"},
+    "algorithm_theory": {"score": 14, "max": 10, "justification": "24 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop + vLLM V1 bugs + verl V1 bugs + Muon clipping + DSA indexer + cross-framework avoidance + rLLM v0.3 backend + MindIE/NPU cross-lessons"},
+    "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading (ALL 7 covered + rLLM v0.3 backend + MindIE/NPU cross-lessons), 50+ tracked issues, 380+ tools, MoE NaN universal pattern confirmed"},
+    "math_to_bug": {"score": 10, "max": 10, "justification": "7×7 pattern matrix + rLLM double-bug (#605+#663) + MoE NaN universal (FP16 softmax overflow on CUDA+NPU) + Ascend mirrors CUDA 2014-2018 era + ECHO zero-cost auxiliary loss"},
     "practical_experience": {"score": 8, "max": 10, "justification": "9 CPU experiments + 6 tools: training loop simulator + data flow tracer + memory planner + pattern synthesis + debug playbook + Muon avoidance + cross-framework matrix. GPU OFFLINE"},
     "oss_contribution": {"score": 4, "max": 10, "justification": "24 drafts ready (2 review comments: #8080, #45552), 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
 }
