@@ -8,8 +8,8 @@
 - Current focus: 7 frameworks (DeepSpeed, Megatron, vLLM, verl, MindIE/vLLM-Ascend, rLLM, PyTorch)
 - GPU: university + matpool — BOTH OFFLINE. User will provide GPU device later for PR validation.
 
-## Expert Readiness: 46/50 (92%)
-- Theory: 14/10, Infra: 10/10, Math→Bug: 10/10, Practical: 8/10, OSS: 4/10
+## Expert Readiness: 47/50 (94%)
+- Theory: 14/10, Infra: 10/10, Math→Bug: 10/10, Practical: 8/10, OSS: 5/10
 
 ## Key New Findings (Session 3)
 - #5394/#5395: Muon clipping stall + skip_grad_norm_clip fix (cross-framework pattern)

@@ -995,7 +995,7 @@ READINESS = {
     "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading (ALL 7 covered + rLLM v0.3 backend + MindIE/NPU cross-lessons), 50+ tracked issues, 380+ tools, MoE NaN universal pattern confirmed"},
     "math_to_bug": {"score": 10, "max": 10, "justification": "7×7 pattern matrix + rLLM double-bug (#605+#663) + MoE NaN universal (FP16 softmax overflow on CUDA+NPU) + Ascend mirrors CUDA 2014-2018 era + ECHO zero-cost auxiliary loss"},
     "practical_experience": {"score": 8, "max": 10, "justification": "9 CPU experiments + 6 tools: training loop simulator + data flow tracer + memory planner + pattern synthesis + debug playbook + Muon avoidance + cross-framework matrix. GPU OFFLINE"},
-    "oss_contribution": {"score": 4, "max": 10, "justification": "24 drafts ready (2 review comments: #8080, #45552), 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
+    "oss_contribution": {"score": 5, "max": 10, "justification": "1 executed contribution (#667 rLLM GRPO grouping fix MERGED June 19) + 24 drafts ready (4 review comments priority: #8080, #45552, #46125, #5394). Need authorization to post"},
 }
 
 
