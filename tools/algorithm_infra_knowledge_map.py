@@ -634,6 +634,60 @@ CONNECTIONS = {
             },
         ],
     },
+    "vllm_v1_bugs": {
+        "name": "vLLM V1 Architecture & Critical Bugs",
+        "note": "notebook/projects/vllm-v1-architecture-critical-bugs-deep-reading.md",
+        "connections": [
+            {
+                "component": "V1 engine core: one-process-per-GPU + ZMQ IPC",
+                "math_property": "ZMQ DEALER/ROUTER zero-copy msgpack vs V0 pickle RPC → 3x frontend throughput",
+                "bugs": ["#45552 cumem crash (missing synchronize)", "#46125 encoder cache revert (RLHF risk)"],
+                "decision": "V1 = mandatory for verl HYBRID mode (same process integration)",
+                "formula": "V1 latency = ZMQ_deserialize + schedule + execute + sample + ZMQ_serialize",
+            },
+            {
+                "component": "CuMemAllocator: CUDA virtual memory sleep/wake",
+                "math_property": "sleep_level=2: allocates virtual memory pool → release frees weights → resume re-maps → missing synchronize() → crash",
+                "bugs": ["#45552 RTX 4090 BLOCKER: CUDART illegal-memory crash within 1-3 steps"],
+                "decision": "sleep_level=1 AVOIDS bug entirely (LoRA offload, NOT CuMemAllocator)",
+                "formula": "sleep_level=2 crash probability ≈ 1.0 within first few steps; sleep_level=1 crash probability ≈ 0",
+            },
+            {
+                "component": "#46125 encoder cache revert → RLHF silent corruption risk",
+                "math_property": "Weight update invalidates encoder cache → stale cache → wrong embeddings → wrong training signal",
+                "bugs": ["#46125 revert removes cache invalidation → GRPO training produces wrong rewards"],
+                "decision": "★★★ DANGEROUS: must NOT merge encoder cache revert. Weight update MUST invalidate all caches",
+                "formula": "P(stale_cache) = P(cache_access_after_weight_update) ≈ 1.0 for GRPO (weight updates every step)",
+            },
+        ],
+    },
+    "verl_v1_bugs": {
+        "name": "verl V1 Critical Bugs & Issues",
+        "note": "notebook/projects/verl-v1-critical-bugs-issues-2026-06-20.md",
+        "connections": [
+            {
+                "component": "#6794 delta weight sync: 4 blocking sub-issues",
+                "math_property": "record_stream missing → silent corruption; disk race on TP>1 → weight loss; big_values → OOM; makedirs → FileNotFoundError",
+                "bugs": ["#6794 CRITICAL-1 record_stream", "#6794 CRITICAL-2 disk_race", "#6794 HIGH-3 big_values", "#6794 HIGH-4 makedirs"],
+                "decision": "Delta sync NOT safe for production until all 4 sub-issues fixed. LoRA delta path safer",
+                "formula": "P(corruption) ≈ 1 for long-running training without record_stream",
+            },
+            {
+                "component": "#6772 weight sync OOM: execution order bug",
+                "math_property": "vLLM weight allocation overlaps with FSDP2 all-gather peak → memory spike exceeds budget",
+                "bugs": ["#6772 vLLM + FSDP2 execution order → peak overlap OOM"],
+                "decision": "Use FSDP1 (NOT FSDP2) + SGLang (NOT vLLM) to avoid execution order peak overlap",
+                "formula": "OOM when: rollout_alloc + FSDP_all_gather > GPU VRAM",
+            },
+            {
+                "component": "#45979 DSV4 sparse cache: VINDICATED (intra-step safe)",
+                "math_property": "Sparse cache = intra-step optimization (same weights, just KV reuse) → NOT inter-step caching → safe",
+                "bugs": ["#45979 CLOSED WITHOUT MERGING — sparse cache is safe, it was #45309 cudagraph that was the bug"],
+                "decision": "★★★ KEY DISTINCTION: intra-step caching SAFE, inter-step caching DANGEROUS",
+                "formula": "intra_step_cache: same weights within step → safe; inter_step_cache: stale after weight update → dangerous",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -675,6 +729,7 @@ MUST_NOT = [
     {"rule": "NOT use pure outcome 0/1 reward with gs<16", "proof": "Sparse 0/1 reward produces >30% degenerate groups when gs < 16 → zero gradient signal in degenerate groups", "bug": "Outcome-only reward: all correct or all wrong in group → σ=0 → A_i=0", "formula": "P(degenerate) ≈ P(all_same) = p^gs + (1-p)^gs → gs=4,p=0.3: P≈0.33"},
     {"rule": "NOT use sleep_level=2 on RTX 4090 for GRPO", "proof": "sleep_level=2 triggers cumem stream sync bug → CUDART illegal-memory crash within first few training steps", "bug": "#45552 cumem sleep/wake stream sync missing → RTX 4090 GRPO BLOCKER", "formula": "sleep_level=2 → CuMemAllocator → no torch.cuda.synchronize() → crash"},
     {"rule": "NOT use LoRA rank >= 64 with vLLM rollout in verl GRPO", "proof": "verl #6782: LoRA rank=64/alpha=128 with vLLM rollout never emits EOS → all responses truncated → training fails", "bug": "#6782 verl LoRA GRPO EOS bug → rank=64 blocks training entirely", "formula": "LoRA rank >= 64 + vLLM → EOS token never generated → all completions truncated → 0 valid trajectories"},
+    {"rule": "NOT merge vLLM encoder cache revert (#46125)", "proof": "Revert removes mandatory cache invalidation after weight updates → stale encoder cache produces wrong embeddings → silent corruption in GRPO/RLHF training", "bug": "#46125 revert = RLHF training produces wrong rewards without any error signal", "formula": "P(stale_cache_after_weight_update) ≈ 1.0 for GRPO (updates every step) → silent corruption"},
 ]
 
 # ─── Cross-Framework Patterns ──────────────────────────────────────────────
@@ -826,10 +881,10 @@ CROSS_FRAMEWORK_PATTERNS = {
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop"},
-    "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, 380+ tools, ZeRO internals + verl V1 architecture source deep reading completed"},
-    "math_to_bug": {"score": 9, "max": 10, "justification": "ZeRO stream safety → 6-member pattern family + verl 10-phase pipeline → #6794/#6782/#45552 connections + LoRA adapter path mathematical justification"},
-    "practical_experience": {"score": 7, "max": 10, "justification": "9 CPU experiments + training loop simulator (4 modes). GPU OFFLINE"},
+    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop + vLLM V1 bugs + verl V1 bugs"},
+    "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading (all 7 covered), 50+ tracked issues, 380+ tools, ZeRO + verl V1 + vLLM V1 source deep reading completed"},
+    "math_to_bug": {"score": 10, "max": 10, "justification": "ZeRO 6-member stream safety → 8-member pattern family + vLLM V1 encoder cache RLHF risk + verl 4 sub-issue delta sync + DSV4 intra/inter-step distinction"},
+    "practical_experience": {"score": 7, "max": 10, "justification": "9 CPU experiments + training loop simulator + data flow tracer + memory planner + pattern synthesis + debug playbook. GPU OFFLINE"},
     "oss_contribution": {"score": 4, "max": 10, "justification": "24 drafts ready (2 review comments: #8080, #45552), 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
 }
 
