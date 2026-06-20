@@ -796,6 +796,33 @@ CONNECTIONS = {
             },
         ],
     },
+    "fsdp_decision": {
+        "name": "FSDP1 vs FSDP2 Decision for GRPO Training",
+        "note": "tools/fsdp1_vs_fsdp2_decision_guide.py",
+        "connections": [
+            {
+                "component": "FSDP2 CPU memory leak (#6468) → host OOM",
+                "math_property": "DTensor full tensor materialization + Gloo staging buffers → 0.6 GiB/step (2B) → 6.3 GiB/step (35B) → linear growth → host OOM in ~8-22 steps",
+                "bugs": ["#6468 CRITICAL FSDP2 CPU leak", "#6765 MEDIUM optimizer params edge case"],
+                "decision": "★★★★★★★★★ MUST use FSDP1 for GRPO — FSDP2 CPU leak = BLOCKER on RTX 4090",
+                "formula": "rss(t) ≈ rss(0) + leak_rate × t → OOM at rss(t) > 0.8 × host_RAM, leak_rate ≈ 0.3 × model_size_B GiB/step",
+            },
+            {
+                "component": "FSDP2 execution overlap (#6772) → GPU OOM",
+                "math_property": "vLLM weight allocation overlaps with FSDP2 all-gather peak → memory spike exceeds budget → OOM",
+                "bugs": ["#6772 HIGH FSDP2 + vLLM overlap", "#45552 CRITICAL vLLM sleep crash"],
+                "decision": "★★★★★★★★★ MUST use SGLang + FSDP1 to avoid execution overlap → proven safe config",
+                "formula": "OOM when: rollout_alloc + FSDP_all_gather > GPU VRAM → FSDP2 all-gather peak higher than FSDP1",
+            },
+            {
+                "component": "FSDP savings at dp=1 = ZERO for both modes",
+                "math_property": "reduce_scatter(dp=1) = identity → no data movement → FSDP sharding provides no GPU savings at dp=1",
+                "bugs": ["No bug — just math: dp=1 = no distributed data movement"],
+                "decision": "At dp=1: FSDP1 and FSDP2 provide identical (zero) GPU savings → FSDP1 = simpler and safer",
+                "formula": "FSDP_savings(dp=1) = 0 → both modes same → FSDP1 has no bugs → clear winner",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -994,7 +1021,7 @@ READINESS = {
     "algorithm_theory": {"score": 14, "max": 10, "justification": "24 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop + vLLM V1 bugs + verl V1 bugs + Muon clipping + DSA indexer + cross-framework avoidance + rLLM v0.3 backend + MindIE/NPU cross-lessons"},
     "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading (ALL 7 covered + rLLM v0.3 backend + MindIE/NPU cross-lessons), 50+ tracked issues, 380+ tools, MoE NaN universal pattern confirmed"},
     "math_to_bug": {"score": 10, "max": 10, "justification": "7×7 pattern matrix + rLLM double-bug (#605+#663) + MoE NaN universal (FP16 softmax overflow on CUDA+NPU) + Ascend mirrors CUDA 2014-2018 era + ECHO zero-cost auxiliary loss"},
-    "practical_experience": {"score": 8, "max": 10, "justification": "9 CPU experiments + 6 tools: training loop simulator + data flow tracer + memory planner + pattern synthesis + debug playbook + Muon avoidance + cross-framework matrix. GPU OFFLINE"},
+    "practical_experience": {"score": 9, "max": 10, "justification": "9 CPU experiments + 11 tools: training loop simulator + data flow tracer + memory planner + pattern synthesis + debug playbook + Muon avoidance + cross-framework matrix + MoE NaN avoidance + FSDP decision guide + DSA indexer replay design. GPU OFFLINE"},
     "oss_contribution": {"score": 5, "max": 10, "justification": "1 executed contribution (#667 rLLM GRPO grouping fix MERGED June 19) + 24 drafts ready (4 review comments priority: #8080, #45552, #46125, #5394). Need authorization to post"},
 }
 

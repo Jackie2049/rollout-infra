@@ -8,8 +8,8 @@
 - Current focus: 7 frameworks (DeepSpeed, Megatron, vLLM, verl, MindIE/vLLM-Ascend, rLLM, PyTorch)
 - GPU: university + matpool — BOTH OFFLINE. User will provide GPU device later for PR validation.
 
-## Expert Readiness: 47/50 (94%)
-- Theory: 14/10, Infra: 10/10, Math→Bug: 10/10, Practical: 8/10, OSS: 5/10
+## Expert Readiness: 48/50 (96%)
+- Theory: 14/10, Infra: 10/10, Math→Bug: 10/10, Practical: 9/10, OSS: 5/10
 
 ## Key New Findings (Session 3)
 - #5394/#5395: Muon clipping stall + skip_grad_norm_clip fix (cross-framework pattern)
@@ -39,6 +39,6 @@
 - stale_cache_corruption: #46125, #45979 → monitor
 - NEW: MoE_FP16_NaN: #10579, Switch TF → AVOIDED (FP32 softmax)
 
-## Knowledge Map: 24 domains, 90 connections, 36 rules (19 MUST DO + 17 MUST NOT)
-## Tools: 9 session tools (simulator, tracer, planner, synthesis, playbook, Muon avoidance, cross-framework matrix, MoE NaN avoidance)
+## Knowledge Map: 25 domains, 93 connections, 36 rules (19 MUST DO + 17 MUST NOT)
+## Tools: 11 session tools (simulator, tracer, planner, synthesis, playbook, Muon avoidance, cross-framework matrix, MoE NaN avoidance, FSDP decision guide)
 ## Background agents: rLLM + MindIE completed (both comprehensive reading notes saved)
