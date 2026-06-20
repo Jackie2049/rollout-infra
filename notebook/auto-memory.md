@@ -8,8 +8,8 @@
 - Current focus: 7 frameworks (DeepSpeed, Megatron, vLLM, verl, MindIE/vLLM-Ascend, rLLM, PyTorch)
 - GPU: university + matpool — BOTH OFFLINE. User will provide GPU device later for PR validation.
 
-## Expert Readiness: 41/50 (82%)
-- Theory: 14/10, Infra: 9/10, Math→Bug: 8/10, Practical: 6/10, OSS: 4/10
+## Expert Readiness: 42/50 (84%)
+- Theory: 14/10, Infra: 9/10, Math→Bug: 8/10, Practical: 7/10, OSS: 4/10
 
 ## Key New Findings (June 20)
 - PPO-clip OOM on RTX 4090 (65 GiB > 24 GiB) → GRPO = ONLY viable
