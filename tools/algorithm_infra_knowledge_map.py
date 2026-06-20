@@ -620,6 +620,7 @@ MUST_NOT = [
     {"rule": "NOT use PPO-clip on RTX 4090 single GPU", "proof": "PPO-clip requires 65 GiB peak memory (value head + reference + optimizer states) > 24 GiB available → OOM", "bug": "No bug — just math: actor(14) + value(0.28) + critic(0.28) + ref(14) + optimizer(28) + grad(7) = 65 GiB", "formula": "PPO_peak = 2·model + value_head + 6·model(optimizer) ≈ 65 GiB >> 24 GiB"},
     {"rule": "NOT use pure outcome 0/1 reward with gs<16", "proof": "Sparse 0/1 reward produces >30% degenerate groups when gs < 16 → zero gradient signal in degenerate groups", "bug": "Outcome-only reward: all correct or all wrong in group → σ=0 → A_i=0", "formula": "P(degenerate) ≈ P(all_same) = p^gs + (1-p)^gs → gs=4,p=0.3: P≈0.33"},
     {"rule": "NOT use sleep_level=2 on RTX 4090 for GRPO", "proof": "sleep_level=2 triggers cumem stream sync bug → CUDART illegal-memory crash within first few training steps", "bug": "#45552 cumem sleep/wake stream sync missing → RTX 4090 GRPO BLOCKER", "formula": "sleep_level=2 → CuMemAllocator → no torch.cuda.synchronize() → crash"},
+    {"rule": "NOT use LoRA rank >= 64 with vLLM rollout in verl GRPO", "proof": "verl #6782: LoRA rank=64/alpha=128 with vLLM rollout never emits EOS → all responses truncated → training fails", "bug": "#6782 verl LoRA GRPO EOS bug → rank=64 blocks training entirely", "formula": "LoRA rank >= 64 + vLLM → EOS token never generated → all completions truncated → 0 valid trajectories"},
 ]
 
 # ─── Cross-Framework Patterns ──────────────────────────────────────────────
