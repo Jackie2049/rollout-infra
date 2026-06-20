@@ -580,6 +580,60 @@ CONNECTIONS = {
             },
         ],
     },
+    "zero_gradient_flow": {
+        "name": "ZeRO Gradient Flow & Stream Safety",
+        "note": "notebook/projects/deepspeed-zero1-2-gradient-flow-stream-safety-deep-reading.md",
+        "connections": [
+            {
+                "component": "IPG bucket accumulation → reduce_scatter → average_tensor",
+                "math_property": "Gradient flow: backward → IPG bucket → reduce_scatter → average_tensor → optimizer step",
+                "bugs": ["#8061 average_tensor stream race → NaN", "#8080 copy_streams fix"],
+                "decision": "ZeRO useless at dp=1, overlap_comm pointless on dp=1, LoRA+FSDP1 superior",
+                "formula": "reduce_scatter(dp=1) = identity → 0 data movement → NCCL overhead only",
+            },
+            {
+                "component": "overlap_comm double-buffering",
+                "math_property": "Reduction_stream overlaps NCCL with backward, but dp=1: NCCL = no-op → pure overhead",
+                "bugs": ["#8061 stream race with overlap_comm"],
+                "decision": "MUST NOT overlap_comm on dp=1 — overhead with zero benefit",
+                "formula": "overlap_comm_time(dp=1) = NCCL_init + kernel_launch > naive_memcpy_time",
+            },
+            {
+                "component": "copy_streams set for multi-stream safety",
+                "math_property": "torch.compile generates multi-stream kernels → average_tensor must wait on ALL producer streams",
+                "bugs": ["#8080 fix: copy_streams: set tracks all producers"],
+                "decision": "Same pattern as #6794, #45552 — CUDA stream safety is systemic",
+                "formula": "safe_read = wait_stream(all_producers) before reading shared buffer",
+            },
+        ],
+    },
+    "verl_training_loop": {
+        "name": "verl V1 GRPO Training Loop Architecture",
+        "note": "notebook/projects/verl-v1-grpo-training-loop-architecture-deep-reading.md",
+        "connections": [
+            {
+                "component": "10-phase step pipeline",
+                "math_property": "Rollout = 38.4% → Sleep → Reward → Advantage → Update → Sync = remaining 61.6%",
+                "bugs": ["#6794 sync race", "#6782 EOS bug in rollout", "#45552 cumem crash"],
+                "decision": "bypass_mode + ref_in_actor = 5→1 forward passes → 14 Psi savings",
+                "formula": "step_time = P2(5.35s) + P8(3.6s) + P7(2.5s) + others(2.5s) = 13.95s",
+            },
+            {
+                "component": "LoRA adapter path vs merge path",
+                "math_property": "LoRA delta = ~200 MiB vs full weights = ~14 GiB → 80x payload reduction per step",
+                "bugs": ["#6782 rank>=64 breaks EOS", "#6512 per-unit LoRA merged"],
+                "decision": "LoRA r=32 + merge=False = sleep_level=1 + fast sync",
+                "formula": "sync_payload = lora_delta ≈ 0.2 GiB vs full ≈ 14 GiB → 70x reduction",
+            },
+            {
+                "component": "TransferQueue data fabric",
+                "math_property": "All intermediate data flows through KV store: prompts → rollouts → rewards → advantages → updates",
+                "bugs": ["#6794 delta snapshot race in TQ operations"],
+                "decision": "TQ-centric design enables replay buffer + staleness ordering",
+                "formula": "TQ ops per step: PUT(prompts) → GET(sample) → GET(old_logprobs) → PUT(advantages) → CLEAR",
+            },
+        ],
+    },
 }
 
 # ─── MUST DO / MUST NOT Rules with Mathematical Proof ──────────────────────
@@ -772,10 +826,10 @@ CROSS_FRAMEWORK_PATTERNS = {
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping"},
-    "infra_implementation": {"score": 9, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, 380+ tools including timing/numerical/gradient/reward/config models"},
-    "math_to_bug": {"score": 8, "max": 10, "justification": "Synthesis + singleton numerical proof + training step timing + cross-framework comparison + gradient flow analysis + PPO vs GRPO proof"},
-    "practical_experience": {"score": 7, "max": 10, "justification": "9 CPU experiments: GRPO singleton, PPO-clip, NanDetectMode, weight sync timing, GRPO numerical, PPO vs GRPO, reward shaping, config validation, gradient flow. GPU OFFLINE"},
+    "algorithm_theory": {"score": 14, "max": 10, "justification": "14 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop"},
+    "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading, 50+ tracked issues, 380+ tools, ZeRO internals + verl V1 architecture source deep reading completed"},
+    "math_to_bug": {"score": 9, "max": 10, "justification": "ZeRO stream safety → 6-member pattern family + verl 10-phase pipeline → #6794/#6782/#45552 connections + LoRA adapter path mathematical justification"},
+    "practical_experience": {"score": 7, "max": 10, "justification": "9 CPU experiments + training loop simulator (4 modes). GPU OFFLINE"},
     "oss_contribution": {"score": 4, "max": 10, "justification": "24 drafts ready (2 review comments: #8080, #45552), 0 executed — need authorization/GPU. PR #667 closed, revised approach needed"},
 }
 
