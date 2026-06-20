@@ -40,5 +40,5 @@
 - NEW: MoE_FP16_NaN: #10579, Switch TF → AVOIDED (FP32 softmax)
 
 ## Knowledge Map: 24 domains, 90 connections, 36 rules (19 MUST DO + 17 MUST NOT)
-## Tools: 8 session tools (simulator, tracer, planner, synthesis, playbook, Muon avoidance, cross-framework matrix)
+## Tools: 9 session tools (simulator, tracer, planner, synthesis, playbook, Muon avoidance, cross-framework matrix, MoE NaN avoidance)
 ## Background agents: rLLM + MindIE completed (both comprehensive reading notes saved)
