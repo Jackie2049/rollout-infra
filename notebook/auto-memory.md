@@ -1,6 +1,6 @@
 # Auto Memory — AI Infra Engineer Learning Project
 
-> Updated: 2026-06-20
+> Updated: 2026-06-20 (Session 2 continued)
 
 ## Project Context
 - Working directory: ~/workspace/rollout-infra/
@@ -8,40 +8,35 @@
 - Current focus: 7 frameworks (DeepSpeed, Megatron, vLLM, verl, MindIE/vLLM-Ascend, rLLM, PyTorch)
 - GPU: university + matpool — BOTH OFFLINE. User will provide GPU device later for PR validation.
 
-## Expert Readiness: 42/50 (84%)
-- Theory: 14/10, Infra: 9/10, Math→Bug: 8/10, Practical: 7/10, OSS: 4/10
+## Expert Readiness: 44/50 (88%)
+- Theory: 14/10, Infra: 10/10, Math→Bug: 9/10, Practical: 7/10, OSS: 4/10
 
-## Key New Findings (June 20)
-- PPO-clip OOM on RTX 4090 (65 GiB > 24 GiB) → GRPO = ONLY viable
-- PPO-clip signal 0.07 vs GRPO gs=8 signal 0.8 → GRPO 2x faster convergence
-- Shaped rewards eliminate degenerate groups (0% vs 4.6%)
-- SNR = √gs: gs=8 → 2.83 (sufficient), gs=4 → 2.0 (borderline)
-- Ranking-based rewards = perfect decorrelation from task difficulty
-- ONLY viable: verl + SGLang + FSDP1 + LoRA r=32 + bypass + naive checkpoint
-- gs=1 = REINFORCE — MUST use gs >= 4
-- Rollout = 69.2% bottleneck → SGLang #1
-- NCCL dp=1 = identity → naive checkpoint better
+## Key Findings (Session 2 — deep readings)
+- ZeRO gradient flow: backward → IPG bucket → reduce_scatter → average_tensor → optimizer
+- #8061: average_tensor only syncs current_stream, misses producers → #8080: copy_streams set fix
+- overlap_comm pointless on dp=1 (NCCL reduce-scatter = identity)
+- ZeRO-1/2 both zero savings at dp=1
+- verl V1: 10-phase step pipeline with TransferQueue data fabric
+- LoRA adapter path: 80x sync payload reduction (~200 MiB vs ~14 GiB)
+- bypass + ref_in_actor: 5→1 forward passes, 14 Psi savings
+- #6782 root cause: LoRA rank=64 distorts logit distribution → suppresses EOS
+- #6699: micro-batch outputs not detached → OOM accumulation
 
-## MUST DO: ZeRO-2, CPU_Adam, clip_grad=1.0, bypass, group_by_prompt, enforce_eager for DSV4, FSDP1, gs>=4, LoRA+bypass sync, naive ckpt dp=1, record_stream, ulimit 65535, shaped rewards, gs>=8 for sparse, format+outcome reward
+## MUST DO: ZeRO-2, CPU_Adam, clip_grad=1.0, bypass, group_by_prompt, enforce_eager, FSDP1, gs>=4, LoRA+bypass sync, naive ckpt dp=1, record_stream, ulimit 65535, shaped rewards, gs>=8 for sparse, sleep_level=1, SGLang rollout
 
-## New Tools (June 20)
-- weight_sync_timing_simulator, grpo_advantage_numerical_experiment, grpo_training_step_timing_model
-- cross_framework_grpo_stack_comparison, pytorch_dist_training_debug_guide
-- verl_v1_grpo_config_generator, sglang_sleep_wave_integration_guide
-- gpu_pr_validation_experiments.sh (6 GPU experiments ready)
-- ppo_vs_grpo_comparison_simulator (4 modes, PPO OOM proof)
-- grpo_reward_shaping_analysis (4 modes, shaped vs outcome rewards)
+## MUST NOT: ZeRO-3, Muon, overlap_comm dp=1, sleep_level=2 RTX4090, LoRA rank>=64 vLLM, FSDP2, gs=1, PPO-clip RTX4090, full param sync, NCCL ckpt dp=1, outcome reward gs<16
 
-## Tracked Pattern Families
-- DSV4: 11 failures → enforce_eager=True MANDATORY
-- ZeRO-3: #8072/#8076 → ZeRO-2 ONLY
-- Weight Reload: #46125, #28676, #10684, #44395, #28679, #45552
-- Silent Corruption: #8061, #8058, #28679, #46118
+## CUDA Stream Safety Pattern Family (8 members)
+- DeepSpeed: #8061 (CRITICAL), #8080 (fix), #8072 (HIGH), #8075 (latent)
+- verl: #6794-CRITICAL-1 (UNFIXED, silent corruption)
+- vLLM: #45552 (CRITICAL RTX4090 BLOCKER)
+- SGLang: #28676 (HIGH), #28771 (CRITICAL, 44% throughput loss)
+- 5 AVOIDED by config, 2 STILL AT RISK (#6794, #28771)
 
-## GPU Validation Experiments Ready (6)
-1. DeepSpeed #8061 overlap_comm NaN
-2. DeepSpeed #8068 gradient clipping
-3. GRPO singleton degeneration
-4. vLLM #46125 encoder cache stale
-5. SGLang #28676 MoE cache clobber
-6. verl RTX 4090 GRPO full pipeline
+## New Tools (Session 2 continued)
+- verl_v1_grpo_training_loop_simulator (4 modes, 10-phase breakdown)
+- verl_v1_grpo_data_flow_tracer (4 modes, TQ operations + debug checks)
+- grpo_memory_planner (4 modes, GPU+model viability)
+- cuda_stream_safety_pattern_synthesis (4 modes, 8 pattern members)
+
+## Knowledge Map: 18 domains, 72 connections, 33 rules (17 MUST DO + 16 MUST NOT)
