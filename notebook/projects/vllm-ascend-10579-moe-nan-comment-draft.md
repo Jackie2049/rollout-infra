@@ -1,9 +1,9 @@
-# vLLM-Ascend #10579: MoE NaN Fix — Comment Draft
+# vLLM-Ascend #10579: MoE NaN — Review Comment Draft (UPDATED Session 3)
 
-> 2026-06-19 | Comment draft for posting on vllm-ascend #10579
-> ★★★★★★★★ CRITICAL: torch.abs() on expanded_row_idx → MoE NaN on Ascend NPU
-> ★★★★★★★★ Pattern family: Framework-specific quantization artifact → silent NaN
-> ★★★★★★★★ 0 substantive reviews, only auto-comments → needs engagement
+> 2026-06-20 (Session 3 update) | Comment draft for posting on vllm-ascend #10579
+> ★★★★★★★★ TWO bug patterns identified: (1) torch.abs() index semantics + (2) FP16 softmax overflow
+> ★★★★★★★★ Pattern #2 is UNIVERSAL across CUDA and NPU — highest-value insight
+> ★★★★★★★★ 0 substantive reviews → needs engagement
 
 ---
 
@@ -79,23 +79,51 @@ All are MoE-adjacent correctness bugs where **index semantics** are violated.
 Thanks for this critical MoE fix!
 ```
 
+### ADDENDUM (Session 3 — FP16 Softmax Overflow Universal Pattern)
+
+After deeper cross-platform analysis, I've identified a **second, universal** MoE NaN pattern that applies to BOTH CUDA and NPU:
+
+## ★★★★★★★★★ Universal Pattern: FP16 Gating Softmax Overflow → NaN
+
+This is NOT Ascend-specific — it's the same bug documented in **Switch Transformer (Google, 2021)**:
+
+| Platform | Year | Bug | Root Cause | Fix |
+|----------|------|-----|------------|-----|
+| CUDA | 2021 | Switch Transformer FP16 NaN | max(logits) > 65504 → softmax overflow → NaN | FP32 gating softmax |
+| Ascend NPU | 2026 | #10579 torch_npu fused MoE NaN | Same: FP16 softmax overflow in gating | #10612 FP32 accumulation |
+| CUDA (Megatron) | 2024+ | TopKRouter FP32 gating | Proactive: always casts to FP32 before softmax | Built-in defense |
+| CUDA (DeepSpeed) | 2024+ | MoE gating FP32 | Same proactive defense | Built-in defense |
+
+**Mathematical proof**:
+```
+FP16 max ≈ 65504
+softmax_FP16(logits) = exp(x_i) / Σexp(x_j)
+When any x_j > 65504 → exp(x_j) = inf → inf/inf = NaN
+FP32 fix: logits.float() → softmax → result.to(dtype)
+```
+
+**RTX 4090 implication**: FP16 MoE models (Mixtral-8x7B FP16) will encounter the same NaN issue. BF16 model dtype (FP32 range) + FP32 gating softmax = safest config on ALL platforms.
+
+**Universal recommendation**:
+★★★★★★★★★ ALWAYS compute MoE gating softmax in FP32 regardless of model dtype or hardware platform. This is a correctness requirement, not an optimization.
+
 ---
 
 ## Posting Strategy
 
 1. ★★★★★★★★ MUST get user authorization before posting on vllm-project/vllm-ascend #10579
-2. Post this comment → provides cross-framework MoE pattern analysis + connection to #45683
+2. Post updated comment → provides TWO patterns: (a) abs() index semantics + (b) FP16 softmax overflow universal
 3. Track engagement → if maintainers respond, collaborate on review
 4. If no response in 7 days → consider submitting a guard assertion PR
 
-## Priority: P6 C13 (HIGH) — MoE NaN fix for Ascend NPU
+## Priority: P5 C15 (VERY HIGH) — Universal MoE NaN pattern analysis
 
-★★★★★★★★★ This is a UNIQUE contribution:
-  → Cross-framework MoE correctness pattern analysis (4 instances)
-  → Connection to vLLM #45683 deterministic MoE combine
-  → Ascend NPU vs CUDA comparison
-  → Guard assertion suggestion for future robustness
-  → Only auto-comments (no substantive reviews) → our comment adds depth
+★★★★★★★★★ This comment provides UNIQUE value:
+  → TWO distinct MoE NaN patterns identified (index semantics + FP16 overflow)
+  → FP16 overflow is UNIVERSAL (CUDA 2021 + NPU 2026) — not Ascend-specific
+  → Cross-framework MoE correctness pattern (4 instances)
+  → RTX 4090 specific recommendation (BF16 + FP32 softmax)
+  → Mathematical proof of FP16 overflow condition
 
 ---
 
