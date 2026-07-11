@@ -864,6 +864,33 @@ class KVCacheBlocks:
 
 ---
 
+## Appendix A: Post-Reading Update — CuMemAllocator Stream Sync Bug (#45552)
+
+**2026-06-19 NEW FINDING**: vLLM #45552 (OPEN, +256/-0, PR author: terafin)
+
+### Bug
+`CuMemAllocator.sleep()` and `wake_up()` are **missing `torch.cuda.synchronize()` barriers** around their `cuMemUnmap` / `cudaMemcpy` regions:
+- **`sleep()`**: engine pauses scheduler (Python-side request state) but does NOT block on CUDA stream → kernels still in flight (decode steps, P2P sends, KV writes) → `cudaMemcpy(cpu_ptr, ptr, ...)` reads from region mid-write → `cuMemUnmap` invalidates pages kernel still holds → `cudaErrorIllegalAddress` crash. Returns HTTP 200 in ~300ms while engine already dying — the "200 lie" pattern.
+- **`wake_up()`**: issues per-allocation H2D `cudaMemcpy` but no end-of-function `torch.cuda.synchronize()` → control returns to caller while tail kernels still active → rapid subsequent `sleep()` races those tail kernels → same crash.
+
+### Fix (2 targeted synchronize calls)
+```python
+# sleep(): BEFORE any cuMemUnmap or D2H cudaMemcpy
+if libcudart is not None:
+    torch.cuda.synchronize()
+
+# wake_up(): AFTER all H2D restore copies complete, BEFORE returning
+if libcudart is not None:
+    torch.cuda.synchronize()
+```
+
+### Impact on RTX 4090 GRPO
+- ★★★★★★★★ Same pattern family as #44395 (partial wake_up illegal memory access)
+- ★★★★★★★★ Directly affects RLHF rotation / swap-group / weight-update lifecycle
+- ★★★★★★★★ Cost: "a single device sync at the end of an already multi-second restore" — trivial
+- ★★★★★★★★ 6th member of weight_reload State Lifecycle Mismatch pattern family
+- ★★★★★★★★ RTX 4090 GRPO: sleep/wake used in verl HYBRID mode → this bug could surface during weight sync
+
 ## References
 
 - vLLM V1 KV Cache Manager: https://github.com/vllm-project/vllm/blob/main/vllm/v1/core/kv_cache_manager.py
