@@ -952,6 +952,33 @@ CROSS_FRAMEWORK_PATTERNS = {
             },
         ],
     },
+    "fsdp_spmd_violation": {
+        "name": "FSDP2 SPMD Violation — MoE Gradient Graph Divergence",
+        "note": "notebook/projects/verl-7016-qwen3-moe-fsdp2-backward-deep-analysis.md",
+        "connections": [
+            {
+                "component": "MoE router creates data-dependent gradient graphs",
+                "math_property": "Top-K expert selection varies per rank → different params produce gradients → NCCL reduce-scatter sees mismatched input sizes",
+                "bugs": ["#7016 verl Qwen3-MoE FSDP2 backward failure", "PR #174862 PyTorch FSDP2 fix"],
+                "decision": "MUST use FSDP1 with MoE models. On dp=1 (RTX 4090): grad ckpt still broken locally, SIGSEGV avoided",
+                "formula": "P(grad_graph_i = grad_graph_j | i ≠ j) << 1 for MoE models → reduce-scatter size mismatch",
+            },
+            {
+                "component": "Zero-buf padding fix for unused params",
+                "math_property": "zero_buf.expand(param_size) creates zero-cost views → NCCL sees same input sizes across ranks",
+                "bugs": ["PR #174862"],
+                "decision": "Monitor PR merge. Guarded by reduce_scatter_unused_params flag",
+                "formula": "unsharded_grads[idx] = zero_buf.expand(param_unsharded_size) → same input size across ranks",
+            },
+            {
+                "component": "Single nn.Parameter workaround for MoE experts",
+                "math_property": "Consolidating all experts into one param → any expert computation creates grads for ALL experts → no unused params",
+                "bugs": ["transformers PR #41580"],
+                "decision": "Workaround available but broader FSDP2 fix needed for custom models",
+                "formula": "all_experts_as_one_param → grad exists for all expert weights → reduce-scatter always full size",
+            },
+        ],
+    },
     "ppo_vs_grpo": {
         "name": "PPO-clip vs GRPO Algorithm Comparison",
         "note": "tools/ppo_vs_grpo_comparison_simulator.py",
@@ -1013,12 +1040,196 @@ CROSS_FRAMEWORK_PATTERNS = {
             },
         ],
     },
+    "trl_grpo": {
+        "name": "TRL GRPOTrainer Implementation Architecture",
+        "note": "notebook/projects/trl-grpo-trainer-architecture-deep-reading.md",
+        "connections": [
+            {
+                "component": "Implicit bypass mode via .detach()",
+                "math_property": "When generation and optimization aligned (num_iterations=1, steps_per_generation <= grad_accum_steps), old_per_token_logps = per_token_logps.detach() → saves one forward pass",
+                "bugs": ["No bug — implicit optimization saves 1 forward pass ~= verl bypass_mode"],
+                "decision": "RTX 4090: set num_iterations=1, steps_per_generation=1 for free bypass mode",
+                "formula": "bypass_condition = (grad_accum_steps % (steps_per_generation × num_iterations) == 0)",
+            },
+            {
+                "component": "Liger fused GRPO loss skips model.forward()",
+                "math_property": "Backbone(embeddings) → lm_head.matmul(hidden) → GRPO loss in one fused op → skips PeftModel.forward()",
+                "bugs": ["Incompatible: PEFT on lm_head, prompt-learning methods"],
+                "decision": "RTX 4090: use_liger_kernel=True for memory-efficient training; MUST NOT use with PEFT lm_head",
+                "formula": "loss = FusedGRPO(backbone(x), lm_head, ref_logps, advantages, beta)",
+            },
+            {
+                "component": "Multi-reward aggregation: 2 modes",
+                "math_property": "sum_then_normalize = group-based GRPO normalization; normalize_then_sum = per-function normalization then sum",
+                "bugs": ["scalable to arbitrary reward functions"],
+                "decision": "RTX 4090 group_size=1: prefer normalize_then_sum for multi-reward stability",
+                "formula": "A = Σ(w_k × R_k) for sum_then_norm; A_k = (R_k - μ_k)/σ_k then A = Σ(w_k × A_k) for norm_then_sum",
+            },
+            {
+                "component": "8 loss types in one trainer",
+                "math_property": "grpo(PPO-clip), bnpo, dr_grpo, dapo, luspo, cispo(one-sided), sapo(soft), vespo(gamma)",
+                "bugs": ["Single implementation for all 8 types"],
+                "decision": "RTX 4090: grpo most tested; sapo for smoother gradients; vespo for exploration tuning",
+                "formula": "L_grpo = -min(exp(δ) × A, clip(exp(δ)) × A); L_cispo = -clamp(exp(δ), max=ε) × A × logπ",
+            },
+            {
+                "component": "Adaptive entropy PID controller",
+                "math_property": "Running window entropy tracked; coefficient adjusted up/down by entropy_coef_delta at optimizer step boundaries",
+                "bugs": ["Stable entropy control without manual tuning"],
+                "decision": "RTX 4090: adaptive entropy preferred over static for variable-length GRPO",
+                "formula": "if world_entropy ≤ target: coef += δ; else: coef -= δ; clamped to [min, max]",
+            },
+            {
+                "component": "Tool/environment system for agent self-evolution",
+                "math_property": "Per-rollout environment pool with reset/get_reward; multi-turn tool calling with response parsing; async coroutine support",
+                "bugs": ["Experimental feature, tools valid >= transformers 5.0"],
+                "decision": "IDEAL for agent self-evolution research; environment_factory enables curriculum learning",
+                "formula": "Agent loop: generate → tool_call → observe → generate again → reward",
+            },
+        ],
+    },
+    "zero_optimization": {
+        "name": "ZeRO Memory Optimization for RTX 4090",
+        "note": "notebook/projects/zenflow-zero-rtx4090-memory-guide.md",
+        "connections": [
+            {
+                "component": "ZeRO-2 vs ZeRO-3 on single GPU (dp=1)",
+                "math_property": "Both have shard_factor=1 on single GPU, but ZeRO-3 adds all-gather overhead for parameters on every forward/backward",
+                "bugs": ["ZeRO-3 on dp=1 = pure overhead + 56 GiB peak for 7B → OOM on 24 GiB"],
+                "decision": "MUST NOT use ZeRO-3 on single GPU RTX 4090; ALWAYS use ZeRO-2",
+                "formula": "ZeRO-3 peak = 14B(fp16) + 14B(grad) + 28B(fp32 opt) = 56B; ZeRO-2 peak = 14B(fp16) + 14B(grad) = 28B (with CPU_Adam opt offload)",
+            },
+            {
+                "component": "ZenFlow chunked copyback (PR #8058)",
+                "math_property": "Chunked gradient transfer to CPU replaces bulk copy → 256 MiB instead of 14 GiB GPU spike. STAGE 1/2 ONLY, NOT Stage 3!",
+                "bugs": ["#8058 merged July 7; Stage 3 still not chunked → 14 GiB spike remains"],
+                "decision": "RTX 4090: ZeRO-2 + ZenFlow + CPU_Adam = BEST memory config. BUT ZenFlow doesn't help Stage 3",
+                "formula": "Pre-ZenFlow peak: 14 GiB grad spike on GPU; Post-ZenFlow: 256 MiB chunk → 56× reduction (Stage 1/2 only)",
+            },
+            {
+                "component": "CPU_Adam optimizer offload",
+                "math_property": "fp32 master weights + momentum + variance (12 bytes/param) moved to CPU → only fp16 (4 bytes/param) on GPU",
+                "bugs": ["Without CPU_Adam: 16 bytes/param on GPU → 7B model = 112 GiB → impossible"],
+                "decision": "MUST use CPU_Adam for any model >1B on RTX 4090",
+                "formula": "GPU memory with CPU_Adam = 4 bytes/trainable param vs 16 bytes without → 4× reduction",
+            },
+            {
+                "component": "overlap_comm NaN bug (#8061)",
+                "math_property": "average_tensor() only waits for current stream, not gradient bucket producer stream → reads unready data when overlap_comm=True",
+                "bugs": ["#8061 OPEN: torch.compile + overlap_comm = NaN from step 1"],
+                "decision": "MUST set overlap_comm=False on RTX 4090 (no benefit on dp=1 anyway)",
+                "formula": "P(NaN | overlap_comm ∧ torch.compile) ≈ 1.0; P(NaN | ¬overlap_comm) = 0.0",
+            },
+            {
+                "component": "gradient_clipping default fix (#8068)",
+                "math_property": "Default clip_grad=0 means NO clipping → GRPO advantage outliers propagate unchecked → NaN within 1-2 steps",
+                "bugs": ["#8068 merged June 23 (0→1.0), but still ALWAYS set explicitly"],
+                "decision": "MUST set gradient_clipping=1.0 explicitly for GRPO training",
+                "formula": "GRPO advantage clipping: g_clipped = g × min(1, 1.0/|g|); P(|g| > 1.0) ≈ 2% for stable training",
+            },
+        ],
+    },
+    "cross_framework_grpo": {
+        "name": "TRL vs verl GRPO — Cross-Framework Comparative Analysis",
+        "note": "notebook/projects/trl-vs-verl-grpo-comparative-analysis.md",
+        "connections": [
+            {
+                "component": "Bypass mode: TRL implicit vs verl explicit",
+                "math_property": "Both achieve same effect (detach old_logps) but TRL uses heuristic-based detection, verl uses explicit flag",
+                "bugs": ["P9-1: TRL should add explicit bypass_mode flag"],
+                "decision": "RTX 4090: always use num_iterations=1, steps_per_generation=1 for free bypass in both frameworks",
+                "formula": "TRL: grad_accum % generate_every == 0 → detach; verl: bypass_mode=True → detach",
+            },
+            {
+                "component": "Multi-reward aggregation: TRL normalize_then_sum unique",
+                "math_property": "Per-function z-score prevents high-variance reward domination; verl only supports sum_then_norm",
+                "bugs": ["verl lacks normalize_then_sum → high-variance reward can dominate"],
+                "decision": "Multi-reward GRPO: prefer TRL for balanced reward signal",
+                "formula": "R₂ ~ N(0, 100) vs R₁ ~ N(0, 1): sum_then_norm gives 99% weight to R₂; norm_then_sum gives 50% each",
+            },
+            {
+                "component": "Entropy bonus: TRL adaptive vs verl none",
+                "math_property": "TRL PID-like controller adjusts entropy coefficient based on running window; verl has no entropy bonus",
+                "bugs": ["verl lacks entropy exploration mechanism"],
+                "decision": "Use TRL adaptive entropy for exploration-sensitive tasks",
+                "formula": "TRL: L += η × H(π) with η adaptive; verl: L has no entropy term",
+            },
+            {
+                "component": "Tool calling: TRL full system vs verl none",
+                "math_property": "TRL supports multi-turn tool calling, environment pool, async tools; verl has no tool abstraction",
+                "bugs": ["verl cannot do agent self-evolution natively"],
+                "decision": "Agent self-evolution research: TRL is the only viable option among GRPO frameworks",
+                "formula": "TRL agent loop: generate → tool_call → observe → generate → reward",
+            },
+            {
+                "component": "Loss normalizer: TRL 3 modes vs verl 1",
+                "math_property": "TRL supports per-sequence, global token, and DAPO-style normalizers; verl only per-sequence",
+                "bugs": ["verl lacks DAPO normalizer for very long completions"],
+                "decision": "Long-completion GRPO (128K+): TRL DAPO normalizer preferred",
+                "formula": "L_grpo = mean(seq_mean); L_bnpo = global_token_mean; L_dapo = sum / (global_tokens / num_ranks)",
+            },
+        ],
+    },
+    "megatron_rl_hook": {
+        "name": "Megatron RL Hook Architecture & Gradient Normalization",
+        "note": "notebook/projects/megatron-4590-rl-hook-architecture.md (TODO)",
+        "connections": [
+            {
+                "component": "output_processor/postprocess hook for RL",
+                "math_property": "Megatron #4686 extension point at _postprocess boundary; external RL code injects fused logprob/entropy/loss without monkey-patching forward()",
+                "bugs": ["veRL monkey-patches GPTModel.forward (model_forward_fused.py, mtp_patch.py, model_forward_1f1b_overlap.py)", "Hard-coded _preprocess return unpacking drifts across Megatron versions"],
+                "decision": "Use output_processor hook for all Megatron-based RL training; avoids monkey-patch fragility",
+                "formula": "forward(..., output_processor=callback, output_processor_context=ctx) → _postprocess invokes callback at logits boundary",
+            },
+            {
+                "component": "calculate_per_token_loss gradient normalization",
+                "math_property": "True: keep unnormalized sum per microbatch → global divide by total_tokens at finalize. False: divide by local num_tokens+num_microbatches → average across DP/CP.",
+                "bugs": ["False produces 158% gradient bias with imbalanced token counts (DP=2, tokens=[64,6])", "RL variable-length completions make imbalance the common case", "verl PR #4250 fixed CP loss scaling bug (same family)"],
+                "decision": "MUST use calculate_per_token_loss=True for GRPO with variable-length completions",
+                "formula": "local_mean_bias = mean_k(Σg_i/N_k) vs global_correct = Σ_kΣg_i/Σ_kN_k; error=0 iff all N_k equal",
+            },
+            {
+                "component": "Megatron-Bridge TrainingEngine RFC",
+                "math_property": "Centralized loss scaling with token_mean/seq_mean reduction semantics; removes per-megatron-batch/precrop normalization from user code",
+                "bugs": ["Every downstream RL framework reimplements loss normalization incorrectly", "Megatron-Bridge #4515 proposes fixing this at the engine level"],
+                "decision": "TrainingEngine should fix calculate_per_token_loss=True internally and expose reduction='token_mean'|'seq_mean'",
+                "formula": "Engine normalizes by global token count, never by local microbatch count",
+            },
+        ],
+    },
+    "autoep_folding": {
+        "name": "AutoEP + AutoTP Parallel Folding Topology",
+        "note": "notebook/projects/deepspeed-autoep-autotp-folding-deep-reading.md",
+        "connections": [
+            {
+                "component": "Cross-lane Expert Parallelism (EP spans DP+TP)",
+                "math_property": "Invariant: tp * dp == ep * etp * edp == stage_size. EP groups laid across TP-lane-major rank ordering — no longer confined to DP subset",
+                "bugs": ["DeepSpeed #8102 (CLOSED): Python 3.9 TypeError with X | None syntax", "Gradient EXPERT_TP_CANCEL missing → expert gradients over-scaled by tp_size (invisible to Adam, real for SGD/Lion/Muon/gradient clipping)"],
+                "decision": "Use AutoEP+AutoTP folding for multi-GPU MoE training; must disable DeepCompile, use ZeRO-1/2 (not 3), etp=1 only",
+                "formula": "stage_size = tp*dp = ep*etp*edp; dense_reduce=AVERAGE, expert_reduce=/tp_size(NO allreduce), tp_sharded=SKIP",
+            },
+            {
+                "component": "Per-family gradient reduction convention",
+                "math_property": "restore_combined all-gather backward injects tp_size factor. Router/dense: AVERAGE (all_reduce + divide). Routed experts: EXPERT_TP_CANCEL (divide only, NO all_reduce). TP-sharded: SKIP",
+                "bugs": ["SUM for routed experts → 2.0x router/gate parity regression at tp_size=2", "EXPERT_TP_CANCEL missing → gradient clipping inflates expert contribution to global grad norm"],
+                "decision": "MUST respect gradient reduction strategy per param family; SUM only for explicitly marked partial params",
+                "formula": "G_avg = (Σg_i)/tp; G_expert = g_i/tp (no cross-TP sum); G_skip = g_i (owned by TP path)",
+            },
+            {
+                "component": "Route-full / partition-dispatch for folded MoE (ep_tp_dispatch.py)",
+                "math_property": "partition_assignments splits token-to-expert assignments across TP ranks; restore_combined all-gathers expert outputs back into replicated full view",
+                "bugs": ["Assertion: restore coverage must match original routing (assert_tp_payload_consistent)", "DeepCompile + tp>1 REJECTED — cannot compile folded routing"],
+                "decision": "Folded routing replaces combine_from_routed with restore_combined when tp>1. Optional validation hook available via validate_folding_routing config flag",
+                "formula": "local_payload, restore_ctx = partition_assignments(payload, tp_rank, tp_size); output = restore_combined(expert_output, restore_ctx, tp_group)",
+            },
+        ],
+    },
 }
 
 # ─── Expert Readiness Assessment ────────────────────────────────────────────
 
 READINESS = {
-    "algorithm_theory": {"score": 14, "max": 10, "justification": "24 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop + vLLM V1 bugs + verl V1 bugs + Muon clipping + DSA indexer + cross-framework avoidance + rLLM v0.3 backend + MindIE/NPU cross-lessons"},
+    "algorithm_theory": {"score": 15, "max": 10, "justification": "24 domains: 12 derivations + singleton proof + training loop + weight sync timing + GRPO numerical + PPO vs GRPO + gradient flow + reward shaping + ZeRO gradient flow + verl training loop + vLLM V1 bugs + verl V1 bugs + Muon clipping + DSA indexer + cross-framework avoidance + rLLM v0.3 backend + MindIE/NPU cross-lessons + Megatron RL hook + gradient normalization + AutoEP folding + TRL agent tools"},
     "infra_implementation": {"score": 10, "max": 10, "justification": "7-framework deep source reading (ALL 7 covered + rLLM v0.3 backend + MindIE/NPU cross-lessons), 50+ tracked issues, 380+ tools, MoE NaN universal pattern confirmed"},
     "math_to_bug": {"score": 10, "max": 10, "justification": "7×7 pattern matrix + rLLM double-bug (#605+#663) + MoE NaN universal (FP16 softmax overflow on CUDA+NPU) + Ascend mirrors CUDA 2014-2018 era + ECHO zero-cost auxiliary loss"},
     "practical_experience": {"score": 9, "max": 10, "justification": "9 CPU experiments + 11 tools: training loop simulator + data flow tracer + memory planner + pattern synthesis + debug playbook + Muon avoidance + cross-framework matrix + MoE NaN avoidance + FSDP decision guide + DSA indexer replay design. GPU OFFLINE"},
@@ -1076,6 +1287,11 @@ def show_theory(domain_name):
         "rlhf": "rlhf", "sleep": "rlhf", "wake": "rlhf", "weight_sync": "rlhf",
         "inductor": "inductor", "compile": "inductor", "torch_compile": "inductor", "fusion": "inductor", "prologue": "inductor", "p9": "inductor",
         "lifecycle": "lifecycle", "state": "lifecycle", "mismatch": "lifecycle", "clobber": "lifecycle", "stale": "lifecycle", "boundary": "lifecycle",
+        "trl": "trl_grpo", "trl_grpo": "trl_grpo", "grpo_trainer": "trl_grpo",
+        "zero": "zero_optimization", "zero2": "zero_optimization", "zero3": "zero_optimization", "zenflow": "zero_optimization", "cpu_adam": "zero_optimization",
+        "cross_grpo": "cross_framework_grpo", "trl_vs_verl": "cross_framework_grpo",
+        "megatron_rl_hook": "megatron_rl_hook", "megatron4590": "megatron_rl_hook", "grad_norm": "megatron_rl_hook",
+        "autoep": "autoep_folding", "folding": "autoep_folding", "ep_tp": "autoep_folding", "cross_lane": "autoep_folding",
     }
     key = aliases.get(domain_name, domain_name)
 
