@@ -703,4 +703,37 @@ This lifecycle is correct and safe for RTX 4090 HYBRID mode.
 
 RolloutKV is a well-designed, cache-layer-only feature that directly targets the dominant latency bottleneck in RL rollout (repeated prompt prefill). The core mechanism — proactive prefix commit + lock_ref pinning + reuse-only followers — is architecturally clean, leveraging SGLang's existing radix cache infrastructure without modifying attention kernels or model math. The TTL eviction mechanism addresses the stale-pin failure mode comprehensively. The 22-41x logprob scoring speedup is the headline result, driven by >99.6% cache hit rate on pinned prefix KV.
 
+### RTX 4090 GRPO MUST DO Rules (RolloutKV)
+
+1. Enable `--enable-rollout-kv` at server startup (zero overhead when disabled)
+2. Set `rollout_kv_expected_followers` = G (rollout) + G (actor) + G (ref)
+3. Use `rollout_kv_reuse_only=True` on ALL follower/scoring requests
+4. Use `rollout_kv_auto_unprotect_on_finish=True` on rollout followers
+5. Use `rollout_kv_unprotect_all=True` at trainer's end-of-step
+6. Keep `--rollout-kv-pin-ttl-seconds=600` (default) as safety net
+7. Match `extra_key` between commit and follower requests
+8. Release pins BEFORE weight sync flush (ordering constraint!)
+
+### RTX 4090 GRPO MUST NOT Rules (RolloutKV)
+
+1. Do NOT use for short prompts (<512 tokens) — overhead exceeds savings
+2. Do NOT forget to release pins — TTL catches stale but wastes 600s of protected_size on 24 GiB
+3. Do NOT mix `rollout_kv_commit=True` with `rollout_kv_reuse_only=True` on same request
+4. Do NOT over-count `expected_followers` — residual refcount wastes memory until TTL
+5. Do NOT use with MoE models without also applying #28676 shuffle cache clear
+6. Do NOT disable TTL (`--rollout-kv-pin-ttl-seconds=0`) in production
+
+### vLLM Comparison: Why RolloutKV Only Works on SGLang
+
+| Property | SGLang RadixAttention | vLLM BlockManager |
+|----------|----------------------|-------------------|
+| Cache structure | Radix tree (any token boundary) | Block hash table (block-aligned only) |
+| Prefix matching | Longest prefix, partial blocks | Full block match only |
+| Eviction protection | `lock_ref` → `protected_size` | `ref_cnt` per block (transient only) |
+| Proactive commit | Yes (before fanout) | No (reactive) |
+| Persistent pinning | Yes (refcount across requests) | No (request-scoped only) |
+| TTL safety net | Yes (default 600s) | None |
+
+SGLang's radix tree makes RolloutKV possible because tree nodes can be pinned independently. vLLM's block hash table cannot easily pin a prefix independently — blocks are the unit of both caching and eviction, and partial-block prefixes cannot be precisely cached.
+
 The main risks are: (1) weight-reload boundary correctness (pins must not persist across weight updates), (2) incompatibility with alternative radix cache implementations (Cpp, Unified, SWA, Mamba), and (3) the large scheduler.py refactoring mixed into the feature PR. For verl RTX 4090 GRPO integration, RolloutKV is viable and beneficial, especially for long-prompt workloads with multi-role logprob scoring.
