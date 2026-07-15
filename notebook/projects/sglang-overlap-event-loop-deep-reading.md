@@ -2,7 +2,7 @@
 
 **Date**: 2026-07-15 (Session 10 continued)
 **Purpose**: Understand SGLang's overlap event loop and FutureMap for GPU-CPU parallelism in serving
-**Sources**: SGLang scheduler.py source, sglang-nav skill, overlap_utils.py, PDMux reading
+**Sources**: SGLang scheduler.py (lines 286-3899), overlap_utils.py (lines 1-297), schedule_batch.py (lines 1491-2697), background agent deep read
 
 ---
 
@@ -336,3 +336,124 @@ Memory budget:
 - **OverlapSchedulerMixin**: methods added, mixin architecture
 - **RTX 4090 config**: overlap + HiCache + enforce_eager + LoRA rank=32
 - **Limitations**: consecutive prefill, scheduling speed, FutureMap overhead
+
+---
+
+## 11. Source Code Implementation Details (from Background Agent)
+
+### FutureMap Pool-Indexed Buffers (overlap_utils.py:114-297)
+
+```
+FutureMap stores cross-iteration values in pool-indexed buffers sized to req_pool_size:
+  output_tokens_buf = torch.empty((req_pool_size,), dtype=torch.int64, device=device)
+  new_seq_lens_buf = torch.empty((req_pool_size,), dtype=torch.int64, device=device)
+
+Slot 0 mirrors KV padding row → CUDA-graph padded batches with req_pool_idx==0
+  → always get valid (padding) value → safe reads
+
+★ Additional buffers for spec_v2: topk_p_buf, topk_index_buf, bonus_tokens
+```
+
+### resolve_forward_inputs (overlap_utils.py:81-112)
+
+```
+Zero-copy gather from FutureMap for decode input_ids:
+  For mixed batch (prefill + decode):
+    prefill_gpu = batch.prefill_input_ids_cpu.to(device, non_blocking=True)  # H2D
+    decode_gpu = future_map.output_tokens_buf[batch.mix_running_indices]     # zero-copy
+    batch.input_ids = torch.cat([prefill_gpu, decode_gpu])
+
+  For pure decode:
+    batch.input_ids = future_map.output_tokens_buf[batch.req_pool_indices]   # zero-copy
+
+★ Prefill tokens: pinned CPU → H2D transfer
+  Decode tokens: zero-copy GPU gather from FutureMap
+  Both resolved on forward_stream
+```
+
+### WAR Barrier Exact Implementation (scheduler.py:1471-1473)
+
+```
+self._war_barrier_enabled = is_cuda()  # CUDA only (scheduler.py:1421)
+
+In overlap loop:
+  if self._war_barrier_enabled:
+      self.schedule_stream.wait_stream(self.forward_stream)  # line 1472-1473
+
+Why CUDA-only: non-CUDA platforms (HIP, NPU) lack fine-grained stream ordering
+  → no WAR hazard on those platforms → barrier not needed
+
+Cost: schedule_stream stalls until forward_stream completes previous forward
+  → partial overlap defeat → mitigated by private D2H stream (overlap_utils.py:153)
+```
+
+### batch_record_buf: 2-Slot Ring for Tensor Lifetime (scheduler.py:1209, 2916-2929)
+
+```
+Overlap creates 2-iteration tensor lifetime problem:
+  GPU tensors from batch N must survive until forward of batch N+1 reads them via FutureMap
+  If torch GC frees them mid-forward → forward reads garbage
+
+Solution: batch_record_buf — ring buffer of 2 slots:
+  self.batch_record_buf = [None] * 2
+  self.batch_record_ct = 0
+
+record_batch_in_overlap():
+  attr_snapshot = [getattr(batch, f.name, None) for f in dataclasses.fields(batch)]
+  self.batch_record_ct = (self.batch_record_ct + 1) % 2
+  self.batch_record_buf[self.batch_record_ct] = [batch, attr_snapshot]
+
+★ Keeps GPU tensor references alive for exactly 2 iterations → matches pipeline depth
+  After 2 iterations → old slot overwritten → tensors freed
+```
+
+### _overlap_forward_isolation Context Manager (scheduler.py:2932-2970)
+
+```
+Transactional snapshot/restoration for spec_v2:
+  1. Snapshot all ScheduleBatch fields before forward
+  2. Substitute sampling_info with forward-only copy (penalty accumulation doesn't double-count)
+  3. Pin batch into batch_record_buf for 2-iter lifetime
+
+★ Critical for spec_v2: mid-forward mutations (publish draft info) must be undone
+  Without isolation: penalty accumulation double-counts across overlap iterations
+```
+
+### Private D2H Stream (overlap_utils.py:149-156, 246-249)
+
+```
+fwd_prepare_d2h_stream: separate CUDA stream for seq_lens D2H copies
+  → Bypasses WAR barrier → starts immediately after publish completes
+  → Gated on publish_ready CUDA Event instead of schedule_stream wait
+
+  self.fwd_prepare_d2h_stream.wait_event(self.publish_ready)
+  with torch.get_device_module(self.device).stream(self.fwd_prepare_d2h_stream):
+      self.new_seq_lens_cpu_pinned.copy_(self.new_seq_lens_buf, non_blocking=True)
+  self.fwd_prepare_d2h_stream.synchronize()
+
+★ On non-CUDA: plain .cpu() bootstrap path (overlap_utils.py:240-241)
+```
+
+### Key Line References
+
+| Component | File | Lines |
+|-----------|------|-------|
+| Scheduler class hierarchy | scheduler.py | 286-293 |
+| enable_overlap flag | scheduler.py | 331 |
+| init_overlap (FutureMap, streams) | scheduler.py | 1167-1211 |
+| event_loop_normal | scheduler.py | 1426-1448 |
+| event_loop_overlap | scheduler.py | 1453-1509 |
+| WAR barrier | scheduler.py | 1471-1473 |
+| run_batch overlap path | scheduler.py | 2993-3052 |
+| _overlap_forward_isolation | scheduler.py | 2932-2970 |
+| record_batch_in_overlap | scheduler.py | 2916-2929 |
+| FutureMap class | overlap_utils.py | 114-297 |
+| resolve_forward_inputs | overlap_utils.py | 81-112 |
+| FutureMap.publish | overlap_utils.py | 255-264 |
+| FutureMap.stash | overlap_utils.py | 266-296 |
+| fwd_prepare_d2h_stream | overlap_utils.py | 149-156 |
+| mix_with_running (delta=0 vs -1) | schedule_batch.py | 2196-2226 |
+| prepare_for_decode (new tensor) | schedule_batch.py | 2486-2497 |
+| batch.copy() shallow copy | schedule_batch.py | 2668-2697 |
+| SGLANG_DISABLE_CONSECUTIVE_PREFILL_OVERLAP | environ.py | 309 |
+

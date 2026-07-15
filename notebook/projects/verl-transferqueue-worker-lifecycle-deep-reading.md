@@ -2,7 +2,7 @@
 
 **Date**: 2026-07-15 (Session 10 continued)
 **Purpose**: Understand verl's TransferQueue weight synchronization and worker lifecycle for GRPO training
-**Sources**: verl/utils/transferqueue_utils.py source, verl workers, weight-sync-nav skill, verl-nav skill
+**Sources**: verl/utils/transferqueue_utils.py (lines 1-431), verl/workers/engine_workers.py, verl/trainer/ppo/ray_trainer.py, background agent deep read
 
 ---
 
@@ -406,3 +406,118 @@ Throughput: ~7-40 steps per hour
 - **Cross-framework comparison**: TQ vs ZeRO vs NIXL for weight sync
 - **Complete data flow**: end-to-end GRPO step traced through TransferQueue
 - **RTX 4090 BEST config**: verl HYBRID + FSDP1 + CPPO + bypass + TQ + sleep_level=1
+
+---
+
+## 13. Source Code Implementation Details (from Background Agent)
+
+### tqbridge Decorator Pipeline (transferqueue_utils.py:298-431)
+
+```
+tqbridge(dispatch_mode) wraps function calls with automatic TQ handling:
+
+  Inner function (sync):
+  1. _find_meta(*args, **kwargs) → detect BatchMeta/KVBatchMeta in arguments
+  2. If meta found: tq.init() (lazy init, global TQ_INITIALIZED flag)
+  3. If KVBatchMeta: kv_batch_meta2batch_meta() → convert KV→regular meta
+  4. _meta_to_realdata(meta) → tq_client.async_get_data(meta) → retrieve TensorDict
+  5. func(*args, **kwargs) → execute with real data
+  6. If output is TensorDict with batch_size > 0: put_data=True
+  7. _update_meta_with_output(output, meta) → tq_client.async_put() → new BatchMeta
+  8. If was KVBatchMeta: batch_meta2kv_batch_meta() → convert back
+  9. Return updated BatchMeta
+
+  Async variant (async_inner): same pipeline but with await throughout
+
+  ★ Key insight: tqbridge makes TQ completely transparent to worker methods
+    → Workers don't need to know about TQ → decorator handles everything
+```
+
+### TrainingWorker (engine_workers.py:76-431)
+
+```
+TrainingWorker wraps model engine (FSDP/Megatron) and provides:
+  train_mini_batch (lines 234-321): split batch into mini-batches, iterate with epochs
+  train_batch (lines 323-377): forward-backward with loss function, update LR scheduler
+  infer_batch (lines 379-423): inference-only forward pass for log_prob computation
+  _postprocess_output (lines 172-231): all-reduce metrics across DP group, compute MFU
+```
+
+### Sleep Levels (vllm/__init__.py:33-49)
+
+```
+VLLM_SLEEP_LEVEL global determines what sleep releases:
+  Level 1 (lines 33, 43): default for NPU + older vLLM → releases KV cache only
+  Level 2 (line 49): since vLLM 0.8.5+ → releases weights AND KV cache
+
+  ★★★★★★★★★ RTX 4090 MUST: sleep_level=1 ONLY
+    Level 2: model offloaded → wake requires full reload (~5s) + corruption risk
+```
+
+### Naive vs Disaggregated Weight Sync (checkpoint_engine/base.py)
+
+```
+Naive backend (lines 220-276): ColocatedCheckpointEngine
+  → send_weights(): just stores generator as self.weights
+  → receive_weights(): yield from self.weights → in-process generator
+  → BucketedWeightSender (bucketed_weight_transfer.py): ZMQ + CUDA IPC
+
+Disaggregated backend (lines 469-515):
+  1. Abort all in-flight rollout requests (line 483)
+  2. Create temp worker group for all replicas (lines 486-489)
+  3. Release KV cache (line 493) — keeps weights for NCCL overwrite
+  4. Build NCCL/NIXL process group (line 496)
+  5. Trainer send_weights() + Rollout receive_weights() (lines 499-502)
+  6. Finalize all workers (lines 505-508)
+  7. Resume KV cache (line 511)
+
+  ★ Key: naive = in-process (same GPU), disaggregated = cross-process (NCCL/NIXL)
+```
+
+### Activation Offloading (activation_offload.py:221-395)
+
+```
+AsyncDoubleBufferGroupOffloadHandler:
+  → Offloads activations to CPU during forward pass
+  → Prefetches back during backward pass
+  → Dual-stream (d2h_stream, h2d_stream) to overlap offload/reload with compute
+  → At most 2 activation groups in GPU simultaneously
+
+  ★ Critical for RTX 4090: reduces peak activation memory → fits in 24 GiB
+```
+
+### GRPO Advantage Computation (core_algos.py:268-331)
+
+```
+compute_grpo_outcome_advantage:
+  1. Sum token-level rewards: scores = token_level_rewards.sum(dim=-1)
+  2. Group scores by uid: id2score[index[i]].append(scores[i])
+  3. Per-group mean/std:
+     Singleton: mean=0, std=1 (lines 315-317)
+     Groups >1: mean = torch.mean(scores_tensor), std = torch.std(scores_tensor)
+  4. Normalize:
+     norm_adv_by_std_in_grpo=True: (scores[i] - mean) / (std + epsilon)
+     norm_adv_by_std_in_grpo=False (Dr.GRPO): scores[i] - mean
+  5. Broadcast: scores.unsqueeze(-1) * response_mask
+
+  ★★★★★★★★★★ Vectorized version (core_algos.py:334-347):
+    Uses groupwise.py:group_mean_std for efficient PyTorch group operations
+    Singleton groups: mean=0, std=1 → fallback prevents division by zero
+```
+
+### Key Source File References
+
+| File | Path | Key Lines |
+|------|------|-----------|
+| TransferQueue utils | verl/utils/transferqueue_utils.py | 298-431 (tqbridge) |
+| Engine workers | verl/workers/engine_workers.py | 434-746 (ActorRolloutRefWorker), 667-746 (update_weights) |
+| Ray trainer | verl/trainer/ppo/ray_trainer.py | 1362-1772 (fit loop) |
+| Core algos | verl/trainer/ppo/core_algos.py | 268-331 (GRPO advantage) |
+| Groupwise utils | verl/utils/groupwise.py | 163-222 (group_mean_std) |
+| Activation offload | verl/utils/activation_offload.py | 221-395 (AsyncDoubleBuffer) |
+| Checkpoint engine | verl/checkpoint_engine/base.py | 220-276 (naive), 469-515 (disaggregated) |
+| vLLM sleep level | verl/third_party/vllm/__init__.py | 33-49 (VLLM_SLEEP_LEVEL) |
+| Bucketed weight transfer | verl/workers/rollout/vllm_rollout/bucketed_weight_transfer.py | 74-231 (sender), 233-334 (receiver) |
+| Prefix grouper | verl/trainer/ppo/prefix_grouper_utils.py | 46-100 (build_pg) |
+| Rollout config | verl/workers/config/rollout.py | 174 (gpu_memory_utilization=0.5), 178 (free_cache_engine) |
+
