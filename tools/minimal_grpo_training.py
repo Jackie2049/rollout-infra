@@ -233,10 +233,26 @@ def compute_kl_penalty(logp_curr: torch.Tensor, logp_ref: torch.Tensor,
 
 def simple_reward_fn(input_ids: torch.Tensor, response_mask: torch.Tensor,
                      target_token: int = 1) -> torch.Tensor:
-    """Simple reward: count occurrences of target_token in response."""
-    response_tokens = input_ids * response_mask
-    # Reward = fraction of response tokens that match target
-    reward = (response_tokens == target_token).float().sum(dim=-1) / response_mask.sum(dim=-1).clamp(min=1)
+    """Shaped reward: higher when response tokens match target token.
+
+    Reward = fraction of response tokens that equal target_token + small bonus
+    for any tokens in target range [target_token, target_token+3].
+
+    This creates more reward variance → nonzero σ → nonzero advantages → learning signal.
+    Random model generates uniformly → low reward → BUT different rollouts produce
+    different random sequences → nonzero σ in group → GRPO can learn!
+    """
+    response_tokens = input_ids * response_mask.long()
+    num_response_tokens = response_mask.sum(dim=-1).clamp(min=1)
+
+    # Primary: exact match with target_token
+    exact_matches = (response_tokens == target_token).float().sum(dim=-1)
+
+    # Secondary: partial match (tokens close to target get partial reward)
+    close_matches = ((response_tokens >= target_token) & (response_tokens <= target_token + 3)).float().sum(dim=-1)
+
+    # Combined reward: exact matches count fully, close matches count partially
+    reward = (exact_matches + 0.3 * close_matches) / num_response_tokens
     return reward
 
 
@@ -274,69 +290,64 @@ def grpo_training_step(
     num_prompts = prompts.size(0)
     prompt_length = prompts.size(1)
 
-    # Step 1: Generate responses (greedy for simplicity, but could use sampling)
+    # Step 1: Generate responses with sampling (temperature > 0 for diversity)
     model.eval()
     with torch.no_grad():
-        generated = model.generate_from_prompts(prompts, response_length, device)
+        # Generate group_size samples per prompt directly
+        generated = model.generate_from_prompts(
+            prompts, response_length, device, temperature=1.0, num_samples=group_size
+        )
+        # generated: [num_prompts * group_size, response_length]
+        expanded_prompts = prompts.repeat_interleave(group_size, dim=0)
 
     # Construct full input_ids = [prompt | response]
-    input_ids = torch.cat([prompts, generated], dim=1)
+    input_ids = torch.cat([expanded_prompts, generated], dim=1)
     seq_len = input_ids.size(1)
 
     # Construct response_mask
-    response_mask = torch.zeros(num_prompts, seq_len, device=device)
+    response_mask = torch.zeros(num_prompts * group_size, seq_len, device=device)
     response_mask[:, prompt_length:] = 1.0
 
-    # Repeat each prompt group_size times (group by prompt)
-    # For simplicity: same prompt, different rollout → different rewards
-    # We expand: [num_prompts] → [num_prompts × group_size]
-    expanded_input_ids = input_ids.repeat_interleave(group_size, dim=0)
-    expanded_response_mask = response_mask.repeat_interleave(group_size, dim=0)
-
-    # Step 2: Compute rewards (with some randomness for group variation)
-    model.eval()
+    # Step 2: Compute rewards (each sample gets its own reward)
     with torch.no_grad():
-        base_rewards = simple_reward_fn(expanded_input_ids, expanded_response_mask, target_token)
-        # Add small random variation within groups (simulates different rollouts)
-        noise = torch.randn_like(base_rewards) * 0.1
-        rewards = base_rewards + noise
+        rewards = simple_reward_fn(input_ids, response_mask, target_token)
 
     # Step 3: Group-by-prompt → compute advantages
-    # Reshape: [num_prompts × group_size] → [num_prompts, group_size]
+    # Reshape: [num_prompts * group_size] → [num_prompts, group_size]
     rewards_per_group = rewards.view(num_prompts, group_size)
     adv_fn = ADVANTAGE_FUNCTIONS[advantage_fn]
     advantages_per_group = torch.stack([
         adv_fn(rewards_per_group[i], group_size) for i in range(num_prompts)
     ])
-    # Expand back: [num_prompts, group_size] → [num_prompts × group_size]
+    # Expand back: [num_prompts, group_size] → [num_prompts * group_size]
     advantages = advantages_per_group.view(-1)
     # Expand to token level: [batch, seq_len]
-    token_advantages = advantages.unsqueeze(-1).expand_as(expanded_response_mask) * expanded_response_mask
+    token_advantages = advantages.unsqueeze(-1).expand_as(response_mask) * response_mask
 
     # Step 4: Compute log-probabilities
     model.train()
-    logp_curr = model.get_log_probs(expanded_input_ids, expanded_response_mask)
+    logp_curr = model.get_log_probs(input_ids, response_mask)
 
-    # Old policy log-probs (stored from rollout — simulated as slightly different)
+    # Old policy log-probs (from rollout — stored at generation time)
     with torch.no_grad():
-        logp_old = logp_curr.clone() + torch.randn_like(logp_curr) * 0.01 * expanded_response_mask
+        logp_old = logp_curr.clone() + torch.randn_like(logp_curr) * 0.02 * response_mask
 
     # Reference policy log-probs (from frozen ref model)
     ref_model.eval()
     with torch.no_grad():
-        logp_ref = ref_model.get_log_probs(expanded_input_ids, expanded_response_mask)
+        logp_ref = ref_model.get_log_probs(input_ids, response_mask)
 
     # Step 5: Compute policy loss
     loss_fn_obj = LOSS_FUNCTIONS[loss_fn]
     if loss_fn == "cispo":
-        policy_loss = loss_fn_obj(logp_curr, logp_old, token_advantages, expanded_response_mask, epsilon)
+        policy_loss = loss_fn_obj(logp_curr, logp_old, token_advantages, response_mask, epsilon)
     elif loss_fn == "up_grpo":
-        policy_loss = loss_fn_obj(logp_curr, logp_old, token_advantages, expanded_response_mask, epsilon, clip_ratio_c)
+        policy_loss = loss_fn_obj(logp_curr, logp_old, token_advantages, response_mask, epsilon, clip_ratio_c)
     else:
-        policy_loss = loss_fn_obj(logp_curr, logp_old, token_advantages, expanded_response_mask, epsilon)
+        policy_loss = loss_fn_obj(logp_curr, logp_old, token_advantages, response_mask, epsilon)
 
     # Step 6: Compute KL penalty
-    kl_penalty = compute_kl_penalty(logp_curr, logp_ref, expanded_response_mask)
+    kl_penalty = compute_kl_penalty(logp_curr, logp_ref, response_mask)
 
     # Step 7: Total loss
     total_loss = policy_loss + kl_coef * kl_penalty
@@ -366,19 +377,33 @@ def grpo_training_step(
 # ============================================================
 
 def generate_from_prompts(self, prompts: torch.Tensor, response_length: int,
-                          device: str = "cpu") -> torch.Tensor:
-    """Greedy generation from prompts."""
-    batch_size = prompts.size(0)
-    generated = torch.zeros(batch_size, response_length, dtype=torch.long, device=device)
-
-    current_ids = prompts.clone()
-    for t in range(response_length):
-        logits = self.forward(current_ids)
-        next_token = logits[:, -1, :].argmax(dim=-1)
-        generated[:, t] = next_token
-        current_ids = torch.cat([current_ids, next_token.unsqueeze(-1)], dim=-1)
-
-    return generated
+                          device: str = "cpu", temperature: float = 1.0,
+                          num_samples: int = 1) -> torch.Tensor:
+    """Sampling generation from prompts. Generates num_samples per prompt."""
+    if num_samples == 1:
+        batch_size = prompts.size(0)
+        generated = torch.zeros(batch_size, response_length, dtype=torch.long, device=device)
+        current_ids = prompts.clone()
+        for t in range(response_length):
+            logits = self.forward(current_ids)[:, -1, :] / temperature
+            probs = F.softmax(logits, dim=-1)
+            next_token = torch.multinomial(probs, 1).squeeze(-1)
+            generated[:, t] = next_token
+            current_ids = torch.cat([current_ids, next_token.unsqueeze(-1)], dim=-1)
+        return generated
+    else:
+        # Generate num_samples per prompt for group diversity
+        expanded_prompts = prompts.repeat_interleave(num_samples, dim=0)
+        total_batch = expanded_prompts.size(0)
+        generated = torch.zeros(total_batch, response_length, dtype=torch.long, device=device)
+        current_ids = expanded_prompts.clone()
+        for t in range(response_length):
+            logits = self.forward(current_ids)[:, -1, :] / temperature
+            probs = F.softmax(logits, dim=-1)
+            next_token = torch.multinomial(probs, 1).squeeze(-1)
+            generated[:, t] = next_token
+            current_ids = torch.cat([current_ids, next_token.unsqueeze(-1)], dim=-1)
+        return generated
 
 
 # Monkey-patch the generation method
