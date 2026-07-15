@@ -23,11 +23,17 @@
 | 7 | vLLM-Ascend | #10645 | DSV4 chat template | Wrong template formatting | FIXED |
 | 8 | vLLM-Ascend | #10724 | DSV4 crash on 2*A2 PD-Mix multi-node | Deployment crash (Ascend) | OPEN bug June 18 |
 | 9 | SGLang | #28612 | DSV4 C128 state mapping lifecycle fix | Correctness fix for online compression | OPEN June 18 (fix PR for #28591!) |
+| 10 | SGLang | #28676 | MXFP8 MoE shuffle cache CLOBBERED | Weight-reload doesn't invalidate cache | MERGED July 1 |
+| 11 | Megatron | #5317 | Triton in-place rotary_fwd_q_kernel NaN | Bypasses autograd version counter → NaN iter 2 | OPEN July 14 |
+| 12 | SGLang | #28685 | GLM-5.2 FP8 block-fp8 wrong on MI350X | aiter gemm incorrect → GSM8K 0.000 | OPEN |
+| 13 | SGLang | #31270 | DSV4 draft-extend WAR ordering | CUDA graph reads shared mapping during replay | OPEN (13th DSV4 failure) |
+| 14 | SGLang | #31277 | GLM-5.2 NVFP4 regression revert | Fix #31001 caused regression → revert | OPEN (14th DSV4 failure) |
 
-★★★★★★★★★ 9 DSV4 issues in 4 days → 3 frameworks → 2 platforms → SYSTEMATIC pattern!
-★★★★★★★★★ Key: #28520 proves DSV4 fragile even WITHOUT CUDA graphs (EAGER mode bug!)
-★★★★★★★★★ #10645 + #10724 extends DSV4 instability to Ascend NPU → now 2 platforms affected!
+★★★★★★★★★ 14 DSV4 issues in 4 weeks → 5 frameworks → 3 platforms → SYSTEMATIC pattern!
+★★★★★★★★★ #28520 proves DSV4 fragile even WITHOUT CUDA graphs (EAGER mode bug!)
+★★★★★★★★★ #10645 + #10724 extends DSV4 instability to Ascend NPU → now 3 platforms affected!
 ★★★★★★★★★ Extended universal rule: per-step dynamic data MUST NOT be cached → not just CUDA graph!
+★★★★★★★★★ #31270 WAR ordering: even FutureMap (SGLang overlap) has DSV4-specific replay bugs
 ```
 
 ---
