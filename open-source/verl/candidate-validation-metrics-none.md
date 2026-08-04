@@ -111,8 +111,17 @@ for var_name, var_vals in var2vals.items():
 
 ## 6. 待办（PR 前）
 
-- [ ] **补 pytest 单测**：`tests/` 下加 sparse-key 的 `process_validation_metrics` 用例（verl CLAUDE.md 要求人类跑测试）
-- [ ] **pre-commit**：`uv pip install pre-commit hydra-core && pre-commit install` 后跑过 lint
+- [x] **补 pytest 单测**：在 `tests/trainer/ppo/test_metric_utils_on_cpu.py` 的 `TestProcessValidationMetrics` 追加 3 个用例（sparse None / 全 None 跳过 / sparse+pred 对齐）
+- [x] **跑全套测试**：`pytest test_metric_utils_on_cpu.py` → **39 passed**（3 新 + 36 现有无回归），4.28s
+- [ ] **pre-commit**：`uv pip install pre-commit hydra-core && pre-commit install` 后跑过 lint（待本地或服务器跑）
 - [ ] **查重**（提交前）：`gh pr list --search "6830 in:body"` + `--search "process_validation_metrics"` 确认没人已开 PR
 - [ ] **（对外，需你同意）** 把 patch 放到你的 fork（`Jackie2049/verl`）开 PR，PR 描述按 CLAUDE.md 要求写（为何不重复/测试结果/声明 AI 协助）
-- [ ] diff 目前在本机 `verl-pr/verl_main/`，未提交到任何远端（符合"只在 fork 建 PR"规则）
+- [x] diff 目前在本机 `verl-pr/verl_main/`，未提交到任何远端（符合"只在 fork 建 PR"规则）
+
+## 7. 评估
+
+- I=4（validation 直接崩，阻断任何 sparse 指标的 reward 函数；正确性相关）
+- C=2（自包含 guard + 3 单测；pred 对齐是唯一小心点，已用 zip strict=True + 测试覆盖）
+- A=5（`help wanted` + 无人认领 + 报告者给了修复指引 → maintainer 想要）
+- F=4（RL 指标聚合，本地可复现）
+- **性价比 = (4×5×4)/2 = 40** —— 本轮最高，patch+测试已就绪，等你审阅后一起在 fork 开 PR
