@@ -6,6 +6,7 @@
 
 ## 工作日志
 
+- [2026-08-04](diary/2026-08-04.md) — verl #6830 完整 Phase ④（patch+3单测+pytest 39/39）；MoonEP #17 静态验证（发现报告者分析 gap）；趋势项目推荐（MoonEP/FlashKDA/AReno）
 - [2026-08-03](diary/2026-08-03.md) — 建立 open-source/ 贡献挖掘流水线，verl 首轮扫描产出 3 个候选（#7213 P0 del_local_ckpt bug 为首选）
 - [2026-06-05](diary/2026-06-05.md) — RTX 4090 全面 benchmark、MiniGPT 训练、论文精读 8 篇、DPO/LoRA/RLHF/GRPO 实验、DeepSeek-V3 验证、Top-nσ PR 评估、开源贡献
 - [2026-06-04](diary/2026-06-04.md) — vLLM 安装、推理性能估算工具、LoRA/Tokenizer 笔记
@@ -87,6 +88,10 @@
 
 - [开源贡献挖掘 SOP](open-source/SOP.md) — 5 阶段流水线、P0-P4 优先级、性价比评分公式
 - [verl 贡献追踪](open-source/verl/tracker.md) — 跨扫描持久追踪（候选 → PR → merged/rejected）
+
+### MoonshotAI 扫描记录
+
+- [MoonshotAI 贡献追踪](open-source/moonshot/tracker.md) — MoonEP/FlashKDA/minitriton 候选追踪（MoonEP 是 Kimi K3 EP 基础设施）
 
 ### verl 扫描记录
 
