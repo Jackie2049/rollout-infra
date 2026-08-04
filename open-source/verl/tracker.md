@@ -7,9 +7,19 @@
 
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
-| 0 | process_validation_metrics 崩在 sparse reward_extra_info None (#6830) | P0 | 40 | — | **VERIFIED-WORKS**(根因+复现+patch 5测试全过；待补单测+pre-commit，PR 待你同意) | 2026-08-04 |
-| 1 | del_local_ckpt_after_load 不删 checkpoint (#7213) | P0 | 30→12 | — | BLOCKED(作者 yuyz-cyber 已认领意图，需先协调；回头提醒 review) | 2026-08-03 |
-| 2 | veomni transformer del_local_after_load 类型标注错误 | P1 | 12 | — | HOLD(单行类型标注，攒着等同文件实质改动顺带修，不单独提) | 2026-08-03 |
+| 0 | process_validation_metrics 崩在 sparse reward_extra_info None (#6830) | P0 | 40 | — | **VERIFIED-WORKS**(根因+复现+patch+3单测+pytest 39/39；待 pre-commit+查重，PR 待你同意) | 2026-08-04 |
+| 1 | dynamic-cp ceil 切分致高 DP rank 空 (#6786) | P0 | 24 | — | **VERIFIED-WORKS**(纯逻辑复现+even 切分 patch 4 用例+merge 安全确认；待补单测，PR 待你同意) | 2026-08-04 |
+| 2 | filter_overlong_prompts 多进程 SIGTERM 挂死 (#7163) | P0 | 24 | — | **VERIFIED-WORKS**(Linux fork 复现 signal 继承+patch 验证；待补单测，PR 待你同意) | 2026-08-04 |
+| 3 | del_local_ckpt_after_load 不删 checkpoint (#7213) | P0 | 30→12 | — | BLOCKED(作者 yuyz-cyber 已认领意图，需先协调；回头提醒 review) | 2026-08-03 |
+| 4 | veomni transformer del_local_after_load 类型标注错误 | P1 | 12 | — | HOLD(单行类型标注，攒着等同文件实质改动顺带修，不单独提) | 2026-08-03 |
+
+### 备选（待深挖）
+
+| # | 候选 | 备注 |
+|---|---|---|
+| #7146 | [FSDP] Nemotron-H 无法开 gradient checkpointing | 复现具体，根因可能在 HF Transformers 上游，需判断 verl 侧能否修 |
+| #6690 | [Megatron] resume 崩在 offload pin_memory cudaError | reporter 做了 root-cause，诊断充分 |
+| #6700 | colocate reward model 路径缺失 | NotImplementedError TODO，需 maintainer 定方向 |
 
 ## 已拒 / 已弃
 
