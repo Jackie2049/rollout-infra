@@ -7,6 +7,7 @@
 
 | # | 候选 | 类别 | 性价比 | PR | 状态 | 首次发现 |
 |---|---|---|---|---|---|---|
+| 0 | process_validation_metrics 崩在 sparse reward_extra_info None (#6830) | P0 | 40 | — | **VERIFIED-WORKS**(根因+复现+patch 5测试全过；待补单测+pre-commit，PR 待你同意) | 2026-08-04 |
 | 1 | del_local_ckpt_after_load 不删 checkpoint (#7213) | P0 | 30→12 | — | BLOCKED(作者 yuyz-cyber 已认领意图，需先协调；回头提醒 review) | 2026-08-03 |
 | 2 | veomni transformer del_local_after_load 类型标注错误 | P1 | 12 | — | HOLD(单行类型标注，攒着等同文件实质改动顺带修，不单独提) | 2026-08-03 |
 

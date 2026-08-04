@@ -2,9 +2,17 @@
 
 > Issue: [volcengine/verl#6830](https://github.com/volcengine/verl/issues/6830)
 > 标签：**bug + help wanted**（官方邀请社区修复）
-> 状态：`verified-static`（根因三重确认；**待本地复现 + patch**）
+> 状态：`verified-works`（根因确认 + 本地复现 TypeError + patch 5 项测试全过）
 > 首次发现：2026-08-04
 > **竞争风险：极低** — 0 评论、0 assignee、`help wanted`（与 #7213 作者自认领不同）
+
+## ⚠️ verl 贡献政策（CLAUDE.md，提交前必读）
+
+- **不允许纯 code-agent PR**：必须人类提交者端到端理解并辩护每一行 → 正好契合"你审阅后一起提交"
+- **AI-assisted PR 描述必须包含**：为何不重复现有 PR / 跑了哪些测试及结果 / 明确声明用了 AI 协助
+- **不允许低价值 busywork PR**（单行 typo/风格）：机械清理只有捆绑实质工作才可
+- **提交前先查重**：`gh issue view <n> --comments` + `gh pr list --search <n> in:body` 确认没有别人已开 PR 修同一个
+- commit message 用 trailer：`Co-authored-by: Claude` + `Signed-off-by: <你的名字>`
 
 ## 0. 为什么这是本轮最佳候选
 
@@ -59,39 +67,52 @@ for var_name, var_vals in var2vals.items():
 
 → 正确修法是**在聚合前过滤掉 None**，只对有值的样本求统计。
 
-## 4. Patch 设计（draft）
+## 4. Patch（已实现 + 本地验证通过）
 
-核心：在 `process_validation_metrics` 聚合前，对每个 per-uid 组**剔除 None**；若整组都是 None 则跳过该 var（无可统计值）。
+改动位置：`verl/trainer/ppo/metric_utils.py`，`process_validation_metrics` 的聚合循环开头。核心：先过滤 None（剔除 sparse key 的 null-fill），再让 pred 按位置对齐过滤，最后才进 skip-filter 和统计。
 
 ```python
-# metric_utils.py 聚合循环内
 for var_name, var_vals in var2vals.items():
-    # NEW: 剔除 None（sparse extra-info 的 null-fill），只统计有值样本
+    # Drop null-filled values from sparse reward_extra_info keys.
+    orig_var_vals = var_vals
     var_vals = [v for v in var_vals if v is not None]
+    if var_name != "pred" and var2vals.get("pred") is not None:
+        # Keep pred aligned with the filtered values for the maj@N vote.
+        var2vals["pred"] = [p for v, p in zip(orig_var_vals, var2vals["pred"], strict=True) if v is not None]
     # skip empty or string values
     if not var_vals or isinstance(var_vals[0], str):
         continue
+    pred_vals = var2vals.get("pred")
+    has_pred = pred_vals is not None
+    n_resps = len(var_vals)
+    metric = {f"mean@{n_resps}": float(np_mean(var_vals))}
     ...
 ```
 
-注意点：
-- 过滤后 `n_resps = len(var_vals)` 会反映**实际有值的样本数**（`mean@k`，k 可能 < 组大小）——这正是期望语义（对 sparse 指标，只统计 emit 了它的样本）。
-- bootstrap / maj 路径同样基于过滤后的 `var_vals`，None 不再进入 `np.max/np.min/zip`。
-- `pred` 相关（majority vote）的 `zip(var_vals, pred_vals, strict=True)` 需确保 None 过滤对 val/pred 对齐——**这里要谨慎**：若只过滤 val 的 None，需同步过滤对应 pred，否则 `strict=True` 会因长度不等报错。实现时应同时剔除两者中 val 为 None 的位置。
+关键设计决策：
+- **过滤 None 而非 sentinel/nan**：符合 issue 期望（sentinel 偏斜 mean，nan 用 np.mean 会传染）
+- **pred 按位置对齐**（`zip(orig_var_vals, pred, strict=True)`）：避免 val 过滤后 maj-vote 的 val/pred 错位；`strict=True` 让真实长度不齐尽早暴露而非静默截断
+- **删除旧的外层 `pred_vals/has_pred`**：移到过滤后重算，否则旧 has_pred 与过滤后 pred 不一致
+- **n_resps 语义**：过滤后 = 实际有值样本数（`mean@k`，k ≤ 组大小），正是 sparse 指标的正确语义
 
-## 5. 待办（Phase ④ 下一步）
+## 5. 验证结果（4090 服务器 verl-pr env，torch 2.6.0，PYTHONPATH 指向最新 verl_main）
 
-- [ ] **本地复现**：写最小脚本构造 `infos_dict` 含 None 的 sparse key → 调 `process_validation_metrics` → 确认 TypeError
-- [ ] **应用 patch** → 确认不再崩、且有值样本统计正确（mean 不被 None 偏斜）
-- [ ] **边界**：整组全 None（该 var 跳过）、val/pred 对齐过滤、`n_resps` 语义
-- [ ] **回归**：非 sparse（所有样本都有值）时行为不变
-- [ ] **补单测**：`tests/` 下加 sparse-key 的 process_validation_metrics 用例
-- [ ] **（对外，需你同意）** 提 PR
+| 用例 | 结果 |
+|---|---|
+| 1. sparse None (n=1) — 原崩溃 | ✅ 不崩，`cp: mean@1=0.85=(0.9+0.8)/2`（None 剔除） |
+| 2. sparse + pred（maj 路径）— 原崩溃 | ✅ 不崩，maj@2 正常，val/pred 对齐 |
+| 3. 全 None 组 | ✅ `cp` 被跳过（不进结果），无 crash |
+| 4. dense 回归（无 None） | ✅ `cp: mean@2=0.75`（4 值全算），行为不变 |
+| 5. 混合 dense+sparse | ✅ dense 用全样本、sparse 只用有值样本，互不干扰 |
 
-## 6. 评估
+**复现确认（patch 前）**：
+- n=1 组：`TypeError: unsupported operand type(s) for /: 'NoneType' and 'int'`（与 issue 一致）
+- 含 pred 组：`TypeError: ... for +: 'float' and 'NoneType'`（maj 路径也崩）
 
-- I=4（validation 直接崩，阻断任何 sparse 指标的 reward 函数；正确性相关）
-- C=2（自包含 guard + 单测；pred 对齐需小心）
-- A=5（`help wanted` + 无人认领 + 报告者给了修复指引 → maintainer 想要）
-- F=4（RL 指标聚合，本地可复现）
-- **性价比 = (4×5×4)/2 = 40** —— 本轮最高，建议优先动工（本地 patch + 复现，不对外）
+## 6. 待办（PR 前）
+
+- [ ] **补 pytest 单测**：`tests/` 下加 sparse-key 的 `process_validation_metrics` 用例（verl CLAUDE.md 要求人类跑测试）
+- [ ] **pre-commit**：`uv pip install pre-commit hydra-core && pre-commit install` 后跑过 lint
+- [ ] **查重**（提交前）：`gh pr list --search "6830 in:body"` + `--search "process_validation_metrics"` 确认没人已开 PR
+- [ ] **（对外，需你同意）** 把 patch 放到你的 fork（`Jackie2049/verl`）开 PR，PR 描述按 CLAUDE.md 要求写（为何不重复/测试结果/声明 AI 协助）
+- [ ] diff 目前在本机 `verl-pr/verl_main/`，未提交到任何远端（符合"只在 fork 建 PR"规则）
